@@ -9,7 +9,7 @@ urlpatterns = [
         include(
             [
                 path("auth/", include("accounts.urls")),
-                # path('books/', include('catalog.urls')), # To be added later
+                path('', include('catalog.urls')),
             ]
         ),
     ),
