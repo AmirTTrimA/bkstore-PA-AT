@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext_lazy as _
 from .models import User
 
 
@@ -12,12 +13,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("username", "email", "password", "password2")
-        extra_kwargs = {"email": {"required": True}, "username": {"required": True}}
+        extra_kwargs = {
+            "email": {"required": True, "label": _("Email Address")},
+            "username": {"required": True, "label": _("Username")},
+        }
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError(
-                {"password": "Password fields didn't match."}
+                {"password": _("Password fields didn't match.")}
             )
         return attrs
 

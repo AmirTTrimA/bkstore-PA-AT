@@ -129,6 +129,12 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+#############################################################################
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
 # Custom User Model Configuration
 AUTH_USER_MODEL = "accounts.User"
 
