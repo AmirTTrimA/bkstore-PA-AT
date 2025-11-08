@@ -53,7 +53,7 @@ class BookDetailSerializer(BookListSerializer):
     # We inherit list fields and add detailed ones
     author_id = serializers.PrimaryKeyRelatedField(source="author", read_only=True)
     isbn = serializers.CharField()
-    description = serializers.CharField(source="description")
+    description = serializers.CharField()
     genre = serializers.CharField(
         source="get_genre_display"
     )  # Gets the human-readable genre name
