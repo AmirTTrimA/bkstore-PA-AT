@@ -191,6 +191,8 @@ ACCOUNT_SIGNUP_FIELDS = ["email", "username", "job_or_major", "hobbies_or_liking
 
 ACCOUNT_EMAIL_VERIFICATION = "none"  # Set to 'mandatory' for production security
 
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Bookstore] ' # Custom email subject prefix
+
 
 # 3. DJ-REST-AUTH JWT CONFIGURATION
 REST_AUTH = {
