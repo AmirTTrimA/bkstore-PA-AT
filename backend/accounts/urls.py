@@ -9,29 +9,29 @@ from rest_framework_simplejwt.views import (
 from .views import OTPLoginView, OTPRequestView, OTPVerifyView, UserRegistrationView
 
 urlpatterns = [
-    # --- Standard JWT Authentication ---
+    # --- JWT Token Management ---
     path("register/", UserRegistrationView.as_view(), name="register"),
     path("login/", TokenObtainPairView.as_view(), name="login"),
+    # NEW LOGIN ROUTE: OTP Login (for unauthenticated users)
+    path("login/otp/", OTPLoginView.as_view(), name="login-otp"),
     path("refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("logout/", TokenBlacklistView.as_view(), name="logout"),
-    # --- Passwordless Login Flow (OTP Steps) ---
-    path(
-        "otp/request/", OTPRequestView.as_view(), name="otp-request"
-    ),  # Step 1: Request code
-    path(
-        "login/otp/", OTPLoginView.as_view(), name="login-otp"
-    ),  # Step 2: Login with code
-    path(
-        "otp/verify/", OTPVerifyView.as_view(), name="otp-verify"
-    ),  # 2FA / Re-verify identity
     # --- Password Reset Flow ---
     path("password/reset/", PasswordResetView.as_view(), name="password_reset"),
-    # Required pattern for internal email link generation (complex regex)
+    # 1. The Complex URL (REQUIRED for link generation, must have arguments)
     re_path(
         r"^password/reset/confirm/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,32}-[0-9A-Za-z]{1,64})/$",
         PasswordResetConfirmView.as_view(),
-        name="password_reset_confirm",
+        name="password_reset_confirm",  # 🔑 FIX: Keep the original name for the link generation to work
     ),
-    # The actual API endpoint the frontend POSTs to
-    path("password/reset/confirm/", PasswordResetConfirmView.as_view()),
+    # 2. The simple API endpoint for POST requests (The actual API the test should reverse)
+    # 🔑 FIX: We will name this endpoint differently and update the test file.
+    path(
+        "password/reset/confirm/",
+        PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm_post",
+    ),
+    # --- OTP/2FA Logic (Custom Views) ---
+    path("otp/request/", OTPRequestView.as_view(), name="otp-request"),
+    path("otp/verify/", OTPVerifyView.as_view(), name="otp-verify"),
 ]
