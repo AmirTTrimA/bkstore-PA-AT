@@ -2,6 +2,8 @@ from django.db.models import Count, Q
 from haystack.query import SearchQuerySet
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.db.models import F
 
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookDetailSerializer, BookListSerializer
@@ -77,27 +79,34 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """
-        Custom queryset logic: Uses Solr/Haystack for search,
-        falls back to Django ORM list if no search query is provided.
+        Custom queryset logic: Uses PostgreSQL Full-Text Search for ranked results.
+
+        Note: This temporarily replaces Solr until the external service is stable.
         """
-        search_query = self.request.query_params.get("search", None)
+        search_query_param = self.request.query_params.get("search", None)
 
-        if search_query:
-            # 🔑 PHASE 2 ADVANCED SEARCH: Use Haystack's SearchQuerySet
-            # 1. Query Solr index using auto_query (handles complex keywords/phrases)
-            sqs = SearchQuerySet().auto_query(search_query).models(Book)
+        # 🔑 ANNOTATE QUERYSET: Add a SearchVector field to the queryset that combines relevant text fields.
+        if not hasattr(self.queryset, "search"):
+            self.queryset = self.queryset.annotate(
+                # Combines title (A weight - highest importance) and description (B weight)
+                search=SearchVector("title", weight="A", config="english")
+                + SearchVector("description", weight="B", config="english")
+                + SearchVector("author__name", weight="B", config="english")
+            )
 
-            # 2. Get the primary keys (PKs) returned by Solr (the rank is implicit in SQS order)
-            pks = [result.pk for result in sqs]
+        if search_query_param:
+            # Create the SearchQuery object from the user's input
+            query = SearchQuery(search_query_param, config="english")
 
-            # 3. Return a filtered queryset based on PKs returned by Solr
-            # Note: We must maintain the order returned by SQS for ranking, but this simple PK filter doesn't.
-            # However, for basic functionality, this is acceptable. Advanced ranking is handled by Solr.
-            # We will use the order of the PKs returned by SQS to ensure rank is preserved:
-
-            # In real-world, we'd use Django's 'Case/When' for ordering, but that's complex.
-            # For simplicity, we filter by PKs:
-            return self.queryset.filter(pk__in=pks)
+            # Filter the queryset using the SearchQuery, then apply ranking
+            return (
+                self.queryset.filter(search=query)
+                .annotate(
+                    # Calculate the ranking score based on the query and vector
+                    rank=SearchRank(F("search"), query)
+                )
+                .order_by("-rank")
+            )
 
         # Fallback: If no search query, return all books ordered by creation date
         return self.queryset.order_by("-created_at")
