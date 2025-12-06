@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "dj_rest_auth",
+    "haystack",  # For search functionality
     # Local apps
     "accounts",
     "catalog",
@@ -210,3 +211,13 @@ REST_AUTH = {
     "JWT_AUTH_COOKIE": "access_token",  # Name of the Access Token cookie
     "JWT_AUTH_REFRESH_COOKIE": "refresh_token",  # Name of the Refresh Token cookie
 }
+
+HAYSTACK_CONNECTIONS = {
+    "default": {
+        "ENGINE": "haystack.backends.solr_backend.SolrEngine",
+        "URL": "http://127.0.0.1:8983/solr/bookstore_core",
+        "INDEX_NAME": "bookstore_solr_index",
+    },
+}
+
+HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
