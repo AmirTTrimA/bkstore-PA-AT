@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "accounts",
     "catalog",
     "pricing",
+    "cart",
 ]
 
 MIDDLEWARE = [
@@ -222,3 +223,5 @@ HAYSTACK_CONNECTIONS = {
 }
 
 HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
+
+CART_SESSION_KEY = "cart"
