@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "dj_rest_auth",
+    "haystack",  # For search functionality
     # Local apps
     "accounts",
     "catalog",
@@ -63,7 +64,7 @@ ROOT_URLCONF = "core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],  # Global templates directory
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -83,10 +84,18 @@ WSGI_APPLICATION = "core.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
+    "sqlite": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
-    }
+    },
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST", default="localhost"),
+        "PORT": os.getenv("DB_PORT", default="5432"),
+    },
 }
 
 
@@ -202,3 +211,13 @@ REST_AUTH = {
     "JWT_AUTH_COOKIE": "access_token",  # Name of the Access Token cookie
     "JWT_AUTH_REFRESH_COOKIE": "refresh_token",  # Name of the Refresh Token cookie
 }
+
+HAYSTACK_CONNECTIONS = {
+    "default": {
+        "ENGINE": "haystack.backends.solr_backend.SolrEngine",
+        "URL": "http://127.0.0.1:8983/solr/bookstore_core",
+        "INDEX_NAME": "bookstore_solr_index",
+    },
+}
+
+HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"

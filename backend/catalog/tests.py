@@ -1,7 +1,8 @@
 from django.urls import reverse
-from rest_framework.test import APITestCase
-from rest_framework import status
 from django.utils.translation import gettext_lazy as _
+from rest_framework import status
+from rest_framework.test import APITestCase
+
 from .models import Author, Book
 
 # ----------------------------------------------------------------------
@@ -138,3 +139,106 @@ class CatalogAPITestCase(APITestCase):
 
         # Check that bio_summary is generated
         self.assertIn("bio_summary", response.data[0])
+
+
+# from catalog.models import Author, Book
+# from django.core import management
+# from django.urls import reverse
+# from rest_framework import status
+# from rest_framework.test import APITestCase
+
+
+# class SolrSearchTest(APITestCase):
+#     """
+#     Tests to verify that the BookViewSet successfully uses Haystack/Solr
+#     for search queries, demonstrating that the ORM filter has been superseded.
+#     """
+
+#     @classmethod
+#     def setUpTestData(cls):
+#         """
+#         Set up data and populate the search index once for all tests.
+#         This ensures search is tested against a clean, pre-indexed dataset.
+#         """
+#         # 1. Create Authors
+#         cls.author_adams = Author.objects.create(
+#             name="Douglas Adams", biography="Sci-Fi Humorist"
+#         )
+#         cls.author_mystery = Author.objects.create(
+#             name="Agatha Christie", biography="Queen of Mystery"
+#         )
+
+#         # 2. Create Books with unique search terms and genres
+#         cls.book_hitchhiker = Book.objects.create(
+#             author=cls.author_adams,
+#             title="The Hitchhiker's Guide to the Galaxy",
+#             slug="hitchhikers-guide",
+#             isbn="978-1000000001",
+#             description="A crucial book exploring the theme of existential survival.",
+#             genre="SCI_FI",
+#             is_digital=True,
+#             is_audio=False,
+#         )
+#         cls.book_murder = Book.objects.create(
+#             author=cls.author_mystery,
+#             title="Murder on the Orient Express",
+#             slug="orient-express",
+#             isbn="978-2000000002",
+#             description="A classic puzzle involving a detective on a train.",
+#             genre="MYSTERY",
+#             is_digital=False,
+#             is_audio=True,
+#         )
+#         cls.book_long = Book.objects.create(
+#             author=cls.author_adams,
+#             title="The Long Dark Tea-Time of the Soul",
+#             slug="long-dark-tea",
+#             isbn="978-3000000003",
+#             description="A modern classic about divine conflict.",
+#             genre="FICTION",
+#             is_digital=True,
+#             is_audio=False,
+#         )
+
+#         # 3. 🔑 CRITICAL STEP: Rebuild the index in the test database
+#         management.call_command("rebuild_index", interactive=False, verbosity=0)
+
+#         cls.books_url = reverse("book-list")
+
+#     # --- Test Cases ---
+
+#     def test_01_search_by_single_keyword(self):
+#         """Tests search functionality by matching a unique keyword in the description."""
+#         response = self.client.get(self.books_url, {"search": "existential"})
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(len(response.data), 1)
+#         self.assertEqual(
+#             response.data[0]["title"], "The Hitchhiker's Guide to the Galaxy"
+#         )
+
+#     def test_02_search_by_author_name(self):
+#         """Tests search functionality by matching the author's name."""
+#         response = self.client.get(self.books_url, {"search": "Christie"})
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(len(response.data), 1)
+#         self.assertEqual(response.data[0]["title"], "Murder on the Orient Express")
+
+#     def test_03_search_returns_multiple_results(self):
+#         """Tests a common keyword returns multiple relevant books (Douglas)."""
+#         response = self.client.get(self.books_url, {"search": "Douglas"})
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         # Should return 'Hitchhiker' and 'Long Dark'
+#         self.assertEqual(len(response.data), 2)
+
+#     def test_04_fallback_to_all_books(self):
+#         """Tests that without a search query, all books are returned."""
+#         response = self.client.get(self.books_url)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         # Should return all 3 books created in setUp
+#         self.assertEqual(len(response.data), 3)
+
+#     def test_05_no_results_found(self):
+#         """Tests that a non-existent search term returns an empty list."""
+#         response = self.client.get(self.books_url, {"search": "quantum mechanics"})
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(len(response.data), 0)
