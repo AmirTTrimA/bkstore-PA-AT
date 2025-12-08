@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",  # Required by allauth
     # Third-party apps
     "rest_framework",
+    "django_extensions",
     # Authentication & Password Reset Dependencies
     "rest_framework.authtoken",  # Required for some dj-rest-auth features
     "rest_framework_simplejwt.token_blacklist",
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     "accounts",
     "catalog",
     "pricing",
+    "cart",
 ]
 
 MIDDLEWARE = [
@@ -222,3 +224,5 @@ HAYSTACK_CONNECTIONS = {
 }
 
 HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
+
+CART_SESSION_KEY = "cart"
