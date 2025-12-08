@@ -10,6 +10,7 @@ urlpatterns = [
             [
                 path("auth/", include("accounts.urls")),
                 path('', include('catalog.urls')),
+                path("pricing/", include("pricing.urls")),
             ]
         ),
     ),
