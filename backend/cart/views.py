@@ -1,24 +1,28 @@
+from decimal import Decimal
+
 from catalog.models import Book
 from django.conf import settings
-from django.db import transaction
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from rest_framework import generics, status, viewsets
+from pricing.models import Price
+from rest_framework import generics, status, viewsets, serializers
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Cart, CartItem, WishlistItem
-from django.utils import timezone
-from pricing.models import Price
-from decimal import Decimal
-from django.db import models
+from .models import Cart, CartItem, WishlistItem, Order, OrderItem
 from .serializers import (  # Assuming CartItemOutputSerializer is for display
     CartItemInputSerializer,
     CartItemOutputSerializer,
     WishlistCreateSerializer,
     WishlistItemSerializer,
+    CheckoutInputSerializer,
+    OrderOutputSerializer,
 )
+
+from .services import PriceCalculationService
 
 # Set session key (should be in settings.py, but defined here for context)
 CART_SESSION_KEY = getattr(settings, "CART_SESSION_KEY", "cart")
@@ -76,17 +80,21 @@ def get_current_prices(book_ids):
     Returns: A dictionary mapping {book_id: price_value}
     """
     now = timezone.now()
-    
+
     # Complex query to find the most recent valid price for each book
-    # This logic finds the Price record where effective_from is the highest (most recent) 
+    # This logic finds the Price record where effective_from is the highest (most recent)
     # but still valid (effective_until is null or future)
-    
+
     # For simplicity, we filter by effective_until=NULL or > now()
-    active_prices = Price.objects.filter(
-        models.Q(effective_until__isnull=True) | models.Q(effective_until__gt=now),
-        book_id__in=book_ids,
-        effective_from__lte=now,
-    ).order_by('book_id', '-effective_from').distinct('book_id')
+    active_prices = (
+        Price.objects.filter(
+            models.Q(effective_until__isnull=True) | models.Q(effective_until__gt=now),
+            book_id__in=book_ids,
+            effective_from__lte=now,
+        )
+        .order_by("book_id", "-effective_from")
+        .distinct("book_id")
+    )
 
     # Create a lookup dictionary: {book_id: value}
     price_map = {price.book_id: price.value for price in active_prices}
@@ -109,16 +117,16 @@ class CartItemHandlerView(generics.GenericAPIView):
         # Fetch book objects in bulk for efficiency
         book_ids = [int(pk) for pk in cart_data.keys()]
         books = Book.objects.filter(pk__in=book_ids).in_bulk()
-        
+
         # 🔑 CRITICAL FIX: Fetch active prices from DB
         price_map = get_current_prices(book_ids)
 
         cart_output = []
         for book_id, quantity in cart_data.items():
             book = books.get(int(book_id))
-            
+
             # Use the actual price from the map, default to 0 if not found
-            unit_price = price_map.get(int(book_id), Decimal("0.00")) 
+            unit_price = price_map.get(int(book_id), Decimal("0.00"))
 
             if book:
                 # 🔑 FIX: Pass the calculated unit price to the serializer's context (item dictionary)
@@ -127,11 +135,11 @@ class CartItemHandlerView(generics.GenericAPIView):
                         "book_id": book.pk,
                         "title": book.title,
                         "quantity": quantity,
-                        "unit_price": unit_price, # 🔑 NEW: Unit price passed for subtotal calc in serializer
+                        "unit_price": unit_price,  # 🔑 NEW: Unit price passed for subtotal calc in serializer
                         "cover_image_url": book.cover_image_url,
                     }
                 )
-        
+
         # Sort output for consistent display
         serializer = CartItemOutputSerializer(
             sorted(cart_output, key=lambda x: x["book_id"]), many=True
@@ -175,6 +183,7 @@ class CartItemHandlerView(generics.GenericAPIView):
         return Response(
             {"detail": _("Item not found in cart.")}, status=status.HTTP_404_NOT_FOUND
         )
+
 
 # -------------------------------------------------------------
 # 2. CART MERGE LOGIC (Upon Login)
@@ -256,3 +265,95 @@ class WishlistViewSet(viewsets.GenericViewSet, ListModelMixin, DestroyModelMixin
                 {"detail": _("Item is already in your wishlist.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+# -------------------------------------------------------------
+# 4. ORDER SUBMISSION (CHECKOUT)
+# -------------------------------------------------------------
+
+
+class CheckoutView(generics.GenericAPIView):
+    """
+    Handles the final order submission, price calculation, and transaction snapshot.
+    Maps to POST /api/v1/cart/checkout/
+    """
+
+    serializer_class = CheckoutInputSerializer
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        input_serializer = self.get_serializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        data = input_serializer.validated_data
+
+        user = request.user
+
+        # 1. Get current cart contents (must be from DB for persistence)
+        cart_data = get_storage_manager(request)
+        if not cart_data:
+            return Response(
+                {"detail": _("Your cart is empty.")}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Initialize Price Calculation Service
+        calculator = PriceCalculationService(user=user)
+
+        # 3. Run final calculation and anti-abuse checks
+        try:
+            (
+                items_for_snapshot,
+                subtotal_base,
+                discount_amount,
+                final_total,
+                applied_discount,
+            ) = calculator.calculate_order_snapshot(
+                cart_items_data=cart_data, discount_code=data.get("discount_code")
+            )
+        except serializers.ValidationError as e:
+            # Catch exceptions raised by the service (e.g., expired discount code)
+            return Response({"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 4. Create the final Order Snapshot (Transaction Record)
+        new_order = Order.objects.create(
+            user=user,
+            discount_code=applied_discount,  # Can be None
+            subtotal=subtotal_base,
+            discount_amount=discount_amount,
+            total_amount=final_total,
+            status="PENDING",  # Assuming payment happens next
+            # Address Snapshot
+            shipping_name=data["shipping_name"],
+            shipping_address_line1=data["shipping_address_line1"],
+            shipping_city=data["shipping_city"],
+            shipping_country=data["shipping_country"],
+        )
+
+        # 5. Create immutable OrderItem records
+        order_items = []
+        for item_data in items_for_snapshot:
+            order_item = OrderItem.objects.create(
+                order=new_order,
+                book=item_data["book"],
+                quantity=item_data["quantity"],
+                snapshot_price=item_data["snapshot_price"],
+                snapshot_title=item_data["snapshot_title"],
+                snapshot_author_name=item_data["snapshot_author_name"],
+            )
+            order_items.append(order_item)
+
+        # 6. Clean Up and Finalize
+
+        # Clean up the persistent cart storage (DB only, session is cleared on login/merge)
+        # Note: We must get the Cart object and delete the related CartItems
+        Cart.objects.get(user=user).items.all().delete()
+
+        # Update Discount Code usage count
+        if applied_discount:
+            applied_discount.times_used += 1
+            applied_discount.save()
+
+        # Return the newly created Order for confirmation
+        return Response(
+            OrderOutputSerializer(new_order).data, status=status.HTTP_201_CREATED
+        )

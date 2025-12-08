@@ -2,11 +2,10 @@ from decimal import Decimal  # 🔑 NEW: Import for safe decimal calculation
 
 from catalog.models import Book  # To check if book exists
 from django.utils.translation import gettext_lazy as _
+from pricing.models import Price
 from rest_framework import serializers
-from decimal import Decimal
 
 from .models import Cart, Order, OrderItem, WishlistItem
-from pricing.models import Price
 
 # -------------------------------------------------------------
 # 1. CART ITEM INPUT/OUTPUT
@@ -102,3 +101,86 @@ class WishlistCreateSerializer(serializers.Serializer):
         except Book.DoesNotExist:
             raise serializers.ValidationError(_("Book with this ID does not exist."))
         return value
+
+
+# -------------------------------------------------------------
+# 3. CHECKOUT & ORDER SERIALIZERS
+# -------------------------------------------------------------
+
+
+class CheckoutInputSerializer(serializers.Serializer):
+    """
+    Serializer for input data during final order submission (checkout).
+    """
+
+    # --- Shipping Address Snapshot (Required for physical delivery) ---
+    shipping_name = serializers.CharField(
+        max_length=255, required=True, label=_("Recipient Name")
+    )
+    shipping_address_line1 = serializers.CharField(
+        max_length=255, required=True, label=_("Address Line 1")
+    )
+    shipping_city = serializers.CharField(
+        max_length=100, required=True, label=_("City")
+    )
+    shipping_country = serializers.CharField(
+        max_length=100, required=True, label=_("Country")
+    )
+
+    # --- Optional Discount Code ---
+    discount_code = serializers.CharField(
+        max_length=50, required=False, allow_blank=True, label=_("Discount Code")
+    )
+
+    # Validation: We don't need extensive validation here; it will happen in the View/Service layer
+    # to enforce business rules (like checking code validity and availability).
+
+
+class OrderItemOutputSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying items within a final, historical Order.
+    """
+
+    # Display the book title and author name from the saved snapshots
+    book_title = serializers.CharField(source="snapshot_title", read_only=True)
+    author_name = serializers.CharField(source="snapshot_author_name", read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = (
+            "id",
+            "book_title",
+            "author_name",
+            "quantity",
+            "snapshot_price",  # The price locked in at the time of purchase
+        )
+
+
+class OrderOutputSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying a completed Order in the user's history/confirmation screen.
+    """
+
+    # 🔑 Nested Serializer: Embeds all the items associated with this order.
+    items = OrderItemOutputSerializer(many=True, read_only=True)
+
+    # Custom fields for readability
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "status",
+            "status_display",
+            "subtotal",
+            "discount_amount",
+            "total_amount",
+            "created_at",
+            # Address Snapshot for confirmation
+            "shipping_name",
+            "shipping_address_line1",
+            "shipping_city",
+            "shipping_country",
+            "items",
+        )
