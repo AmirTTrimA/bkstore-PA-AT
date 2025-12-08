@@ -3,25 +3,25 @@ from decimal import Decimal
 from catalog.models import Book
 from django.conf import settings
 from django.db import models, transaction
+from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from pricing.models import Price
-from rest_framework import generics, status, viewsets, serializers
+from rest_framework import generics, serializers, status, viewsets
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Cart, CartItem, WishlistItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderItem, WishlistItem
 from .serializers import (  # Assuming CartItemOutputSerializer is for display
     CartItemInputSerializer,
     CartItemOutputSerializer,
-    WishlistCreateSerializer,
-    WishlistItemSerializer,
     CheckoutInputSerializer,
     OrderOutputSerializer,
+    WishlistCreateSerializer,
+    WishlistItemSerializer,
 )
-
 from .services import PriceCalculationService
 
 # Set session key (should be in settings.py, but defined here for context)
@@ -232,7 +232,9 @@ class CartMergeView(generics.GenericAPIView):
         )
 
 
-class WishlistViewSet(viewsets.GenericViewSet, ListModelMixin, DestroyModelMixin):
+class WishlistViewSet(
+    viewsets.GenericViewSet, ListModelMixin, DestroyModelMixin
+):
     """
     Handles listing the user's wishlist and removing items.
     Maps to GET, DELETE /api/v1/cart/wishlist/<id>/
@@ -253,18 +255,20 @@ class WishlistViewSet(viewsets.GenericViewSet, ListModelMixin, DestroyModelMixin
 
         book = get_object_or_404(Book, pk=book_id)
 
-        try:
-            WishlistItem.objects.create(user=request.user, book=book)
-            return Response(
-                {"detail": _("Item added to your wishlist."), "book_id": book_id},
-                status=status.HTTP_201_CREATED,
-            )
-        except Exception:
-            # Catches unique_together constraint violation (item already exists)
+        # 🔑 DEFINITIVE FIX: Query the database first to PREVENT IntegrityError
+        if WishlistItem.objects.filter(user=request.user, book=book).exists():
             return Response(
                 {"detail": _("Item is already in your wishlist.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # If the item doesn't exist, create it. This creation is now guaranteed to succeed.
+        WishlistItem.objects.create(user=request.user, book=book)
+
+        return Response(
+            {"detail": _("Item added to your wishlist."), "book_id": book_id},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 # -------------------------------------------------------------
