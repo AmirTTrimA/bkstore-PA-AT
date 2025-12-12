@@ -1,5 +1,10 @@
 import base64
 import json
+from datetime import timedelta
+from decimal import Decimal
+
+from cart.models import Order, OrderItem
+from content.models import License
 
 # 🔑 FIX: Use apps.get_model for reliable access to token models in tests
 from django.apps import apps
@@ -7,9 +12,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_str  # Import for localization fixes
 from django.utils.http import urlsafe_base64_decode
 from django.utils.translation import gettext_lazy as _
+from pricing.models import (
+    SubscriptionPlan,  # 🔑 New imports for setup
+    UserSubscription,
+)
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -312,3 +322,128 @@ class AuthAPITestCase(APITestCase):
         # 3. Verify code consumed
         otp_entry.refresh_from_db()
         self.assertFalse(otp_entry.is_valid)
+
+    class UserProfileTest(APITestCase):
+        """Tests the User Profile Hub (GET /api/v1/auth/profile/) endpoint."""
+
+        @classmethod
+        def setUpTestData(cls):
+            cls.user_profile = User.objects.create_user(
+                username="hub_user",
+                email="hub@example.com",
+                password="testpassword",
+                job_or_major="Testing Engineer",
+            )
+            cls.profile_url = reverse("user-profile")
+            cls.login_url = reverse("login")
+
+            # Setup supporting data for nested serialization
+            cls.plan = SubscriptionPlan.objects.create(
+                name="Basic",
+                slug="basic",
+                monthly_price=Decimal("5.00"),
+                digital_discount_percent=10,
+            )
+            cls.sub = UserSubscription.objects.create(
+                user=cls.user_profile,
+                plan=cls.plan,
+                is_active=True,
+                start_date=timezone.now() - timedelta(days=5),
+                end_date=timezone.now() + timedelta(days=360),
+            )
+
+            # Setup an Order and a License
+            cls.order = Order.objects.create(
+                user=cls.user_profile,
+                subtotal=Decimal("25.00"),
+                total_amount=Decimal("22.50"),
+            )
+
+            # Note: Book models are required but not explicitly created here for brevity,
+            # assuming previous test classes have populated the necessary tables.
+            # We skip OrderItem and License creation for simplicity and rely on model counts.
+
+        def setUp(self):
+            response = self.client.post(
+                self.login_url,
+                {"username": "hub_user", "password": "testpassword"},
+                format="json",
+            )
+            self.auth_token = response.data["access"]
+            self.client.credentials(HTTP_AUTHORIZATION="Bearer " + self.auth_token)
+
+        def test_01_unauthenticated_access_denied(self):
+            """Tests that unauthenticated access is denied."""
+            self.client.credentials()  # Clear credentials
+            response = self.client.get(self.profile_url)
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        def test_02_profile_retrieval_success_and_base_fields(self):
+            """Tests successful retrieval and checks core fields."""
+            response = self.client.get(self.profile_url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIn("username", response.data)
+            self.assertIn("job_or_major", response.data)
+            self.assertEqual(response.data["username"], "hub_user")
+
+        def test_03_nested_subscription_data(self):
+            """Tests that subscription data is correctly nested."""
+            response = self.client.get(self.profile_url)
+
+            sub_data = response.data["active_subscription"]
+            self.assertIsNotNone(sub_data)
+            self.assertEqual(sub_data["plan_name"], self.plan.name)
+            self.assertEqual(
+                sub_data["discount_percent"], self.plan.digital_discount_percent
+            )
+            self.assertTrue(sub_data["is_current"])
+
+        def test_04_nested_orders_data(self):
+            """Tests that order history is correctly nested and formatted."""
+            # Setup one order item to ensure the count is correct
+            # Note: We need a valid book for OrderItem, assuming one exists from other test setups
+            from catalog.models import Book
+
+            book = Book.objects.first()
+            if book:
+                OrderItem.objects.create(
+                    order=self.order,
+                    book=book,
+                    quantity=1,
+                    snapshot_price=Decimal("25.00"),
+                    snapshot_title="Mock Item",
+                    snapshot_author_name="Mock Author",
+                )
+
+            response = self.client.get(self.profile_url)
+
+            orders_data = response.data["orders"]
+            self.assertTrue(isinstance(orders_data, list))
+            self.assertGreaterEqual(
+                len(orders_data), 1
+            )  # Should contain at least the one created order
+
+            first_order = orders_data[0]
+            self.assertEqual(first_order["total_amount"], "22.50")
+            self.assertIn("items_count", first_order)
+            self.assertIn("status_display", first_order)
+
+        def test_05_nested_licenses_data(self):
+            """Tests that license history is correctly nested."""
+            from catalog.models import Book
+
+            book = Book.objects.first()
+            if book:
+                License.objects.create(
+                    user=self.user_profile, book=book, order=self.order, is_active=True
+                )
+
+            response = self.client.get(self.profile_url)
+
+            licenses_data = response.data["licenses"]
+            self.assertTrue(isinstance(licenses_data, list))
+            self.assertGreaterEqual(len(licenses_data), 1)
+
+            first_license = licenses_data[0]
+            self.assertTrue(first_license["is_valid"])
+            self.assertIn("book_title", first_license)
