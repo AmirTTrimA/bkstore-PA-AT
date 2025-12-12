@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from cart.models import Cart, CartItem, Order, OrderItem
 from catalog.models import Author, Book
+from content.models import License
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -535,6 +536,43 @@ class CheckoutProcessTest(APITestCase):
         # 3. Verify Discount Usage
         discount_code.refresh_from_db()
         self.assertEqual(discount_code.times_used, initial_uses + 1)
+
+    def test_06_digital_purchase_grants_perpetual_license(self):
+        """Verifies that purchasing a digital item creates a valid, perpetual License record."""
+
+        # 1. Setup Cart: Digital (gets license) + Physical (gets no license)
+        self.add_item(self.book_digital, 1)  # Should get license
+        self.add_item(self.book_physical, 1)  # Should NOT get license
+
+        # Record initial count (should be 0 for a fresh user, but safer to check)
+        initial_license_count = License.objects.filter(user=self.user_checker).count()
+
+        # 2. Execute Checkout
+        response = self.client.post(
+            self.checkout_url, self.checkout_data, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_order = Order.objects.get(pk=response.data["id"])
+
+        # 3. Assertion: Verify License Creation
+        final_licenses = License.objects.filter(user=self.user_checker)
+        # Should be exactly one new license created
+        self.assertEqual(final_licenses.count(), initial_license_count + 1)
+
+        # 4. Assertion: Check License Details
+        license_digital = final_licenses.get(book=self.book_digital)
+        self.assertEqual(license_digital.order, new_order)
+        self.assertTrue(license_digital.is_active)
+        self.assertIsNone(
+            license_digital.valid_until
+        )  # Verify Perpetual access (valid_until=None)
+
+        # 5. Assertion: Ensure Physical book did NOT get a license
+        self.assertFalse(
+            License.objects.filter(
+                book=self.book_physical, user=self.user_checker
+            ).exists()
+        )
 
 
 class WishlistTest(APITestCase):

@@ -206,5 +206,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+<<<<<<< Updated upstream
 
 solr_schema.xml
+=======
+solr_scheama.xml
+>>>>>>> Stashed changes
