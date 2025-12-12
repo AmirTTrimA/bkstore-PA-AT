@@ -227,3 +227,18 @@ HAYSTACK_CONNECTIONS = {
 HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
 
 CART_SESSION_KEY = "cart"
+
+# 🔑 CELERY BEAT SCHEDULE (Periodic Tasks) - Schedule the high-priority tasks
+CELERY_BEAT_SCHEDULE = {
+    "expire-otp-hourly": {
+        "task": "accounts.tasks.expire_old_otp_codes",
+        # Executes every hour (crontab is the most precise for hourly/daily tasks)
+        "schedule": timedelta(hours=1),
+    },
+    "process-license-expiry-daily": {
+        "task": "content.tasks.process_license_expiry",
+        # Executes daily
+        "schedule": timedelta(days=1),
+    },
+    # Note: send_order_confirmation_email is triggered immediately by the CheckoutView, not scheduled.
+}
