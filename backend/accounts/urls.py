@@ -6,7 +6,13 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from .views import OTPLoginView, OTPRequestView, OTPVerifyView, UserRegistrationView
+from .views import (
+    OTPLoginView,
+    OTPRequestView,
+    OTPVerifyView,
+    UserProfileView,
+    UserRegistrationView,
+)
 
 urlpatterns = [
     # --- JWT Token Management ---
@@ -34,4 +40,6 @@ urlpatterns = [
     # --- OTP/2FA Logic (Custom Views) ---
     path("otp/request/", OTPRequestView.as_view(), name="otp-request"),
     path("otp/verify/", OTPVerifyView.as_view(), name="otp-verify"),
+    # --- User Profile Hub (NEW) ---
+    path("profile/", UserProfileView.as_view(), name="user-profile"),
 ]

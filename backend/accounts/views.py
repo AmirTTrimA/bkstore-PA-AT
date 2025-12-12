@@ -15,6 +15,7 @@ from .serializers import (
     OTPRequestSerializer,
     OTPVerificationSerializer,
     UserRegistrationSerializer,
+    UserProfileSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -187,3 +188,18 @@ class OTPLoginView(generics.GenericAPIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class UserProfileView(generics.RetrieveAPIView):
+    """
+    Retrieves the complete user profile hub, including subscriptions, licenses, and order history.
+    Maps to GET /api/v1/auth/profile/
+    """
+
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        """Returns the currently authenticated user object."""
+        # Note: The UserProfileSerializer handles the nesting of related data.
+        return self.request.user

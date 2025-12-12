@@ -1,5 +1,11 @@
+from cart.models import Order  # Import Order model for history
+from content.models import License  # Import License model for digital access
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
+from pricing.models import (
+    SubscriptionPlan,  # Import Subscription models
+    UserSubscription,
+)
 from rest_framework import serializers
 
 from .models import User
@@ -83,3 +89,102 @@ class OTPLoginSerializer(serializers.Serializer):
         # Attach the user instance for the view to use
         data["user"] = user
         return data
+
+
+# --- 2. SUBSCRIPTION SERIALIZER (For Nesting in Profile Hub) ---
+
+
+class UserSubscriptionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying a user's active subscription status.
+    Source: pricing.models
+    """
+
+    plan_name = serializers.CharField(source="plan.name", read_only=True)
+    discount_percent = serializers.IntegerField(
+        source="plan.digital_discount_percent", read_only=True
+    )
+    is_current = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserSubscription
+        fields = [
+            "plan_name",
+            "discount_percent",
+            "start_date",
+            "end_date",
+            "is_current",
+        ]
+
+    def get_is_current(self, obj):
+        # Calls the is_current method defined on the UserSubscription model
+        return obj.is_current()
+
+
+# --- 3. NESTED ORDER/LICENSE SERIALIZERS (For User Profile Hub) ---
+
+
+class LicenseSerializer(serializers.ModelSerializer):
+    """Serializer to display a user's digital licenses."""
+
+    # Assumes License model has a foreign key to Book
+    book_title = serializers.CharField(source="book.title", read_only=True)
+    is_valid = serializers.SerializerMethodField()
+
+    class Meta:
+        model = License
+        fields = ["id", "book_title", "valid_until", "is_valid"]
+
+    def get_is_valid(self, obj):
+        # Calls the is_valid method defined on the License model
+        return obj.is_valid()
+
+
+class OrderHistorySerializer(serializers.ModelSerializer):
+    """Serializer for displaying summary of an Order (for user history)."""
+
+    items_count = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ["id", "created_at", "total_amount", "status_display", "items_count"]
+
+    def get_items_count(self, obj):
+        # Assumes Order model has a related_name 'items' pointing to OrderItem
+        return obj.items.count()
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Master serializer for the User Profile Hub. Nests all required data.
+    """
+
+    # 1. Active Subscription: Uses the UserSubscriptionSerializer
+    # Assumes related_name 'subscription' on User model (from pricing app)
+    active_subscription = UserSubscriptionSerializer(
+        source="subscription", read_only=True
+    )
+
+    # 2. Licenses: Fetches all associated licenses
+    # Assumes related_name 'licenses' on User model (from content app)
+    licenses = LicenseSerializer(many=True, read_only=True)
+
+    # 3. Orders: Fetches all past orders
+    # Uses reverse relation/related_name 'order_set' (or custom name if set on Order model)
+    orders = OrderHistorySerializer(source="order_set", many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "job_or_major",
+            "hobbies_or_likings",
+            # Nested fields below:
+            "active_subscription",
+            "licenses",
+            "orders",
+        ]
+        read_only_fields = fields  # Profile is read-only for this endpoint
