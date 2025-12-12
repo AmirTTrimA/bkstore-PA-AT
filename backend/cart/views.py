@@ -24,6 +24,7 @@ from .serializers import (  # Assuming CartItemOutputSerializer is for display
     WishlistItemSerializer,
 )
 from .services import PriceCalculationService
+from .tasks import send_order_confirmation_email
 
 # Set session key (should be in settings.py, but defined here for context)
 CART_SESSION_KEY = getattr(settings, "CART_SESSION_KEY", "cart")
@@ -389,6 +390,9 @@ class CheckoutView(generics.GenericAPIView):
         if applied_discount:
             applied_discount.times_used += 1
             applied_discount.save()
+
+        # Send confirmation email to the background worker immediately after transaction completion.
+        transaction.on_commit(lambda: send_order_confirmation_email.delay(new_order.id))
 
         # Return the newly created Order for confirmation
         return Response(
