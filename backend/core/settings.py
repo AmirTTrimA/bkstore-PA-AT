@@ -2,7 +2,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from django.utils.translation import gettext_lazy as _  # 🔑 NEW: Import for I18N
+from django.utils.translation import \
+    gettext_lazy as _  # 🔑 NEW: Import for I18N
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -226,7 +227,7 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
-HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
+HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.BaseSignalProcessor"
 
 CART_SESSION_KEY = "cart"
 

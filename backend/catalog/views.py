@@ -1,15 +1,20 @@
-from django.db.models import Count, Q
+# catalog/views.py
+from django.contrib.postgres.search import (SearchQuery, SearchRank,
+                                            SearchVector)
+from django.db.models import Count, F, Q
 from haystack.query import SearchQuerySet
 from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-from django.db.models import F
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from .models import Author, Book
-from .serializers import AuthorSerializer, BookDetailSerializer, BookListSerializer
 from .pagination import BookPagination
+from .serializers import (AuthorSerializer, BookDetailSerializer,
+                          BookListSerializer)
 
+TRUE_VALUES = {"true", "1", "yes"}
 
 class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -17,7 +22,7 @@ class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     Maps to GET /api/v1/authors/ and /api/v1/authors/<id>/
     """
 
-    queryset = Author.objects.all().annotate(
+    queryset = Author.objects.all().order_by("name").annotate(
         books_count=Count("book")  # Count books for performance in get_books_count()
     )
     permission_classes = [AllowAny]
@@ -90,11 +95,9 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         return BookListSerializer
 
     def get_queryset(self):
-        """
-        Custom queryset logic: Uses PostgreSQL Full-Text Search for ranked results.
-
-        Note: This temporarily replaces Solr until the external service is stable.
-        """
+        return self.get_filtered_queryset().order_by("-created_at")
+    
+    def get_filtered_queryset(self):
         search_query_param = self.request.query_params.get("search", None)
         genre = self.request.query_params.get("genre")
         author = self.request.query_params.get("author")
@@ -116,12 +119,12 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
 
         if is_digital is not None:
             queryset = queryset.filter(
-                is_digital=is_digital.lower() == "true"
+            is_digital=is_digital.lower() in TRUE_VALUES
             )
 
         if is_audio is not None:
             queryset = queryset.filter(
-                is_audio=is_audio.lower() == "true"
+                is_audio=is_audio.lower() in TRUE_VALUES
             )
 
         if search_query_param:
@@ -131,12 +134,25 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
             # Filter the queryset using the SearchQuery, then apply ranking
             return (
                 queryset.filter(search=query)
-                .annotate(
-                    # Calculate the ranking score based on the query and vector
-                    rank=SearchRank(F("search"), query)
-                )
+                .annotate(rank=SearchRank(F("search"), query))
                 .order_by("-rank")
             )
 
         # Fallback: If no search query, return all books ordered by creation date
         return queryset.order_by("-created_at")
+    
+    @action(detail=False, methods=["get"])
+    def new(self, request):
+        queryset = self.get_filtered_queryset().order_by("-created_at")
+
+        return self.paginate_and_serialize(queryset)
+    
+    def paginate_and_serialize(self, queryset):
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
