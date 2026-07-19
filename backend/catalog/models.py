@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -74,6 +75,38 @@ class Book(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def get_current_price(self):
+        """
+        Returns the currently active Price object for this book.
+        Returns None if no active price exists.
+        """
+        now = timezone.now()
+
+        return (
+            self.prices.filter(
+                effective_from__lte=now,
+            )
+            .filter(
+                models.Q(effective_until__isnull=True)
+                | models.Q(effective_until__gt=now)
+            )
+            .order_by("-effective_from")
+            .first()
+        )
+    
+    @property
+    def current_price(self):
+        """
+        Returns the most recent active price for this book.
+
+        A price is active when:
+        - effective_from <= now
+        - effective_until is null or in the future
+
+        If multiple prices are active, the most recently effective one is returned.
+        """
+        return self.get_current_price()
 
     class Meta:
         verbose_name = _("Book")
