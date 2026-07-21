@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -107,6 +107,26 @@ class Book(models.Model):
         If multiple prices are active, the most recently effective one is returned.
         """
         return self.get_current_price()
+    
+    def change_price(self, value, currency="USD", min_price=None):
+        """Creates a new active price while preserving price history."""
+
+        now = timezone.now()
+
+        with transaction.atomic():
+
+            current_price = self.current_price
+
+            if current_price:
+                current_price.effective_until = now
+                current_price.save(update_fields=["effective_until"])
+
+            return self.prices.create(
+                value=value,
+                currency=currency,
+                min_price=min_price,
+                effective_from=now,
+            )
 
     class Meta:
         verbose_name = _("Book")

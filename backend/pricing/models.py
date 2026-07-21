@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from catalog.models import Book  # Import the Book model
 from django.conf import settings  # For accessing AUTH_USER_MODEL
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 

@@ -1,10 +1,7 @@
 from django.urls import path
 
-from .views import (
-    DiscountValidationView,
-    SubscriptionPlanListView,
-    UserSubscriptionDetailView,
-)
+from .views import (BookPriceListCreateView, DiscountValidationView,
+                    SubscriptionPlanListView, UserSubscriptionDetailView)
 
 urlpatterns = [
     # GET /api/v1/pricing/plans/ -> List all available subscription plans
@@ -15,4 +12,9 @@ urlpatterns = [
     ),
     # POST /api/v1/pricing/validate/ -> Validate a single promo code
     path("validate/", DiscountValidationView.as_view(), name="discount-validate"),
+    path(
+    "books/<int:book_id>/prices/",
+    BookPriceListCreateView.as_view(),
+    name="book-price-list-create",
+),
 ]

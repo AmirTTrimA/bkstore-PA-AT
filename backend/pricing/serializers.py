@@ -1,9 +1,11 @@
 # pricing/serializers.py
+from decimal import Decimal
+
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .models import DiscountCode, SubscriptionPlan, UserSubscription
+from .models import DiscountCode, Price, SubscriptionPlan, UserSubscription
 
 # -------------------------------------------------------------
 # 1. SUBSCRIPTION SERIALIZERS
@@ -78,3 +80,72 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         # Note: We do not check max_uses here, as that complex logic belongs in a dedicated validation service
         # that handles concurrency (like during the final order submission).
         return True
+
+# -------------------------------------------------------------
+# 3. PRICE SERIALIZERS
+# -------------------------------------------------------------
+
+
+class PriceSerializer(serializers.ModelSerializer):
+    """
+    Read-only serializer for displaying price history records.
+    """
+
+    class Meta:
+        model = Price
+        fields = (
+            "id",
+            "value",
+            "currency",
+            "min_price",
+            "effective_from",
+            "effective_until",
+        )
+        read_only_fields = fields
+
+
+class PriceChangeSerializer(serializers.Serializer):
+    """
+    Input serializer for changing a book's price.
+
+    This serializer validates the incoming request. It does not create
+    a Price object directly; instead, the view delegates to
+    Book.change_price().
+    """
+
+    value = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=Decimal("0.01"),
+    )
+
+    currency = serializers.CharField(
+        max_length=3,
+        default="USD",
+    )
+
+    min_price = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+    )
+
+    def validate(self, attrs):
+        """
+        Ensures the minimum price does not exceed the selling price.
+        """
+
+        value = attrs["value"]
+        min_price = attrs.get("min_price")
+
+        if min_price is not None and min_price > value:
+            raise serializers.ValidationError(
+                {
+                    "min_price": _(
+                        "Minimum price cannot be greater than the selling price."
+                    )
+                }
+            )
+
+        return attrs

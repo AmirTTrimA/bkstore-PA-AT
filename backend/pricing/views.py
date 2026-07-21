@@ -1,13 +1,15 @@
 # pricing/views.py
+from catalog.models import Book
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import generics, serializers, status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import DiscountCode, SubscriptionPlan, UserSubscription
-from .serializers import (DiscountCodeSerializer, SubscriptionPlanSerializer,
+from .models import DiscountCode, Price, SubscriptionPlan, UserSubscription
+from .serializers import (DiscountCodeSerializer, PriceChangeSerializer,
+                          PriceSerializer, SubscriptionPlanSerializer,
                           UserSubscriptionSerializer)
 
 # -------------------------------------------------------------
@@ -111,3 +113,59 @@ class DiscountValidationView(generics.GenericAPIView):
                 {"detail": _("Invalid or expired discount code.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+# -------------------------------------------------------------
+# 3. PRICE MANAGEMENT ENDPOINTS
+# -------------------------------------------------------------
+
+
+class BookPriceListCreateView(generics.ListCreateAPIView):
+    """
+    GET:
+        Returns the complete price history for a book.
+
+    POST:
+        Creates a new active price for a book while preserving
+        the previous price in the history.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_book(self):
+        """Returns the requested Book or raises 404."""
+        return get_object_or_404(Book, pk=self.kwargs["book_id"])
+
+    def get_queryset(self):
+        """Returns all historical prices for the requested book."""
+        return self.get_book().prices.all()
+
+    def get_serializer_class(self):
+        """Uses different serializers for reading and writing."""
+        if self.request.method == "POST":
+            return PriceChangeSerializer
+        return PriceSerializer
+
+    def perform_create(self, serializer):
+        """Delegates price changes to the Book model."""
+        self.created_price = self.get_book().change_price(
+            value=serializer.validated_data["value"],
+            currency=serializer.validated_data["currency"],
+            min_price=serializer.validated_data.get("min_price"),
+        )
+
+    def create(self, request, *args, **kwargs):
+        """
+        Handles POST requests and returns the newly created
+        price history record.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+
+        output_serializer = PriceSerializer(self.created_price)
+
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
