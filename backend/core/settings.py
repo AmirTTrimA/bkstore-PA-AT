@@ -2,7 +2,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from django.utils.translation import gettext_lazy as _  # 🔑 NEW: Import for I18N
+from django.utils.translation import \
+    gettext_lazy as _  # 🔑 NEW: Import for I18N
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -160,6 +161,8 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 12,
 }
 
 # Simple JWT Configuration
@@ -224,7 +227,7 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
-HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
+HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.BaseSignalProcessor"
 
 CART_SESSION_KEY = "cart"
 
