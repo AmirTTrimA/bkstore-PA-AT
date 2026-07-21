@@ -1,3 +1,4 @@
+# pricing/models.py
 from datetime import timedelta
 
 from catalog.models import Book  # Import the Book model

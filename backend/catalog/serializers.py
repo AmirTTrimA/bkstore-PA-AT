@@ -1,5 +1,6 @@
-from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+
 from .models import Author, Book
 
 
@@ -25,26 +26,32 @@ class AuthorSerializer(serializers.ModelSerializer):
     def get_books_count(self, obj):
         """Returns the total number of books by this author."""
         return obj.book_set.count()
+    
+class CurrentPriceMixin(serializers.Serializer):
+    """Provides the current active price for a book."""
 
-
-class BookListSerializer(serializers.ModelSerializer):
-    """Serializer for the public Book list and Search results."""
-
-    # Nested fields required by the API contract
-    author_name = serializers.CharField(source="author.name")
-
-    # MOCK PRICE FIELD for Phase 1 (We will replace this method in Phase 2)
     price = serializers.SerializerMethodField()
+
+    def get_price(self, obj):
+        current_price = obj.current_price
+        return str(current_price.value) if current_price else None
+
+
+class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
+    """Serializer for the public Book list and search results."""
+
+    author_name = serializers.CharField(source="author.name")
 
     class Meta:
         model = Book
-        fields = ("id", "title", "slug", "author_name", "cover_image_url", "price")
-
-    def get_price(self, obj):
-        """Returns a fixed mock price for MVP testing."""
-        # !!! PHASE 1 MOCK DATA: Returns a hardcoded value.
-        # This will be replaced with logic querying the pricing_price model in Phase 2.
-        return "19.99"
+        fields = (
+            "id",
+            "title",
+            "slug",
+            "author_name",
+            "cover_image_url",
+            "price",
+        )
 
 
 class BookDetailSerializer(BookListSerializer):
