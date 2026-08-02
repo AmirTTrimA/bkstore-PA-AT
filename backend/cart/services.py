@@ -1,152 +1,266 @@
-from django.utils import timezone
-from django.db.models import F, Q, Sum # F is not used yet, but kept for future queries
+# cart/services.py
+from dataclasses import dataclass
 from decimal import Decimal
-from django.shortcuts import get_object_or_404
-from django.utils.translation import gettext_lazy as _
+from typing import Optional, Union  # For type hinting
+
+from accounts.models import User  # For type hinting
 from catalog.models import Book
-from pricing.models import Price, DiscountCode, UserSubscription
-from accounts.models import User # For type hinting
-from typing import Union, Optional # For type hinting
-from rest_framework import serializers # Must be imported for serializers.ValidationError
+from content.models import License
+from django.db import transaction
+from django.db.models import (  # F is not used yet, but kept for future queries
+    F, Q, Sum)
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from .models import Cart, Order, OrderItem
+from pricing.models import DiscountCode, Price, UserSubscription
+from pricing.services import PricingEngine
+from rest_framework import \
+    serializers  # Must be imported for serializers.ValidationError
 
 # Define the minimum allowed price floor for any single item after all discounts
 MINIMUM_PRICE_FLOOR = Decimal('1.00')
 
-class PriceCalculationService:
+@dataclass
+class SnapshotItem:
+    book: Book
+    quantity: int
+    unit_price: Decimal
+    snapshot_title: str
+    snapshot_author_name: str
+
+@dataclass
+class OrderSnapshot:
+    items: list[SnapshotItem]
+    subtotal: Decimal
+    discount_amount: Decimal
+    total_amount: Decimal
+    applied_coupon: DiscountCode | None
+
+class CheckoutService:
     """
-    Handles all complex financial logic for the cart and order submission.
-    Ensures correct pricing, discount application, and anti-abuse measures.
+    Coordinates the checkout workflow.
+
+    This service does not contain pricing logic. It orchestrates the checkout
+    process by delegating price calculation to the PricingEngine and handling
+    order creation, license granting, coupon consumption, cart cleanup, and
+    other checkout-related operations.
     """
-    
+
     def __init__(self, user: User):
         self.user = user
-        self.active_plan = self._get_active_subscription()
-        self.user_is_subscribed = self.active_plan is not None
-        
-        # 🔑 Calculated and stored as Decimal for precision
-        self.digital_discount_rate = self._calculate_digital_discount_rate()
 
-    def _calculate_digital_discount_rate(self) -> Decimal:
-        """Calculates the digital discount rate as a Decimal."""
-        if not self.user_is_subscribed:
-            return Decimal('0.00')
-
-        discount_percent = self.active_plan.plan.digital_discount_percent
-        return Decimal(discount_percent) / Decimal('100')
-
-    def _get_current_price(self, book_id: int) -> Decimal:
+    def checkout(
+        self,
+        cart,
+        shipping_data,
+        coupon_code=None,
+    ):
         """
-        Retrieves the currently active price for a single book.
+        Executes the complete checkout workflow and returns the created order.
         """
-        now = timezone.now()
-        
-        # Find the most recent, non-expired price record
-        try:
-            # 🔑 FIX: Simplified filter condition for efficiency
-            price_record = Price.objects.filter(
-                Q(effective_until__isnull=True) | Q(effective_until__gt=now),
-                book_id=book_id,
-                effective_from__lte=now
-            ).order_by('-effective_from').first()
-            
-            if price_record:
-                return price_record.value
-        except Exception:
-            pass
-            
-        return Decimal('0.00') # Default to zero if no price is set
+        pass
 
-    def _get_active_subscription(self) -> Optional[UserSubscription]:
-        """Retrieves the user's active subscription if one exists."""
-        try:
-            sub = UserSubscription.objects.get(user=self.user)
-            if sub.is_current():
-                return sub
-        except UserSubscription.DoesNotExist:
-            pass
-        return None
-
-    def calculate_order_snapshot(self, cart_items_data: dict, discount_code: str = None) -> tuple:
+    def _build_order_snapshot(
+        self,
+        cart,
+        coupon_code=None,
+    ):
         """
-        Calculates the final cost of the order based on items, subscription, and promo code.
-        Returns: (final_items_list, subtotal, discount_amount, final_total, applied_discount_code)
+        Builds an immutable snapshot of the current cart.
+
+        This method performs no database writes. It delegates all pricing
+        calculations to PricingEngine and aggregates the results into an
+        OrderSnapshot.
         """
-        items_for_snapshot = []
-        item_subtotal_base = Decimal('0.00') # Base total before *any* discount
-        total_subscription_discount = Decimal('0.00') # Total monetary reduction from subscription
 
-        # 1. PRICE LOOKUP & SUBSCRIPTION DISCOUNT (Item Level)
-        for book_id_str, quantity in cart_items_data.items():
-            book = get_object_or_404(Book, pk=int(book_id_str))
-            unit_price_base = self._get_current_price(book.id)
-            
-            subscription_discount = Decimal('0.00')
-            
-            # Check eligibility for item-level subscription discount
-            if self.user_is_subscribed and book.is_digital:
-                subscription_discount = unit_price_base * self.digital_discount_rate
-                
-            # Accumulate total subscription reduction for later comparison
-            total_subscription_discount += subscription_discount * quantity
-            
-            unit_price_after_sub = unit_price_base - subscription_discount
-            
-            # 🔑 ANTI-ABUSE CHECK: Enforce Minimum Price Floor ($1.00)
-            unit_price_final = max(unit_price_after_sub, MINIMUM_PRICE_FLOOR)
-            
-            item_subtotal_base += unit_price_base * quantity # Accumulate base total (before any discount)
-            
-            # Prepare data for OrderItem snapshot
-            items_for_snapshot.append({
-                'book': book,
-                'quantity': quantity,
-                'snapshot_price': unit_price_final, # Locked in item price AFTER subscription/floor
-                'snapshot_title': book.title,
-                'snapshot_author_name': book.author.name
-            })
-            
-        # Total Price after Item-Level Subscription Discount is applied
-        price_after_item_discount = item_subtotal_base - total_subscription_discount
-        
-        # 2. GLOBAL DISCOUNT CHECK (Order Level)
-        final_discount_amount = total_subscription_discount # Start with the subscription discount
-        applied_discount_code = None
-        
-        if discount_code:
-            try:
-                promo_code = DiscountCode.objects.get(code__iexact=discount_code, is_active=True)
-                
-                # Validation checks
-                if promo_code.valid_until and promo_code.valid_until < timezone.now():
-                    raise serializers.ValidationError(_("Discount code has expired."))
-                if promo_code.max_uses is not None and promo_code.times_used >= promo_code.max_uses:
-                    raise serializers.ValidationError(_("Discount code usage limit reached."))
+        items = []
 
-                # Calculate the monetary value of the promo code against the BASE subtotal
-                promo_discount_value = item_subtotal_base * (Decimal(promo_code.discount_percent) / Decimal('100'))
-                
-                # 🔑 ANTI-STACKING FIX: Compare Subscription Reduction vs Promo Reduction
-                if promo_discount_value > total_subscription_discount:
-                    # Promo code is better! We use the promo discount and ignore the subscription discount.
-                    final_discount_amount = promo_discount_value
-                    applied_discount_code = promo_code
-                else:
-                    # Subscription discount is better or equal. We stick with the subscription discount.
-                    pass # final_discount_amount remains total_subscription_discount
+        subtotal = Decimal("0.00")
+        discount_amount = Decimal("0.00")
+        total_amount = Decimal("0.00")
 
-            except DiscountCode.DoesNotExist:
-                raise serializers.ValidationError(_("Invalid discount code."))
-                
-        # 3. CALCULATE FINALS
-        final_total = item_subtotal_base - final_discount_amount
-        
-        # Ensure total is not negative
-        final_total = max(final_total, Decimal('0.00')) 
-        
-        return (
-            items_for_snapshot,
-            item_subtotal_base, # Total price before order-level discount
-            final_discount_amount, # Total monetary reduction applied to the order
-            final_total, # Final price after all deductions
-            applied_discount_code
+        applied_coupon = None
+
+        if coupon_code:
+            applied_coupon = DiscountCode.objects.filter(
+                code__iexact=coupon_code
+            ).select_related("discount").first()
+
+        for cart_item in cart.items.select_related(
+            "book",
+            "book__author",
+        ):
+
+            result = PricingEngine(
+                book=cart_item.book,
+                user=self.user,
+            ).calculate(
+                coupon_code=coupon_code,
+            )
+
+            item_discount = (
+                (result.automatic_discount_amount or Decimal("0.00"))
+                + (result.coupon_discount_amount or Decimal("0.00"))
+                + (result.subscription_discount_amount or Decimal("0.00"))
+            )
+
+            subtotal += result.base_price * cart_item.quantity
+            discount_amount += item_discount * cart_item.quantity
+            total_amount += result.final_price * cart_item.quantity
+
+            items.append(
+                SnapshotItem(
+                    book=cart_item.book,
+                    quantity=cart_item.quantity,
+                    unit_price=result.final_price,
+                    snapshot_title=cart_item.book.title,
+                    snapshot_author_name=cart_item.book.author.name,
+                )
+            )
+
+        return OrderSnapshot(
+            items=items,
+            subtotal=subtotal,
+            discount_amount=discount_amount,
+            total_amount=total_amount,
+            applied_coupon=applied_coupon,
         )
+
+    def _create_order(
+        self,
+        snapshot: OrderSnapshot,
+        shipping_data: dict,
+    ):
+        return Order.objects.create(
+            user=self.user,
+            discount_code=snapshot.applied_coupon,
+            subtotal=snapshot.subtotal,
+            discount_amount=snapshot.discount_amount,
+            total_amount=snapshot.total_amount,
+            status="PENDING",
+            shipping_name=shipping_data["shipping_name"],
+            shipping_address_line1=shipping_data["shipping_address_line1"],
+            shipping_city=shipping_data["shipping_city"],
+            shipping_country=shipping_data["shipping_country"],
+        )
+
+    def _create_order_items(
+        self,
+        order: Order,
+        snapshot: OrderSnapshot,
+    ):
+        """
+        Creates immutable OrderItem records from an OrderSnapshot.
+        """
+
+        order_items = []
+
+        for item in snapshot.items:
+            order_items.append(
+                OrderItem(
+                    order=order,
+                    book=item.book,
+                    quantity=item.quantity,
+                    snapshot_price=item.unit_price,
+                    snapshot_title=item.snapshot_title,
+                    snapshot_author_name=item.snapshot_author_name,
+                )
+            )
+
+        OrderItem.objects.bulk_create(order_items)
+
+    def _grant_licenses(
+        self,
+        order: Order,
+        snapshot: OrderSnapshot,
+    ):
+        """
+        Grants licenses for all digital and audio books in the order.
+        """
+
+        for item in snapshot.items:
+            book = item.book
+
+            if not (book.is_digital or book.is_audio):
+                continue
+
+            License.objects.update_or_create(
+                user=self.user,
+                book=book,
+                defaults={
+                    "order": order,
+                    "is_active": True,
+                    "valid_from": timezone.now(),
+                    "valid_until": None,
+                },
+            )
+
+    def _consume_coupon(
+        self,
+        coupon: DiscountCode | None,
+    ):
+        """
+        Marks a successfully used coupon as consumed.
+        """
+
+        if coupon is None:
+            return
+
+        coupon.times_used += 1
+        coupon.save(update_fields=["times_used"])
+
+    def _clear_cart(
+        self,
+        cart: Cart,
+    ):
+        """
+        Removes all items from the customer's cart after a successful checkout.
+        """
+
+        cart.items.all().delete()
+
+    @transaction.atomic
+    def checkout(
+        self,
+        cart: Cart,
+        shipping_data: dict,
+    ):
+        """
+        Executes the complete checkout workflow.
+        """
+
+        if not cart.items.exists():
+            raise serializers.ValidationError(
+                _("Your cart is empty.")
+            )
+
+        coupon_code = shipping_data.get("discount_code")
+
+        snapshot = self._build_order_snapshot(
+            cart=cart,
+            coupon_code=coupon_code,
+        )
+
+        order = self._create_order(
+            snapshot=snapshot,
+            shipping_data=shipping_data,
+        )
+
+        self._create_order_items(
+            order=order,
+            snapshot=snapshot,
+        )
+
+        self._grant_licenses(
+            order=order,
+            snapshot=snapshot,
+        )
+
+        self._consume_coupon(
+            snapshot.applied_coupon,
+        )
+
+        self._clear_cart(cart)
+
+        return order

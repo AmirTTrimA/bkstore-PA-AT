@@ -1,3 +1,4 @@
+# cart/serilaizers.py
 from decimal import Decimal  # 🔑 NEW: Import for safe decimal calculation
 
 from catalog.models import Book  # To check if book exists

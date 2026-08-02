@@ -1,3 +1,4 @@
+# cart/tasks.py
 from cart.models import Order
 from celery import shared_task
 from django.conf import settings

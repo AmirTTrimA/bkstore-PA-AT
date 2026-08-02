@@ -1,3 +1,4 @@
+# cart/models.py
 from catalog.models import Book
 from django.conf import settings
 from django.db import models

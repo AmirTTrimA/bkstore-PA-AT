@@ -1,3 +1,4 @@
+# cart/views.py
 from decimal import Decimal
 
 from catalog.models import Book
@@ -16,14 +17,9 @@ from rest_framework.response import Response
 
 from .models import Cart, CartItem, Order, OrderItem, WishlistItem
 from .serializers import (  # Assuming CartItemOutputSerializer is for display
-    CartItemInputSerializer,
-    CartItemOutputSerializer,
-    CheckoutInputSerializer,
-    OrderOutputSerializer,
-    WishlistCreateSerializer,
-    WishlistItemSerializer,
-)
-from .services import PriceCalculationService
+    CartItemInputSerializer, CartItemOutputSerializer, CheckoutInputSerializer,
+    OrderOutputSerializer, WishlistCreateSerializer, WishlistItemSerializer)
+from .services import CheckoutService
 from .tasks import send_order_confirmation_email
 
 # Set session key (should be in settings.py, but defined here for context)
@@ -272,129 +268,55 @@ class WishlistViewSet(viewsets.GenericViewSet, ListModelMixin, DestroyModelMixin
 
 
 # -------------------------------------------------------------
-# 4. LICENSE GRANTING HELPER (NEW)
-# -------------------------------------------------------------
-
-
-def create_licenses_for_order(order: Order, items_for_snapshot: list):
-    """
-    Grants digital licenses for eligible items purchased in the order.
-    """
-    for item_data in items_for_snapshot:
-        book = item_data["book"]
-
-        # Only grant licenses for digital or audio books (Phase 3 content)
-        if not book.is_digital and not book.is_audio:
-            continue
-
-        # 🔑 License Logic: Perpetual access for purchased items.
-        # We use update_or_create to ensure the user only has one License row per book.
-        try:
-            License.objects.update_or_create(
-                user=order.user,
-                book=book,
-                defaults={
-                    "order": order,
-                    "is_active": True,
-                    "valid_until": None,  # Perpetual license
-                    "valid_from": timezone.now(),
-                },
-            )
-        except IntegrityError:
-            # If a rare concurrency error prevents the update_or_create, log or handle.
-            print(f"Warning: Concurrency error when granting license for {book.title}.")
-            pass
-
-
-# -------------------------------------------------------------
-# 5. ORDER SUBMISSION (CHECKOUT)
+# 3. ORDER SUBMISSION (CHECKOUT)
 # -------------------------------------------------------------
 
 
 class CheckoutView(generics.GenericAPIView):
     """
-    Handles the final order submission, price calculation, and transaction snapshot.
-    Maps to POST /api/v1/cart/checkout/
+    Handles the final checkout process.
     """
 
     serializer_class = CheckoutInputSerializer
     permission_classes = [IsAuthenticated]
 
-    @transaction.atomic
     def post(self, request, *args, **kwargs):
-        input_serializer = self.get_serializer(data=request.data)
-        input_serializer.is_valid(raise_exception=True)
-        data = input_serializer.validated_data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        user = request.user
-
-        # 1. Get current cart contents (must be from DB for persistence)
-        cart_data = get_storage_manager(request)
-        if not cart_data:
-            return Response(
-                {"detail": _("Your cart is empty.")}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 2. Initialize Price Calculation Service and run final calculation
-        calculator = PriceCalculationService(user=user)
-
-        try:
-            (
-                items_for_snapshot,
-                subtotal_base,
-                discount_amount,
-                final_total,
-                applied_discount,
-            ) = calculator.calculate_order_snapshot(
-                cart_items_data=cart_data, discount_code=data.get("discount_code")
-            )
-        except serializers.ValidationError as e:
-            # Catch exceptions raised by the service (e.g., expired discount code)
-            return Response({"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 3. Create the final Order Snapshot (Transaction Record)
-        new_order = Order.objects.create(
-            user=user,
-            discount_code=applied_discount,  # Can be None
-            subtotal=subtotal_base,
-            discount_amount=discount_amount,
-            total_amount=final_total,
-            status="PENDING",  # Assuming payment happens next
-            # Address Snapshot
-            shipping_name=data["shipping_name"],
-            shipping_address_line1=data["shipping_address_line1"],
-            shipping_city=data["shipping_city"],
-            shipping_country=data["shipping_country"],
+        cart = get_object_or_404(
+            Cart.objects.prefetch_related(
+                "items",
+                "items__book",
+                "items__book__author",
+            ),
+            user=request.user,
         )
 
-        # 4. Create immutable OrderItem records
-        for item_data in items_for_snapshot:
-            OrderItem.objects.create(
-                order=new_order,
-                book=item_data["book"],
-                quantity=item_data["quantity"],
-                snapshot_price=item_data["snapshot_price"],
-                snapshot_title=item_data["snapshot_title"],
-                snapshot_author_name=item_data["snapshot_author_name"],
+        if not cart.items.exists():
+            return Response(
+                {"detail": _("Your cart is empty.")},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 🔑 NEW STEP 5: Grant Digital Licenses (completes the loop)
-        create_licenses_for_order(new_order, items_for_snapshot)
+        service = CheckoutService(request.user)
 
-        # 6. Clean Up and Finalize
+        try:
+            order = service.checkout(
+                cart=cart,
+                shipping_data=serializer.validated_data,
+            )
+        except serializers.ValidationError as exc:
+            return Response(
+                {"detail": exc.detail},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        # Clean up the persistent cart storage (DB only)
-        Cart.objects.get(user=user).items.all().delete()
+        transaction.on_commit(
+            lambda: send_order_confirmation_email.delay(order.id)
+        )
 
-        # Update Discount Code usage count
-        if applied_discount:
-            applied_discount.times_used += 1
-            applied_discount.save()
-
-        # Send confirmation email to the background worker immediately after transaction completion.
-        transaction.on_commit(lambda: send_order_confirmation_email.delay(new_order.id))
-
-        # Return the newly created Order for confirmation
         return Response(
-            OrderOutputSerializer(new_order).data, status=status.HTTP_201_CREATED
+            OrderOutputSerializer(order).data,
+            status=status.HTTP_201_CREATED,
         )

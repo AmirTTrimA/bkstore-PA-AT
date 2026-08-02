@@ -8,13 +8,16 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from pricing.models import DiscountCode, Price, SubscriptionPlan, UserSubscription
-from rest_framework import status
+from pricing.models import (Discount, DiscountCode, Price, SubscriptionPlan,
+                            UserSubscription)
+from rest_framework import serializers, status
 from rest_framework.test import APITestCase
 
 from .models import CartItem, WishlistItem
+from .services import CheckoutService
 
 User = get_user_model()
 
@@ -269,308 +272,267 @@ class CartMergeTest(APITestCase):
         )
 
 
-class CheckoutProcessTest(APITestCase):
+class CheckoutServiceTestCase(TestCase):
     """
-    Part 3: Tests the Checkout (Order Submission) and Price Calculation Logic.
-    Verifies anti-abuse rules, discount application, and final snapshot creation.
+    Tests the CheckoutService orchestration.
+
+    Pricing rules themselves are covered by PricingEngine tests.
+    These tests verify that checkout correctly persists and finalizes
+    an order.
     """
 
     @classmethod
     def setUpTestData(cls):
-        """Set up complex data (Pricing, Subscriptions, Cart, Order URL) once."""
-
-        # --- 1. USERS & CORE DATA ---
-        cls.user_checker = User.objects.create_user(
+        cls.user = User.objects.create_user(
             username="checkout_user",
-            email="checkout@test.com",
-            password="testpassword",
+            password="password123",
         )
-        cls.user_no_sub = User.objects.create_user(
-            username="no_sub_user",
-            email="nosub@test.com",
-            password="testpassword",
+
+        cls.author = Author.objects.create(
+            name="Douglas Adams",
         )
-        cls.author = Author.objects.create(name="Checkout Author")
+
         cls.book_digital = Book.objects.create(
             author=cls.author,
             title="Digital Book",
             slug="digital-book",
-            isbn="978-0111111111",
+            isbn="9780000000001",
+            description="Digital",
+            genre="SCI_FI",
             is_digital=True,
         )
+
         cls.book_physical = Book.objects.create(
             author=cls.author,
             title="Physical Book",
             slug="physical-book",
-            isbn="978-0222222222",
+            isbn="9780000000002",
+            description="Physical",
+            genre="SCI_FI",
             is_digital=False,
         )
 
-        # --- 2. PRICING INFRASTRUCTURE ---
-        cls.price_digital = Price.objects.create(
-            book=cls.book_digital, value=Decimal("40.00"), effective_from=timezone.now()
+        cls.book_digital.change_price(
+            value=Decimal("40.00"),
+            currency="USD",
         )
-        cls.price_physical = Price.objects.create(
-            book=cls.book_physical,
+
+        cls.book_physical.change_price(
             value=Decimal("20.00"),
-            effective_from=timezone.now(),
+            currency="USD",
         )
-
-        cls.plan_premium = SubscriptionPlan.objects.create(
-            name="Premium",
-            slug="premium",
-            monthly_price=Decimal("10.00"),
-            digital_discount_percent=15,
-        )
-
-        # --- 3. SUBSCRIPTIONS & DISCOUNTS ---
-        # Subscribe the test user to the Premium plan
-        UserSubscription.objects.create(
-            user=cls.user_checker,
-            plan=cls.plan_premium,
-            is_active=True,
-            start_date=timezone.now(),
-            end_date=timezone.now() + timedelta(days=365),
-        )
-
-        cls.discount_valid = DiscountCode.objects.create(
-            code="SAVE20",
-            discount_percent=20,
-            max_uses=1,
-            valid_until=timezone.now() + timedelta(days=10),
-        )
-        cls.discount_expired = DiscountCode.objects.create(
-            code="OLD50",
-            discount_percent=50,
-            is_active=True,
-            valid_until=timezone.now() - timedelta(days=1),
-        )
-
-        cls.checkout_url = reverse("cart-checkout")
-        cls.login_url = reverse("login")
 
     def setUp(self):
-        """Logs in the user and clears the cart before each test."""
-
-        # Login user_checker (for authorized tests)
-        response = self.client.post(
-            self.login_url,
-            {"username": "checkout_user", "password": "testpassword"},
-            format="json",
+        self.cart, _ = Cart.objects.get_or_create(
+            user=self.user,
         )
-        self.auth_token = response.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.auth_token}")
 
-        # Ensure a clean cart state for the current test
-        CartItem.objects.filter(cart__user=self.user_checker).delete()
-
-        # Helper data for checkout
-        self.checkout_data = {
+        self.shipping = {
             "shipping_name": "John Doe",
             "shipping_address_line1": "123 Test Street",
             "shipping_city": "Testville",
-            "shipping_country": "US",
+            "shipping_country": "USA",
         }
 
-        # Helper to add items to the user_checker's DB cart
-        self.add_item = lambda book, qty: CartItem.objects.create(
-            cart=Cart.objects.get_or_create(user=self.user_checker)[0],
+        self.service = CheckoutService(self.user)
+
+    def add_item(self, book, quantity=1):
+        CartItem.objects.create(
+            cart=self.cart,
             book=book,
-            quantity=qty,
+            quantity=quantity,
         )
 
-    # --- TEST 1: BASE CALCULATION & FINANCIAL INTEGRITY ---
+    def test_creates_order(self):
+        self.add_item(self.book_digital)
 
-    def test_01_base_and_subscription_calculation(self):
-        """Tests that the correct subscription discount is applied and order is created."""
-
-        # Cart setup: 1 Digital (eligible for 15% sub discount) + 1 Physical (no discount)
-        self.add_item(self.book_digital, 1)  # $40.00 base
-        self.add_item(self.book_physical, 1)  # $20.00 base
-
-        # EXPECTED CALCULATION:
-        # Base Subtotal: $40.00 + $20.00 = $60.00
-        # Digital Discount (15%): $40.00 * 0.15 = $6.00
-        # Final Subtotal (Item Subtotals): $60.00 - $6.00 = $54.00
-
-        response = self.client.post(
-            self.checkout_url, self.checkout_data, format="json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        # Verify the Order Snapshot
-        order = Order.objects.get(pk=response.data["id"])
-
-        # Assert Financials
-        self.assertEqual(
-            order.subtotal, Decimal("60.00")
-        )  # Subtotal is before any discount is applied
-        self.assertEqual(
-            order.discount_amount, Decimal("6.00")
-        )  # Discount is $6.00 (Item-level sub discount)
-        self.assertEqual(order.total_amount, Decimal("54.00"))  # Final total
-
-        # Verify Cart Cleanup
-        self.assertEqual(
-            CartItem.objects.filter(cart__user=self.user_checker).count(), 0
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
         )
 
-        # Verify OrderItem Snapshot Integrity
-        digital_item = OrderItem.objects.get(order=order, book=self.book_digital)
-        # 🔑 FIX: Snapshot price needs to be asserted against the correct calculated value (40.00 - 6.00)
-        self.assertEqual(digital_item.snapshot_price, Decimal("34.00"))
+        self.assertIsInstance(order, Order)
 
-    def test_02_discount_stacking_prevention(self):
-        """Tests that the highest discount (Promo Code) is selected over the Subscription."""
-
-        # Setup: Cart has items eligible for both discounts
-        self.add_item(self.book_digital, 1)  # $40.00 base
-
-        # 1. Run Checkout with Promo Code SAVE20 (20% off total $40.00 = $8.00)
-        # Subscription discount is 15% off $40.00 = $6.00
-
-        data_with_promo = self.checkout_data.copy()
-        data_with_promo["discount_code"] = "SAVE20"
-
-        response = self.client.post(self.checkout_url, data_with_promo, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        order = Order.objects.get(pk=response.data["id"])
-
-        # EXPECTED RESULT: Should use the 20% Promo Code ($8.00)
-        # instead of the 15% Subscription discount ($6.00).
+        self.assertEqual(order.user, self.user)
 
         self.assertEqual(
-            order.discount_amount, Decimal("8.00")
-        )  # 🔑 FIX: Asserts the higher discount amount
-        self.assertEqual(order.total_amount, Decimal("32.00"))  # $40.00 - $8.00
-        self.assertEqual(
-            order.discount_code.code, "SAVE20"
-        )  # Verify code was locked in
-
-    def test_03_anti_abuse_minimum_price_floor(self):
-        """Tests that item price never drops below MINIMUM_PRICE_FLOOR ($1.00)."""
-
-        # Setup: Create a very cheap book (or use the lowest base price for this test)
-        # Note: We rely on the MINIMUM_PRICE_FLOOR = 1.00 constant in the service.
-        self.add_item(self.book_physical, 1)  # $20.00 base price
-
-        data_with_huge_promo = self.checkout_data.copy()
-
-        # 1. Create a massive 95% discount code (should drop price to $1.00)
-        huge_discount = DiscountCode.objects.create(
-            code="HUGE95",
-            discount_percent=95,
-            max_uses=5,
-            valid_until=timezone.now() + timedelta(days=10),
-        )
-        data_with_huge_promo["discount_code"] = "HUGE95"
-
-        response = self.client.post(
-            self.checkout_url, data_with_huge_promo, format="json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        order = Order.objects.get(pk=response.data["id"])
-        order_item = OrderItem.objects.get(order=order)
-
-        # 95% of $20.00 is $19.00 discount. Final price should be $1.00.
-        # 🔑 FIX: The discount logic should calculate the required discount to meet the floor.
-        # Since the item is physical, no sub discount is applied.
-        self.assertEqual(
-            order_item.snapshot_price, Decimal("20.00")
-        )  # 🔑 Item snapshot should be the base price (no sub discount)
-        self.assertEqual(
-            order.discount_amount, Decimal("19.00")
-        )  # The 95% discount of $20.00
-        self.assertEqual(
-            order.total_amount, Decimal("1.00")
-        )  # Final total after discount (enforcing floor)
-
-    # --- TEST 4: VALIDATION & USAGE LIMITS ---
-
-    def test_04_invalid_discount_code_fails_transaction(self):
-        """Tests that an invalid or expired code halts the transaction (400)."""
-
-        self.add_item(self.book_digital, 1)
-
-        # Scenario 1: Non-existent code
-        data_invalid = self.checkout_data.copy()
-        data_invalid["discount_code"] = "NONEXISTENT"
-        response = self.client.post(self.checkout_url, data_invalid, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # Verify no Order was created
-        self.assertEqual(Order.objects.count(), 0)
-
-        # Scenario 2: Expired code
-        data_expired = self.checkout_data.copy()
-        data_expired["discount_code"] = "OLD50"  # This code is expired in setUpTestData
-        response = self.client.post(self.checkout_url, data_expired, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # Verify the specific error message from the service
-        # 🔑 FIX: Assert against the expected error detail string from the service
-        self.assertIn("Discount code has expired", str(response.data))
-
-    def test_05_cart_cleanup_and_discount_usage(self):
-        """Tests that cart is emptied and the discount usage counter increments."""
-
-        self.add_item(self.book_digital, 1)
-        discount_code = self.discount_valid
-
-        initial_uses = discount_code.times_used
-
-        data_with_promo = self.checkout_data.copy()
-        data_with_promo["discount_code"] = discount_code.code
-
-        # 1. Execute checkout
-        response = self.client.post(self.checkout_url, data_with_promo, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        # 2. Verify Cart Cleanup
-        self.assertEqual(
-            CartItem.objects.filter(cart__user=self.user_checker).count(), 0
+            order.shipping_name,
+            self.shipping["shipping_name"],
         )
 
-        # 3. Verify Discount Usage
-        discount_code.refresh_from_db()
-        self.assertEqual(discount_code.times_used, initial_uses + 1)
-
-    def test_06_digital_purchase_grants_perpetual_license(self):
-        """Verifies that purchasing a digital item creates a valid, perpetual License record."""
-
-        # 1. Setup Cart: Digital (gets license) + Physical (gets no license)
-        self.add_item(self.book_digital, 1)  # Should get license
-        self.add_item(self.book_physical, 1)  # Should NOT get license
-
-        # Record initial count (should be 0 for a fresh user, but safer to check)
-        initial_license_count = License.objects.filter(user=self.user_checker).count()
-
-        # 2. Execute Checkout
-        response = self.client.post(
-            self.checkout_url, self.checkout_data, format="json"
+        self.assertEqual(
+            order.shipping_city,
+            self.shipping["shipping_city"],
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_order = Order.objects.get(pk=response.data["id"])
 
-        # 3. Assertion: Verify License Creation
-        final_licenses = License.objects.filter(user=self.user_checker)
-        # Should be exactly one new license created
-        self.assertEqual(final_licenses.count(), initial_license_count + 1)
+    def test_creates_order_items(self):
+        self.add_item(self.book_digital, 2)
+        self.add_item(self.book_physical, 1)
 
-        # 4. Assertion: Check License Details
-        license_digital = final_licenses.get(book=self.book_digital)
-        self.assertEqual(license_digital.order, new_order)
-        self.assertTrue(license_digital.is_active)
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+        self.assertEqual(order.items.count(), 2)
+
+        digital = order.items.get(book=self.book_digital)
+
+        self.assertEqual(digital.quantity, 2)
+        self.assertEqual(
+            digital.snapshot_title,
+            self.book_digital.title,
+        )
+
+        self.assertEqual(
+            digital.snapshot_author_name,
+            self.author.name,
+        )
+
+    def test_clears_cart(self):
+        self.add_item(self.book_digital)
+
+        self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+        self.assertEqual(
+            self.cart.items.count(),
+            0,
+        )
+
+    def test_grants_license_for_digital_books(self):
+        self.add_item(self.book_digital)
+
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+        license = License.objects.get(
+            user=self.user,
+            book=self.book_digital,
+        )
+
+        self.assertEqual(
+            license.order,
+            order,
+        )
+
+        self.assertTrue(license.is_active)
+
         self.assertIsNone(
-            license_digital.valid_until
-        )  # Verify Perpetual access (valid_until=None)
+            license.valid_until,
+        )
 
-        # 5. Assertion: Ensure Physical book did NOT get a license
+    def test_physical_books_receive_no_license(self):
+        self.add_item(self.book_physical)
+
+        self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
         self.assertFalse(
             License.objects.filter(
-                book=self.book_physical, user=self.user_checker
+                user=self.user,
+                book=self.book_physical,
+            ).exists()
+        )
+
+    def test_consumes_coupon(self):
+        discount = Discount.objects.create(
+            name="Coupon",
+            description="Coupon",
+            activation=Discount.Activation.COUPON,
+            discount_type=Discount.DiscountType.PERCENT,
+            value=Decimal("10"),
+            scope=Discount.Scope.STORE,
+        )
+
+        coupon = DiscountCode.objects.create(
+            discount=discount,
+            code="SAVE10",
+        )
+
+        self.add_item(self.book_digital)
+
+        self.service.checkout(
+            cart=self.cart,
+            shipping_data={
+                **self.shipping,
+                "discount_code": "SAVE10",
+            },
+        )
+
+        coupon.refresh_from_db()
+
+        self.assertEqual(
+            coupon.times_used,
+            1,
+        )
+
+    def test_checkout_without_coupon_does_not_consume_coupon(self):
+        self.add_item(self.book_digital)
+
+        self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+        self.assertEqual(
+            DiscountCode.objects.count(),
+            0,
+        )
+
+    def test_shipping_snapshot_is_saved(self):
+        self.add_item(self.book_digital)
+
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+        self.assertEqual(
+            order.shipping_name,
+            "John Doe",
+        )
+
+        self.assertEqual(
+            order.shipping_address_line1,
+            "123 Test Street",
+        )
+
+        self.assertEqual(
+            order.shipping_city,
+            "Testville",
+        )
+
+        self.assertEqual(
+            order.shipping_country,
+            "USA",
+        )
+
+    def test_empty_cart_raises_validation_error(self):
+        with self.assertRaises(serializers.ValidationError):
+            self.service.checkout(
+                cart=self.cart,
+                shipping_data=self.shipping,
+            )
+
+
+    def test_checkout_returns_created_order(self):
+        self.add_item(self.book_digital)
+
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+        self.assertTrue(
+            Order.objects.filter(
+                pk=order.pk,
             ).exists()
         )
 
@@ -631,10 +593,13 @@ class WishlistTest(APITestCase):
         # 2. GET (List items)
         response_get = self.client.get(self.wishlist_url)
         self.assertEqual(response_get.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response_get.data), 1)
+        self.assertEqual(
+            len(response_get.data["results"]),
+            1,
+        )
 
         # Verify nested data is correct (book title, author name)
-        item_data = response_get.data[0]
+        item_data = response_get.data["results"][0]
         self.assertEqual(item_data["book_id"], self.book_A.pk)
         self.assertEqual(item_data["title"], "Wishlist Book A")
         self.assertIn("added_at", item_data)
