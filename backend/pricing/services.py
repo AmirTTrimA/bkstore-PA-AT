@@ -170,6 +170,11 @@ class PricingEngine:
         price = self.get_current_price()
         current_price = price.value
 
+        if price is None:
+            raise ValueError(
+                f"Book '{self.book}' has no active price."
+            )
+
         # Automatic discounts
         automatic_discount, current_price = (
             self.get_best_discount(current_price)

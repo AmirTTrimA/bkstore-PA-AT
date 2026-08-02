@@ -55,6 +55,13 @@ class CartCRUDTest(APITestCase):
             isbn="978-0000000002",
             is_digital=False,  # Mark as physical
         )
+        cls.book_1.change_price(
+            value=Decimal("20.00"),
+        )
+
+        cls.book_2.change_price(
+            value=Decimal("30.00"),
+        )
         cls.cart_url = reverse("cart-items")
         cls.login_url = reverse("login")
         cls.merge_url = reverse("cart-merge")  # 🔑 NEW: Merge URL

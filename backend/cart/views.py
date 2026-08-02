@@ -10,15 +10,16 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from pricing.models import Price
+from pricing.services import PricingEngine
 from rest_framework import generics, serializers, status, viewsets
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Cart, CartItem, Order, OrderItem, WishlistItem
-from .serializers import (  # Assuming CartItemOutputSerializer is for display
-    CartItemInputSerializer, CartItemOutputSerializer, CheckoutInputSerializer,
-    OrderOutputSerializer, WishlistCreateSerializer, WishlistItemSerializer)
+from .serializers import (CartItemInputSerializer, CartItemOutputSerializer,
+                          CheckoutInputSerializer, OrderOutputSerializer,
+                          WishlistCreateSerializer, WishlistItemSerializer)
 from .services import CheckoutService
 from .tasks import send_order_confirmation_email
 
@@ -72,31 +73,31 @@ def save_storage_manager(request, cart_data):
 # -------------------------------------------------------------
 
 
-def get_current_prices(book_ids):
-    """
-    Retrieves the currently active price for each book ID from the database.
-    Returns: A dictionary mapping {book_id: price_value}
-    """
-    now = timezone.now()
+# def get_current_prices(book_ids):
+#     """
+#     Retrieves the currently active price for each book ID from the database.
+#     Returns: A dictionary mapping {book_id: price_value}
+#     """
+#     now = timezone.now()
 
-    # Complex query to find the most recent valid price for each book
-    # This logic finds the Price record where effective_from is the highest (most recent)
-    # but still valid (effective_until is null or future)
+#     # Complex query to find the most recent valid price for each book
+#     # This logic finds the Price record where effective_from is the highest (most recent)
+#     # but still valid (effective_until is null or future)
 
-    # For simplicity, we filter by effective_until=NULL or > now()
-    active_prices = (
-        Price.objects.filter(
-            models.Q(effective_until__isnull=True) | models.Q(effective_until__gt=now),
-            book_id__in=book_ids,
-            effective_from__lte=now,
-        )
-        .order_by("book_id", "-effective_from")
-        .distinct("book_id")
-    )
+#     # For simplicity, we filter by effective_until=NULL or > now()
+#     active_prices = (
+#         Price.objects.filter(
+#             models.Q(effective_until__isnull=True) | models.Q(effective_until__gt=now),
+#             book_id__in=book_ids,
+#             effective_from__lte=now,
+#         )
+#         .order_by("book_id", "-effective_from")
+#         .distinct("book_id")
+#     )
 
-    # Create a lookup dictionary: {book_id: value}
-    price_map = {price.book_id: price.value for price in active_prices}
-    return price_map
+#     # Create a lookup dictionary: {book_id: value}
+#     price_map = {price.book_id: price.value for price in active_prices}
+#     return price_map
 
 
 class CartItemHandlerView(generics.GenericAPIView):
@@ -116,15 +117,20 @@ class CartItemHandlerView(generics.GenericAPIView):
         book_ids = [int(pk) for pk in cart_data.keys()]
         books = Book.objects.filter(pk__in=book_ids).in_bulk()
 
-        # 🔑 CRITICAL FIX: Fetch active prices from DB
-        price_map = get_current_prices(book_ids)
-
         cart_output = []
         for book_id, quantity in cart_data.items():
             book = books.get(int(book_id))
 
+            if not book:
+                continue
+
             # Use the actual price from the map, default to 0 if not found
-            unit_price = price_map.get(int(book_id), Decimal("0.00"))
+            pricing = PricingEngine(
+                book=book,
+                user=request.user if request.user.is_authenticated else None,
+            ).calculate()
+
+            unit_price = pricing.final_price
 
             if book:
                 # 🔑 FIX: Pass the calculated unit price to the serializer's context (item dictionary)
