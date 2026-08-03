@@ -2,11 +2,17 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import CartItemHandlerView, CartMergeView, CheckoutView, WishlistViewSet
+from .views import (CartItemHandlerView, CartMergeView, CheckoutView,
+                    WishlistViewSet, OrderViewSet)
 
 # Create a router for the Wishlist ViewSet
 router = DefaultRouter()
 router.register(r"wishlist", WishlistViewSet, basename="wishlist")
+router.register(
+    r"orders",
+    OrderViewSet,
+    basename="orders",
+)
 
 urlpatterns = [
     # GET, POST, DELETE /api/v1/cart/items/

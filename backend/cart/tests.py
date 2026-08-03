@@ -657,3 +657,194 @@ class WishlistTest(APITestCase):
 
         # 3. VERIFY COUNT: Item should be permanently gone
         self.assertEqual(WishlistItem.objects.filter(user=self.user).count(), 0)
+
+class OrderApiTest(APITestCase):
+    """
+    Tests the authenticated customer Order API.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            username="customer",
+            email="customer@test.com",
+            password="password123",
+        )
+
+        cls.other_user = User.objects.create_user(
+            username="other",
+            email="other@test.com",
+            password="password123",
+        )
+
+        cls.author = Author.objects.create(
+            name="Douglas Adams",
+        )
+
+        cls.book = Book.objects.create(
+            author=cls.author,
+            title="The Hitchhiker's Guide",
+            slug="hitchhiker",
+            isbn="9780345391803",
+            description="Don't Panic.",
+            genre="SCI_FI",
+            is_digital=True,
+        )
+
+        cls.order = Order.objects.create(
+            user=cls.user,
+            subtotal=Decimal("100.00"),
+            discount_amount=Decimal("20.00"),
+            total_amount=Decimal("80.00"),
+            status="PROCESSING",
+            shipping_name="Arthur Dent",
+            shipping_address_line1="42 Galaxy Way",
+            shipping_city="London",
+            shipping_country="UK",
+        )
+
+        OrderItem.objects.create(
+            order=cls.order,
+            book=cls.book,
+            quantity=2,
+            snapshot_price=Decimal("40.00"),
+            snapshot_title=cls.book.title,
+            snapshot_author_name=cls.author.name,
+        )
+
+        cls.other_order = Order.objects.create(
+            user=cls.other_user,
+            subtotal=Decimal("50.00"),
+            discount_amount=Decimal("0.00"),
+            total_amount=Decimal("50.00"),
+            status="PROCESSING",
+        )
+
+        cls.list_url = reverse("orders-list")
+
+    def setUp(self):
+        login = self.client.post(
+            reverse("login"),
+            {
+                "username": "customer",
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {login.data['access']}"
+        )
+
+    def test_list_returns_only_user_orders(self):
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data["results"]),
+            1,
+        )
+
+        self.assertEqual(
+            response.data["results"][0]["id"],
+            self.order.id,
+        )
+
+    def test_retrieve_returns_order_detail(self):
+        response = self.client.get(
+            reverse(
+                "orders-detail",
+                args=[self.order.id],
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["id"],
+            self.order.id,
+        )
+
+    def test_order_detail_contains_items(self):
+        response = self.client.get(
+            reverse(
+                "orders-detail",
+                args=[self.order.id],
+            )
+        )
+
+        self.assertEqual(
+            len(response.data["items"]),
+            1,
+        )
+
+        self.assertEqual(
+            response.data["items"][0]["book_title"],
+            self.book.title,
+        )
+
+    def test_user_cannot_access_other_users_order(self):
+        response = self.client.get(
+            reverse(
+                "orders-detail",
+                args=[self.other_order.id],
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_anonymous_user_cannot_list_orders(self):
+        self.client.credentials()
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_anonymous_user_cannot_retrieve_order(self):
+        self.client.credentials()
+
+        response = self.client.get(
+            reverse(
+                "orders-detail",
+                args=[self.order.id],
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_orders_are_returned_newest_first(self):
+        newer_order = Order.objects.create(
+            user=self.user,
+            subtotal=Decimal("10.00"),
+            discount_amount=Decimal("0.00"),
+            total_amount=Decimal("10.00"),
+            status="PROCESSING",
+        )
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            response.data["results"][0]["id"],
+            newer_order.id,
+        )
+
+        self.assertEqual(
+            response.data["results"][1]["id"],
+            self.order.id,
+        )

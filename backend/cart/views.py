@@ -5,6 +5,7 @@ from catalog.models import Book
 from content.models import License
 from django.conf import settings
 from django.db import models, transaction
+from django.db.models import Prefetch
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -15,6 +16,7 @@ from rest_framework import generics, serializers, status, viewsets
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from .models import Cart, CartItem, Order, OrderItem, WishlistItem
 from .serializers import (CartItemInputSerializer, CartItemOutputSerializer,
@@ -325,4 +327,30 @@ class CheckoutView(generics.GenericAPIView):
         return Response(
             OrderOutputSerializer(order).data,
             status=status.HTTP_201_CREATED,
+        )
+
+class OrderViewSet(ReadOnlyModelViewSet):
+    """
+    Allows authenticated users to view their order history.
+
+    Endpoints:
+        GET /cart/orders/
+        GET /cart/orders/<id>/
+    """
+
+    serializer_class = OrderOutputSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            Order.objects.filter(
+                user=self.request.user,
+            )
+            .prefetch_related(
+                Prefetch(
+                    "items",
+                    queryset=OrderItem.objects.select_related("book"),
+                )
+            )
+            .order_by("-created_at")
         )
