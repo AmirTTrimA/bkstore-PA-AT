@@ -23,7 +23,7 @@ class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     queryset = Author.objects.all().order_by("name").annotate(
-        books_count=Count("book")  # Count books for performance in get_books_count()
+        books_count=Count("books")  # Count books for performance in get_books_count()
     )
     permission_classes = [AllowAny]
 

@@ -1,18 +1,12 @@
+# accounts/urls.py
 from dj_rest_auth.views import PasswordResetConfirmView, PasswordResetView
 from django.urls import path, re_path
-from rest_framework_simplejwt.views import (
-    TokenBlacklistView,
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from rest_framework_simplejwt.views import (TokenBlacklistView,
+                                            TokenObtainPairView,
+                                            TokenRefreshView)
 
-from .views import (
-    OTPLoginView,
-    OTPRequestView,
-    OTPVerifyView,
-    UserProfileView,
-    UserRegistrationView,
-)
+from .views import (OTPLoginView, OTPRequestView, OTPVerifyView,
+                    UserProfileView, UserRegistrationView)
 
 urlpatterns = [
     # --- JWT Token Management ---

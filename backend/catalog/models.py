@@ -1,3 +1,4 @@
+# catalog/models.py
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -37,7 +38,10 @@ class Book(models.Model):
 
     # --- Core Identification ---
     author = models.ForeignKey(
-        Author, on_delete=models.CASCADE, verbose_name=_("Author")
+        Author,
+        on_delete=models.CASCADE,
+        related_name="books",
+        verbose_name=_("Author"),
     )
     title = models.CharField(_("Title"), max_length=255)
     slug = models.SlugField(

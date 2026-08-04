@@ -25,7 +25,7 @@ class AuthorSerializer(serializers.ModelSerializer):
 
     def get_books_count(self, obj):
         """Returns the total number of books by this author."""
-        return obj.book_set.count()
+        return obj.books.count()
     
 class CurrentPriceMixin(serializers.Serializer):
     """Provides the current active price for a book."""

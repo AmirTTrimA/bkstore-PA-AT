@@ -230,6 +230,14 @@ class DiscountCode(models.Model):
     def __str__(self):
         return self.code
 
+    @property
+    def remaining_uses(self):
+
+        if self.max_uses is None:
+            return None
+
+        return max(self.max_uses - self.times_used, 0)
+
 
 # -------------------------------------------------------------
 # 2. SUBSCRIPTION INFRASTRUCTURE

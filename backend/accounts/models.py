@@ -1,3 +1,4 @@
+# accounts/models.py
 import random
 from datetime import timedelta
 
@@ -22,7 +23,7 @@ class User(AbstractUser):
 class OTPCode(models.Model):
     """Stores temporary One-Time Passwords for user verification."""
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="otp_codes",)
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     is_valid = models.BooleanField(default=True)

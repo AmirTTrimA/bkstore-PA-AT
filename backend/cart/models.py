@@ -75,6 +75,7 @@ class Order(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         verbose_name=_("User"),
+        related_name="orders",
     )
     discount_code = models.ForeignKey(
         DiscountCode,

@@ -1,3 +1,4 @@
+# content/models.py
 from datetime import timedelta
 
 from cart.models import Order
@@ -16,10 +17,10 @@ class License(models.Model):
 
     # --- Relationships ---
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("User")
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("User"), related_name="licenses",
     )
     book = models.ForeignKey(
-        Book, on_delete=models.PROTECT, verbose_name=_("Book")
+        Book, on_delete=models.PROTECT, verbose_name=_("Book"), related_name="licenses",
     )  # Protects link to the source book
     order = models.ForeignKey(
         Order,
@@ -27,6 +28,7 @@ class License(models.Model):
         null=True,
         blank=True,
         verbose_name=_("Source Order"),
+        related_name="licenses",
     )  # Links to the source transaction
 
     # --- License Details (Based on time-based model) ---
