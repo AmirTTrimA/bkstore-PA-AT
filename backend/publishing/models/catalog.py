@@ -22,7 +22,9 @@ class AbstractBookProposal(models.Model):
 
     cover_image_url = models.URLField(
         _("Cover Image URL"),
+        max_length=500,
         blank=True,
+        null=True,
     )
 
     genre = models.CharField(
@@ -66,6 +68,14 @@ class BookCreateProposal(AbstractBookProposal):
         Proposal,
         on_delete=models.CASCADE,
         related_name="book_create",
+    )
+
+    created_book = models.OneToOneField(
+        Book,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="creation_proposal",
     )
 
     author = models.ForeignKey(

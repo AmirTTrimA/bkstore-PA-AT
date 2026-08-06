@@ -36,8 +36,6 @@ class Proposal(models.Model):
 
         UNDER_REVIEW = "UNDER_REVIEW", _("Under Review")
 
-        APPROVED = "APPROVED", _("Approved")
-
         APPLIED = "APPLIED", _("Applied")
 
         REJECTED = "REJECTED", _("Rejected")
@@ -135,7 +133,6 @@ class Proposal(models.Model):
         self.reviewed_by = reviewer
         self.reviewed_at = timezone.now()
         self.review_notes = reason
-
 
     def mark_applied(self, reviewer):
         self.status = self.Status.APPLIED

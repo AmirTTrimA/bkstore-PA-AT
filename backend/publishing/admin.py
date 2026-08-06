@@ -1,10 +1,12 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from django.db.models import Count
 
 from .models import (AuthorCreateProposal, AuthorUpdateProposal,
                      BookCreateProposal, BookDeleteProposal,
                      BookUpdateProposal, PriceChangeProposal, Proposal,
                      Publisher, PublisherMembership)
+from .services.proposal_service import ProposalService
 
 # ============================================================
 # Publisher
@@ -124,7 +126,7 @@ class ProposalAdmin(admin.ModelAdmin):
         "title",
         "publisher",
         "proposal_type",
-        "status",
+        "proposal_status",
         "submitted_by",
         "submitted_at",
         "reviewed_by",
@@ -154,10 +156,98 @@ class ProposalAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = (
+        "status",
+        "submitted_by",
         "submitted_at",
+        "reviewed_by",
         "reviewed_at",
         "applied_at",
     )
+
+    actions = (
+        "approve_selected",
+        "reject_selected",
+    )
+
+    @admin.action(
+        description="Approve selected proposals"
+    )
+    def approve_selected(self, request, queryset):
+
+        success = 0
+
+        for proposal in queryset:
+
+            try:
+                ProposalService.approve(
+                    proposal,
+                    request.user,
+                )
+
+                success += 1
+
+            except ValidationError as e:
+
+                self.message_user(
+                    request,
+                    f"{proposal}: {e}",
+                    level=messages.ERROR,
+                )
+
+        if success:
+            self.message_user(
+                request,
+                f"{success} proposal(s) approved.",
+                level=messages.SUCCESS,
+            )
+
+    @admin.action(
+        description="Reject selected proposals"
+    )
+    def reject_selected(self, request, queryset):
+
+        for proposal in queryset:
+
+            try:
+                ProposalService.reject(
+                    proposal,
+                    request.user,
+                    "Rejected from admin action.",
+                )
+
+            except ValidationError as e:
+
+                self.message_user(
+                    request,
+                    f"{proposal}: {e}",
+                    level=messages.ERROR,
+                )
+
+        self.message_user(
+            request,
+            "Selected proposals rejected.",
+            level=messages.SUCCESS,
+        )
+
+    @admin.display(
+        description="Status"
+    )
+    def proposal_status(self, obj):
+
+        return obj.get_status_display()
+
+    def has_delete_permission(
+        self,
+        request,
+        obj=None,
+    ):
+        if obj and obj.status == Proposal.Status.APPLIED:
+            return False
+
+        return super().has_delete_permission(
+            request,
+            obj,
+        )
 
     fieldsets = (
         (

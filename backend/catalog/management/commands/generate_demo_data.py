@@ -916,7 +916,6 @@ class Command(BaseCommand):
         statuses = [
             Proposal.Status.SUBMITTED,
             Proposal.Status.UNDER_REVIEW,
-            Proposal.Status.APPROVED,
             Proposal.Status.REJECTED,
         ]
 
@@ -961,6 +960,11 @@ class Command(BaseCommand):
                 description=(
                     "A demo book creation request submitted "
                     "by a publisher."
+                ),
+                isbn=f"978200000{created + 1:06d}",
+                cover_image_url=(
+                    f"https://placehold.co/400x600"
+                    f"?text=new-demo-book-{created + 1}"
                 ),
                 genre=random.choice(
                     list(Book.GENRE_CHOICES)
@@ -1067,7 +1071,6 @@ class Command(BaseCommand):
         for proposal in self.proposals:
 
             if proposal.status in [
-                Proposal.Status.APPROVED,
                 Proposal.Status.REJECTED,
                 Proposal.Status.UNDER_REVIEW,
             ]:
@@ -1089,12 +1092,6 @@ class Command(BaseCommand):
                     proposal.review_notes = (
                         "Rejected during demo review. "
                         "Metadata requires revision."
-                    )
-
-                elif proposal.status == Proposal.Status.APPROVED:
-
-                    proposal.review_notes = (
-                        "Approved during demo review."
                     )
 
                 proposal.save()
