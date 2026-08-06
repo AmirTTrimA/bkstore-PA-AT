@@ -13,6 +13,10 @@ from django.utils import timezone
 from django.utils.text import slugify
 from pricing.models import (Discount, DiscountCode, Price, SubscriptionPlan,
                             UserSubscription)
+from publishing.models import (AuthorCreateProposal, AuthorUpdateProposal,
+                               BookCreateProposal, BookDeleteProposal,
+                               BookUpdateProposal, PriceChangeProposal,
+                               Proposal, Publisher, PublisherMembership)
 
 User = get_user_model()
 
@@ -182,6 +186,51 @@ class Command(BaseCommand):
         },
     ]
 
+    PUBLISHERS = [
+        {
+            "name": "O'Reilly Media",
+            "website": "https://www.oreilly.com",
+            "email": "contact@oreilly.demo",
+            "description": (
+                "Technology and software engineering publisher "
+                "specializing in developer education."
+            ),
+        },
+        {
+            "name": "Penguin Books",
+            "website": "https://www.penguinrandomhouse.com",
+            "email": "contact@penguin.demo",
+            "description": (
+                "General publishing organization covering fiction, "
+                "history, and educational works."
+            ),
+        },
+        {
+            "name": "MIT Press",
+            "website": "https://mitpress.mit.edu",
+            "email": "contact@mit.demo",
+            "description": (
+                "Academic publisher focused on science and technology."
+            ),
+        },
+        {
+            "name": "Pearson",
+            "website": "https://www.pearson.com",
+            "email": "contact@pearson.demo",
+            "description": (
+                "Educational and professional learning publisher."
+            ),
+        },
+        {
+            "name": "Demo Independent Publishing",
+            "website": "https://demo-publishing.local",
+            "email": "contact@demo-publishing.local",
+            "description": (
+                "Small independent publisher used for testing workflows."
+            ),
+        },
+    ]
+
     def build_shipping_data(self, user, coupon_code=None):
 
         data = {
@@ -211,9 +260,14 @@ class Command(BaseCommand):
         self.automatic_discounts = []
         self.coupon_codes = []
 
+        self.publishers = {}
+        self.proposals = []
+
         self.reset_demo_data()
 
         self.create_users()
+
+        self.create_publishers()
 
         self.create_authors()
 
@@ -232,6 +286,8 @@ class Command(BaseCommand):
         self.create_wishlists()
 
         self.create_orders()
+
+        self.create_proposals()
 
         self.print_summary()
 
@@ -262,6 +318,9 @@ class Command(BaseCommand):
 
         Book.objects.all().delete()
         Author.objects.all().delete()
+
+        PublisherMembership.objects.all().delete()
+        Publisher.objects.all().delete()
 
         # Remove demo users but leave superusers intact.
         User.objects.filter(is_superuser=False).delete()
@@ -297,6 +356,64 @@ class Command(BaseCommand):
                 f"Created {len(self.users)} demo users."
             )
     )
+
+    def create_publishers(self):
+        """
+        Creates demo publisher organizations and memberships.
+        """
+
+        self.stdout.write("Creating publishers...")
+
+        publishers = []
+
+        for data in self.PUBLISHERS:
+
+            publisher = Publisher.objects.create(
+                name=data["name"],
+                website=data["website"],
+                contact_email=data["email"],
+                description=data["description"],
+            )
+
+            self.publishers[publisher.slug] = publisher
+            publishers.append(publisher)
+
+        roles = [
+            PublisherMembership.Role.OWNER,
+            PublisherMembership.Role.MANAGER,
+            PublisherMembership.Role.EDITOR,
+        ]
+
+        users = self.user_list.copy()
+
+        random.shuffle(users)
+
+        for publisher in publishers:
+
+            if not users:
+                break
+
+            number_of_members = random.randint(3, 5)
+
+            members = users[:number_of_members]
+
+            users = users[number_of_members:]
+
+            for position, user in enumerate(members):
+
+                PublisherMembership.objects.create(
+                    publisher=publisher,
+                    user=user,
+                    role=roles[position % len(roles)],
+                    is_active=True,
+                )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {len(self.publishers)} publishers "
+                # f"and {membership_count} memberships."
+            )
+        )
 
     def create_authors(self):
         """
@@ -785,6 +902,210 @@ class Command(BaseCommand):
             )
         )
 
+    def create_proposals(self):
+        """
+        Creates demo publisher proposals for moderation workflow testing.
+        """
+
+        self.stdout.write("Creating proposals...")
+
+        publishers = list(self.publishers.values())
+
+        created = 0
+
+        statuses = [
+            Proposal.Status.SUBMITTED,
+            Proposal.Status.UNDER_REVIEW,
+            Proposal.Status.APPROVED,
+            Proposal.Status.REJECTED,
+        ]
+
+        # Users that belong to publishers
+        members = list(
+            PublisherMembership.objects.filter(
+                is_active=True,
+            )
+        )
+
+        if not members:
+            self.stdout.write(
+                self.style.WARNING(
+                    "No publisher memberships found. Skipping proposals."
+                )
+            )
+            return
+
+        # ------------------------------------------------------------
+        # Book creation proposals
+        # ------------------------------------------------------------
+
+        for _ in range(5):
+
+            membership = random.choice(members)
+            publisher = membership.publisher
+
+            proposal = Proposal.objects.create(
+                title=f"Create new book proposal #{created + 1}",
+                publisher=publisher,
+                submitted_by=membership.user,
+                proposal_type=Proposal.ProposalType.BOOK_CREATE,
+                status=random.choice(statuses),
+            )
+
+            author = random.choice(self.author_list)
+
+            BookCreateProposal.objects.create(
+                proposal=proposal,
+                author=author,
+                title=f"New Demo Book {created + 1}",
+                description=(
+                    "A demo book creation request submitted "
+                    "by a publisher."
+                ),
+                genre=random.choice(
+                    list(Book.GENRE_CHOICES)
+                )[0],
+                is_digital=True,
+                is_audio=random.choice(
+                    [True, False]
+                ),
+                digital_file_path="demo/new_book.epub",
+                audio_file_path="demo/new_book.mp3",
+            )
+
+            self.proposals.append(proposal)
+            created += 1
+
+
+        # ------------------------------------------------------------
+        # Book update proposals
+        # ------------------------------------------------------------
+
+        for book in random.sample(
+            self.book_list,
+            k=5,
+        ):
+
+            membership = random.choice(members)
+
+            proposal = Proposal.objects.create(
+                title=f"Update {book.title}",
+                publisher=membership.publisher,
+                submitted_by=membership.user,
+                proposal_type=Proposal.ProposalType.BOOK_UPDATE,
+                status=random.choice(statuses),
+            )
+
+            BookUpdateProposal.objects.create(
+                proposal=proposal,
+                book=book,
+                title=book.title,
+                description=(
+                    f"Updated description for {book.title}"
+                ),
+                cover_image_url=book.cover_image_url,
+                genre=book.genre,
+                is_digital=book.is_digital,
+                is_audio=book.is_audio,
+                digital_file_path=book.digital_file_path,
+                audio_file_path=book.audio_file_path,
+            )
+
+            self.proposals.append(proposal)
+            created += 1
+
+
+        # ------------------------------------------------------------
+        # Price change proposals
+        # ------------------------------------------------------------
+
+        for book in random.sample(
+            self.book_list,
+            k=5,
+        ):
+
+            membership = random.choice(members)
+
+            current_price = self.prices.get(
+                book.isbn
+            )
+
+            if not current_price:
+                continue
+
+            new_price = (
+                current_price.value * Decimal("1.10")
+            ).quantize(
+                Decimal("0.01")
+            )
+
+            proposal = Proposal.objects.create(
+                title=f"Price update for {book.title}",
+                publisher=membership.publisher,
+                submitted_by=membership.user,
+                proposal_type=Proposal.ProposalType.PRICE_CHANGE,
+                status=random.choice(statuses),
+            )
+
+            PriceChangeProposal.objects.create(
+                proposal=proposal,
+                book=book,
+                value=new_price,
+                currency="USD",
+                min_price=current_price.min_price,
+                reason="Annual price adjustment.",
+            )
+
+            self.proposals.append(proposal)
+            created += 1
+
+
+        # ------------------------------------------------------------
+        # Rejection/review metadata
+        # ------------------------------------------------------------
+
+        for proposal in self.proposals:
+
+            if proposal.status in [
+                Proposal.Status.APPROVED,
+                Proposal.Status.REJECTED,
+                Proposal.Status.UNDER_REVIEW,
+            ]:
+
+                proposal.reviewed_by = User.objects.filter(
+                    is_superuser=True
+                ).first()
+
+                proposal.reviewed_at = (
+                    timezone.now()
+                    -
+                    timedelta(
+                        days=random.randint(1, 30)
+                    )
+                )
+
+                if proposal.status == Proposal.Status.REJECTED:
+
+                    proposal.review_notes = (
+                        "Rejected during demo review. "
+                        "Metadata requires revision."
+                    )
+
+                elif proposal.status == Proposal.Status.APPROVED:
+
+                    proposal.review_notes = (
+                        "Approved during demo review."
+                    )
+
+                proposal.save()
+
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {created} demo proposals."
+            )
+        )
+
     def print_summary(self):
         """
         Prints a summary of the generated demo environment.
@@ -799,6 +1120,13 @@ class Command(BaseCommand):
         self.stdout.write("Created:")
 
         self.stdout.write(f"  Users:               {User.objects.count()}")
+
+        self.stdout.write(f"  Publishers:          {Publisher.objects.count()}")
+
+        self.stdout.write(f"  Publisher Members:   {PublisherMembership.objects.count()}")
+
+        self.stdout.write(f"  Proposals:           {Proposal.objects.count()}")
+        
         self.stdout.write(f"  Authors:            {Author.objects.count()}")
         self.stdout.write(f"  Books:              {Book.objects.count()}")
 

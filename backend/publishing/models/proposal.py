@@ -123,5 +123,25 @@ class Proposal(models.Model):
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
 
+    def can_reject(self):
+        return self.status == self.Status.SUBMITTED
+
+    def can_approve(self):
+        return self.status == self.Status.SUBMITTED
+
+
+    def reject(self, reviewer, reason):
+        self.status = self.Status.REJECTED
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.review_notes = reason
+
+
+    def mark_applied(self, reviewer):
+        self.status = self.Status.APPLIED
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.applied_at = timezone.now()
+
     def clean(self):
         ...
