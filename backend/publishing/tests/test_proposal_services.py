@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from publishing.models.catalog import BookUpdateProposal
 from catalog.models import Author, Book
 from publishing.models import (
     Proposal,
@@ -139,4 +140,72 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(
             created_book.isbn,
             "9781234567890",
+        )
+
+    def test_approve_book_update_proposal(self):
+
+        book = Book.objects.create(
+            author=self.author,
+            title="Old Title",
+            slug="old-title",
+            isbn="9781234567891",
+            description="Old description",
+            genre="TECH",
+            is_digital=True,
+            is_audio=False,
+        )
+
+
+        proposal = Proposal.objects.create(
+            title="Update book",
+            publisher=self.publisher,
+            submitted_by=self.publisher_user,
+            proposal_type=Proposal.ProposalType.BOOK_UPDATE,
+            status=Proposal.Status.SUBMITTED,
+        )
+
+
+        BookUpdateProposal.objects.create(
+            proposal=proposal,
+            book=book,
+            title="New Title",
+            description="New description",
+            genre="SCIENCE",
+            cover_image_url="https://example.com/new.jpg",
+            is_digital=True,
+            is_audio=True,
+            digital_file_path="new.epub",
+            audio_file_path="new.mp3",
+        )
+
+
+        ProposalService.approve(
+            proposal,
+            self.admin,
+        )
+
+
+        book.refresh_from_db()
+
+
+        self.assertEqual(
+            book.title,
+            "New Title",
+        )
+
+        self.assertEqual(
+            book.genre,
+            "SCIENCE",
+        )
+
+        self.assertTrue(
+            book.is_audio,
+        )
+
+
+        proposal.refresh_from_db()
+
+        self.assertEqual(
+            proposal.status,
+            Proposal.Status.APPLIED,
         )

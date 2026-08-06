@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from ..models.catalog import BookCreateProposal
+from ..models.catalog import BookCreateProposal, BookUpdateProposal
 from ..models.proposal import Proposal
 
 
@@ -192,7 +192,38 @@ class ProposalService:
 
     @staticmethod
     def _apply_book_update(proposal):
-        pass
+        """
+        Applies a book update proposal to an existing Book.
+        """
+
+        try:
+            update = proposal.book_update
+
+        except BookUpdateProposal.DoesNotExist:
+            raise ValidationError(
+                "Book update details are missing."
+            )
+
+
+        book = update.book
+
+
+        book.title = update.title
+        book.description = update.description
+        book.cover_image_url = update.cover_image_url
+        book.genre = update.genre
+
+        book.is_digital = update.is_digital
+        book.is_audio = update.is_audio
+
+        book.digital_file_path = update.digital_file_path
+        book.audio_file_path = update.audio_file_path
+
+
+        book.save()
+
+
+        return book
 
 
     @staticmethod
