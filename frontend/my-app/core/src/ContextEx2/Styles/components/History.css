@@ -1,0 +1,57 @@
+/* ============================================
+        HISTORY PAGE
+   ============================================ */
+
+
+
+/* Cards */
+.history-cards{
+    transition: all 0.3s ease;
+}
+
+/* Card Content */
+.history-cards-content{
+    padding: 16px;
+}
+
+/* Main Layout */
+.history-cards-main{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+/* Amount */
+.history-cards-total-amount{
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.history-card-small-text{
+    font-size: 0.75rem;
+    color: rgba(0,0,0,0.6);
+}
+
+/* Right Section */
+.history-card-right-section{
+    text-align: right;
+    margin-top: 5px;
+}
+
+
+/* Icons */
+.icon-withdraw{
+    font-size: 32px;
+    color: #f44336;
+}
+
+.icon-deposit{ 
+    margin-top: 5px;
+    font-size: 32px;
+    color:#4caf50;
+}
+
+
+
+

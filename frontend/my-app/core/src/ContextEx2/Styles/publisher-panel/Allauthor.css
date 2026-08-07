@@ -1,0 +1,108 @@
+/* ============================================
+       ALL AUTHORS 
+   ============================================ */
+
+/* Empty State */
+.empty-authors-list{
+    color: red;
+}
+
+/* Container */
+.all-authors-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 50px 25px;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+}
+
+/* Author Profile Card */
+.authors-profile{
+    display: flex;
+    justify-content: space-between;
+    margin: 0 10px;
+    text-align: center;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+    width: 550px;
+    padding: 30px;
+}
+
+/* Left Side (Buttons) */
+.authors-profile-leftside{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Edit Buttons */
+.edit-authors-icon{
+    background-color: white;
+    border: none;
+    border-radius: 50%;
+    color: #1976d2;
+    padding: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+}
+.edit-authors-icon:hover{
+    color: #114e8b;
+}
+
+
+
+
+/* Right Side (Author Info) */
+.authors-profile-rightside{
+    font-weight: bold;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+}
+.authors-profile-rightside-name{
+    font-size: clamp(1rem,3vw,1.5rem);
+    color: rgb(0, 0, 0);
+    margin-left: 5px;
+}
+.authors-profile-rightside-book-number{
+    font-size: clamp(0.5rem,4vw,0.8rem);
+    color: rgb(77, 77, 77);
+    
+}
+
+
+
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablets */
+@media(max-width:769px){
+    .all-authors-container{
+        margin: 50px auto;
+    }
+    .authors-profile{
+        width: 400px;
+    }
+}
+
+/* Mobile */
+@media(max-width:600px){
+    .all-authors-container{
+        margin: 30px auto;
+    }
+    .authors-profile{
+        width: 300px;
+    }
+}
+
+
+
+
+
+

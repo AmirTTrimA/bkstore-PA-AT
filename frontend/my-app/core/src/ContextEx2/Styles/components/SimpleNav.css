@@ -1,0 +1,140 @@
+
+
+/* ============================================
+        SIMPLE NAVIGATION (Mobile)
+   ============================================ */
+
+/* Container */
+.SimpleNav{
+    display: none;
+}
+
+/* Navigation Bar */
+.simple-navbar {
+    height: 70px;
+    
+    background-color: var(--bg-nav);
+    box-shadow: 0px -5px 15px rgba(0, 0, 0, 0.813); 
+    
+    border-radius: 10px;
+    padding: 0 15px;
+    list-style: none;
+}
+
+
+
+
+
+.items {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #999; 
+    fill: #999;
+    font-size: 12px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.items i {
+    font-size: 25px;
+    margin-bottom: 2px;
+}
+
+
+
+.items:hover {
+    fill: rgb(14, 14, 14);
+    
+}
+
+#back{
+    border: none;
+    background-color: var(--bg-nav);
+    cursor: pointer;
+}
+
+#back:hover{
+    color: rgb(14, 14, 14);
+}
+
+/* Left and Right Groups */
+.simple-navbar >.left{
+    display: flex;
+    justify-content: center;
+    padding: 0px 10px;
+    gap: 7px;
+}
+.simple-navbar >.right{
+    display: flex;
+    justify-content: space-around;
+    padding: 0px 10px;
+    gap: 1.2rem;
+}
+
+#silent-search{
+    background-color: var(--bg-nav) !important ;
+    border: none;
+    padding: 0;
+}
+#silent-search:hover{
+    cursor: pointer;
+}
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet */
+@media(max-width:992px){
+    .SimpleNav{
+        display: none;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    
+    .SimpleNav{
+            display: flex !important;
+            top: 0;  
+    }  
+
+    .simple-navbar{
+        display: flex;
+        justify-content: space-between;
+        width:86%;
+        margin: 0 auto;  
+    }    
+}
+
+/* Small Mobile */
+@media(max-width:600px){
+    .simple-navbar{
+        padding: 0 10px;
+    }
+
+}
+
+
+/* Extra Small Mobile */
+@media (max-width: 480px) {
+    .simple-navbar {
+      width: 95%;
+      height: 60px;
+      padding: 0 8px;
+    }
+  
+    .items i {
+      font-size: 18px;
+    }
+  
+    .simple-navbar > .left,
+    .simple-navbar > .right {
+      gap: 3px;
+      padding: 0 3px;
+    }
+  }

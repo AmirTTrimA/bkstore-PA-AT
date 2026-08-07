@@ -1,0 +1,19 @@
+
+
+
+/* ============================================
+        AUTHORS PAGE
+   ============================================ */
+
+   
+/* Author Container */
+.authors-container{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+/* Form Container */
+.form-authors-container{
+     margin: 0 auto;
+}

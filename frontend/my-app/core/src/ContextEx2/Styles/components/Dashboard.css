@@ -1,0 +1,531 @@
+/* ============================================
+        DASHBOARD STYLES
+   ============================================ */
+
+/* Main Container */
+.main-container{
+    display: grid;
+    grid-template-columns: 8fr 2fr;
+    gap: 20px;
+
+    margin: 0 auto;
+    padding: 20px;
+    color:black;
+
+}
+
+
+
+
+
+
+
+
+/* Menu */
+.menu-bar{
+    grid-column: 2;
+}
+
+
+/* Profile Picture */
+.profile-pic{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.profile-pic img{
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+}
+
+
+/* Aside */
+aside{
+    position: sticky;
+    top: 75px;
+    padding: 20px 0;
+    margin: 75px 0;
+
+    
+    height: fit-content;
+    border-radius: 20px;
+    background-color: #6c6c6c;
+    
+}
+
+
+
+
+aside ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+  
+aside li {
+    margin: 10px 0;
+    font-size:medium;
+    width: 100%;
+    text-align: center;
+  }
+
+
+aside a{
+    display: block;
+    padding: 15px 0;
+    text-decoration: none;
+    color: rgb(255, 255, 255);
+    transition: background-color 0.3s;
+    cursor: pointer;
+
+}
+
+aside a:hover{
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.logout a{
+    fill: red;
+
+}
+.logout a:hover{
+    fill: white;
+    background-color: rgb(213, 0, 0);
+}
+
+
+
+
+/* Main Content */
+.main-text{
+    grid-column: 1;
+    background-color: var(--bg-primary);
+    color: var(--text-primarys);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.greet{
+    font-size:xx-large;
+    font-weight: 700;
+    font-style: oblique;
+    margin-bottom: 10px;
+}
+
+
+.date{
+    color: white;
+    border-right: 1px solid white;
+    padding: 10px;
+}
+
+
+
+/* Search Container */
+.search-container{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin: 20px -10px;
+    background-color: rgb(147, 147, 147);
+    padding: 10px;
+    border-radius: 10px;
+
+    
+    outline: 2px solid rgb(255, 255, 255);
+    outline-offset: -4px; /* go inside */
+    
+}
+
+.search-container>li{
+    list-style: none;
+    fill: #ffffff;
+    display: flex;
+    justify-content: flex-start;
+
+    margin: 0;
+    padding: 15px 20px;
+    padding-left: 30px;
+    
+}
+
+.left-icons{
+    display: flex;
+    
+}
+
+
+.left-icons-group {
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+    gap: 5px;
+    order: 1;
+}
+
+.left-icons-group > li {
+    list-style: none;
+    fill: #ffffff;
+    display: flex;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 15px;
+    cursor: pointer;
+}
+
+
+
+
+/* Right icons group (hamburger menu) */
+.right-icons-group {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+    order: 3;
+}
+
+
+
+
+
+
+/* Search Bar */
+.search-bar {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    
+    width: auto;
+    min-width: 100px;
+    background-color: rgb(83, 83, 83);
+    transition: all 0.3s ease;
+    border-radius: 30px;
+    order: 2;
+}
+  
+
+.search-input {
+    border: none;
+    background: none;
+    color: rgb(241, 241, 241);
+    font-size: 15px;
+    padding: 12px ;
+    outline: none;
+    width:200px; 
+}
+  
+.search-input::placeholder {
+    color: rgb(225, 225, 225);
+}
+  
+.search-icon {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    background-color:rgb(83, 83, 83);
+    margin-left: 5px;
+    transition: background-color 0.3s ease;
+    border-radius: 20px;
+}
+
+.icon_se  {
+    fill: white;
+    padding: 5px;
+}
+  
+
+/* Table */
+.table-container{
+    margin: 0 auto;
+    
+}
+
+table {
+    border-style: none;
+    padding: 10px;
+    width: 100%;
+    align-items: center;
+    border-radius: 30px;
+    background-color: #858585;
+    color: white;
+    text-align: center;
+}
+
+td{
+    padding: 20px;
+    font-size: large;
+}
+
+th{
+    border-bottom: 1px solid rgb(255, 255, 255);
+    padding: 20px;
+    font-size: larger;
+    font-weight: 800;
+}
+
+
+
+
+td>button{
+    border-radius: 10px;
+    padding: 15px;
+    border-style: none;
+    background-color: rgba(255,174,0);
+    color: white;
+}
+
+td >button:hover{
+    background-color: rgb(228, 160, 0);
+    cursor: pointer;
+}
+
+#res-only{
+    display: none;
+}
+
+
+/* Highlight Row */
+.highlight-row {
+    border-radius: 20px;
+    background-color: rgba(76, 175, 80, 0.3) !important;
+    transition: all 0.3s ease;
+  }
+  
+  .highlight-row td {
+    transition: all 0.3s ease;
+  }
+
+
+
+
+/* Hamburger Menu */
+.hamburger-menu {
+    display: none;
+    cursor: pointer;
+    padding: 10px;
+    background: #939393;
+    border-radius: 50%;
+    transition: background 0.3s;
+    margin-left: 10px;
+}
+
+.hamburger-menu:hover {
+    background: rgb(100, 100, 100);
+}
+
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+
+/* Desktop - Hide mobile aside */
+@media(min-width:769px){
+    .mobile-aside-overlay,
+    .mobile-aside-panel {
+        display: none !important;
+    }
+}
+
+/* Mobile */
+@media(max-width:768px){
+    .menu-bar {
+        display: none;
+    }
+    
+    .hamburger-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .search-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        gap: 10px;
+    }
+    
+    .search-container > li:first-of-type {
+        order: 2;
+    }
+    
+    .search-container > li:last-of-type {
+        order: 3;
+    }
+    
+    .left-icons-group {
+        order: 1;
+        flex-shrink: 0;
+        margin-left: 5px;
+        
+    }
+
+    .left-icons-group > li {
+        padding: 10px 10px;
+    }
+
+    .search-bar {
+        width: 200px;
+        min-width: 180px;
+        max-width: 250px;
+        flex-shrink: 0; 
+        order: 2;
+    }
+    
+    .search-input {
+        width: 140px;
+        min-width: 140px;
+    }
+    .right-icons-group {
+        order: 3;
+        flex-shrink: 0;
+    }
+
+
+
+
+    .date {
+        display: none;
+    }
+
+    .mobile-aside-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-aside-overlay.open {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .mobile-aside-panel {
+        position: fixed;
+        top: 0;
+        right: -70%;
+        width: 50%;
+        height: 100vh;
+        background-color: #6c6c6c;
+        z-index: 1000;
+        transition: right 0.3s ease;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .mobile-aside-panel.open {
+        right: 0;
+    }
+    
+    .mobile-aside-panel aside {
+        position: relative;
+        top: 0;
+        margin: 0;
+        padding: 20px;
+        height: 100%;
+        border-radius: 0;
+        background-color: #6c6c6c;
+    }
+    
+    .mobile-aside-panel .profile-pic img {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .mobile-aside-panel aside ul {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .mobile-aside-panel aside li {
+        margin: 15px 0;
+    }
+    
+    .mobile-aside-panel aside a {
+        padding: 12px 20px;
+        font-size: 16px;
+    }
+    
+    
+    .close-aside-btn {
+        display: flex;
+        justify-content: flex-start;
+        padding: 15px;
+        cursor: pointer;
+        color: white;
+    }
+    
+    .close-aside-btn svg {
+        fill: white;
+    }
+    
+    .main-container {
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+        margin-right: 20px;
+        gap: 15px;
+    }
+    
+    .main-text {
+        order: 1;
+        width: 100%;
+        padding: 15px;
+    }
+    
+    /* Table full width */
+    .table-container {
+        width: 100%;
+        margin: 15px 0;
+    }
+    
+    table {
+        width: 100%;
+        min-width: 100%;
+    }
+    
+    td, th {
+        padding: 12px 8px;
+        font-size: 14px;
+    }
+    
+    
+    .greet {
+        font-size: x-large;
+        margin-bottom: 5px;
+    }
+    
+    .search-icon {
+        padding: 5px;
+        width: 50%;
+    }
+
+}
+
+/* Small Mobile */
+@media(max-width:600px){
+
+    .left-icons-group{
+        margin-left: 0px;
+    }
+
+    .left-icons-group >li{
+        padding: 0px 5px;
+    }
+    .main-container{
+        margin-right: 15px ;
+    }
+}
+
+

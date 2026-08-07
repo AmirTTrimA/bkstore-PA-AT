@@ -1,0 +1,144 @@
+/* ============================================
+        ROOT-REPEATABLES
+   ============================================ */
+
+/* Light Theme */
+:root {
+        /* main-bg */
+        --bg-primary: #ffffff;
+        /* whole-bg */
+        --bg-secondary: #f3f4f6;
+        /* home title */
+        --text-primarys2:#35322d;
+        --bg-nav: #ffffff;
+        --text-primarys: #000000;
+        --text-primarys3: #ca7900;
+    
+        /* home-category-box-shadow */
+        --category-box-shadow:rgb(199, 199, 199);
+        --text-secondary-nav:#000000;
+
+        /* home-nav-res */
+        --bg-top-res: #eaeaea;
+        /* fav/sub card, home-res-nav */
+        --res-btn: #f0f0f0;
+    
+        /* default slider */
+        --slider-card:#ffffff;
+        --slider-bg:#e4e4e4;
+
+        /* book slider */
+        --slider-bg2: #eeeeee;
+        --slider-card2:#afafaf;
+
+        /* publisher slider */
+        --slider-bg3: #650000;
+        --slider-card3:#b10000;
+        --slider-bg4: #1b5400;
+        --slider-card4:#1d7c00;
+        --slider-bg5: #576300;
+        --slider-card5:#7a7c00;
+        --slider-bg6: #002a68;
+        --slider-card6:#000c4e;
+    
+
+        /* corner-card-bg */
+        --corner-card-bg:#b10000;
+
+        /* sub-title */
+        --sub-text-first: #c20c0c;
+        --sub-text-second: #d8ab06;
+    
+    
+        /* for field-button [signup] */
+        --fields-button-default:#d17842;
+        --form-hover: #f5762d;
+        --error-color-checked: #af0d1a;
+    
+        /* sliders-title */
+        --text-primarys4:rgb(39, 39, 39);
+    
+        /* bg-introduce */
+        --bg-int:#e8edf2;
+        --card-int:#ffffff;
+        --ux-card:#f9f9f9;
+    
+    
+    
+        --bg-category: #F2F3FF;
+        --bg-category-hover: rgba(201, 202, 216, 0.799);
+        --text-secondary: #4b5563;
+        --text-category: #333333;
+        --border-color: #e5e7eb;
+        
+        
+        --bottom-nav-shadow: rgba(0, 0, 0, 0.2);
+    
+
+        /* footer , library */
+        --secondary-dark: #2d3546;
+        --accent-color: #8b6b4c;
+        --accent-light: #b8946c;
+        --text-secondary-f: #a8a5a0;
+        --success: #4caf50;
+        --warning: #ff9800;
+            
+          
+        /* forgetpass */
+        --glow-color: rgb(176, 255, 251);
+        --btn-color: rgba(65, 65, 65, 0.508); 
+        --clear-shadow:#ff0000;
+        --verify-shadow:#00ff95;
+        --textvc-shadow:#ffffff;
+
+      }
+      
+/* ============================================
+        DARK THEME
+   ============================================ */
+.dark {
+
+        --bg-primary: #343434;
+        --text-primarys2: #e59f36;
+        --bg-secondary: #3d3d3d;
+        --text-primarys: #ffffff;
+        --bg-nav: #26282c;
+        --text-secondary-nav:#c20000;
+
+        --bg-top-res: #26282c;
+        --res-btn: #454545;
+
+        /* default slider */
+        --slider-card:#616161;
+        --slider-bg:#454545;
+        
+        /* book slider */
+        --slider-bg2: #00102f;
+        --slider-card2:#ca7900;
+
+        /* publisher slider */
+        --slider-bg3: #780000;
+        --slider-card3:#c64343;
+        --slider-bg4: #065b00;
+        --slider-card4:#55e84a;
+        --slider-bg5: #555b00;
+        --slider-card5:#e5e84a;
+        --slider-bg6: #00315b;
+        --slider-card6:#4a6ce8;
+
+
+        /* corner-card-bg */
+        --corner-card-bg:#ca7900;
+
+        --bg-int:#555555;
+        --card-int:#c5c5c5;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+        --text-primarys3: #ffffff;
+        --text-primarys4:#ffffff;
+        
+        /* home-category */
+        --category-box-shadow:rgba(247, 0, 0, 0.08);
+        --ux-card: #26282c;
+      }
+      

@@ -1,0 +1,238 @@
+/* ============================================
+        FAVORITES PAGE 
+   ============================================ */
+
+
+/* Navigation */
+.fav-nav{
+    position: sticky;
+    z-index: 1000;
+    top: 0;
+}
+/* Container */
+.fav-container{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 0px;
+    
+    border-radius: 0 0 10px 10px;
+    background-color: var(--bg-primary);
+    box-shadow: 0 0 15px rgba(113, 113, 113, 0.575);
+
+    width: 90%;
+
+}
+
+
+
+/* Header */
+.fav-nav-head{
+    display: flex;
+}
+#back2{
+    background-color: var(--bg-primary) ;
+}
+.titler{
+    color: var(--text-primarys);
+    margin-left: 10px;
+    font-size: 30px;
+}
+
+
+
+
+
+/* Clear All Button */
+.remove-fav-btn{
+    background-color: inherit;
+    border: none;
+    color: rgb(201, 0, 0);
+    cursor: pointer;
+    height: fit-content;
+    margin-left: 25px;
+}
+
+
+
+
+
+
+/* ---Individual Card--- */
+.cards-row {
+    display: flex;
+    
+    flex-wrap: wrap;
+    gap: 25px;
+    padding: 10px 20px;
+    max-width: 1100px;
+    margin: 25px 20px 100px;
+    justify-content: space-evenly;
+}
+
+
+
+
+.fav-cards {
+    background-color:var(--res-btn) ;
+    border-radius: 10px;  
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(247, 0, 0, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.01s ease-out;
+
+    flex: 0 0 calc(55% - 16px);
+    max-width:calc(55% - 16px);
+    max-width: 250px;
+    
+    text-align: center;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.fav-cards:hover {
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.454);
+}
+
+.fav-cards:hover  .card-pic {
+    background-color: rgba(201, 202, 216, 0.002);
+}
+
+
+/* ---Card Image--- */
+.card-pic{
+    width: 100%;
+    height: 250px; 
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    
+}
+
+
+.card-pic >img{
+    height: 100%;
+    width: 100%;
+    display: block;
+    object-fit:cover;  
+}
+
+
+
+
+.card-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 10px 0px;
+    color: var(--text-primarys);    
+}
+
+
+
+/* ---Empty State--- */
+.empty-favorites{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    font-weight: 700;
+    color: var(--text-primarys);
+    font-size: clamp(2.5rem,5vw,3.5rem);
+    margin: 100px 0 200px;
+}
+
+.empty-favorites p{
+    margin-bottom: 50px;
+}
+
+/* Browse Button */
+.browse-btn{
+    border:none;
+    border-radius: 20px ;
+    padding: 20px;
+    background-color: red;
+    color: white;
+    width: fit-content;
+    cursor: pointer;
+}
+
+
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+
+
+/* Tablets */
+@media (max-width: 992px) {
+    .fav-cards {
+        flex: 0 0 calc(33.333% - 16px);
+        max-width: calc(33.333% - 16px);
+    }
+    .card-pic{
+        height: 200px;
+    }
+    
+}
+
+
+/* Mobile */
+@media (max-width: 768px) {
+    .fav-container{
+        width: 90%;
+        border-radius: 0;
+        box-shadow: 0 0 8px rgba(150, 150, 150, 0.4);
+    }  
+
+    .cards-row {
+        padding: 10px;
+        gap: 20px;
+        margin-top: 25px;
+    }
+
+    .fav-cards {
+        flex: 0 0 calc(50% - 16px);
+        max-width:calc(50% - 16px);
+    }
+    .card-pic{
+        height: 200px;
+    }
+
+    .fav-nav-head{
+        display: none;
+    }
+    .remove-fav-btn{
+        margin-top: 15px;
+    }
+
+
+
+}
+
+
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .fav-container{
+        width: 100%;
+        padding: 0.5rem;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .cards-row {
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .fav-cards {
+        flex: 0 0 calc(50% - 12px);
+        max-width:calc(50% - 12px);
+        padding: 16px;
+    }
+}

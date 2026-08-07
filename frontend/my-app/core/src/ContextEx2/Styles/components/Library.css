@@ -1,0 +1,194 @@
+/* ============================================
+        CONTAINER
+   ============================================ */
+.all{
+    max-width: 1100px;
+    margin: 0 auto;
+    border-radius: 0 0 10px 10px;
+    background-color: var(--bg-primary);
+    width: 90%;
+}
+
+
+
+/* ============================================
+        NAVIGATION
+   ============================================ */
+.full-lib-nav{
+    position: sticky;
+    z-index: 1000;
+    top: 0;
+}
+.lib-nav{
+    position: sticky;
+    z-index: 1000;
+    top: 0;
+}
+
+
+
+/* ============================================
+        HEADER
+   ============================================ */
+.head{
+    margin-top: 50px;
+    
+    display: flex;
+    justify-content: center;
+    font-weight: 700;
+    animation: fadeInUp 1s ease;
+
+    background: linear-gradient(to right, var(--secondary-dark), var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.head-txt::after {
+    content: '';
+    position: absolute;
+    bottom: 310px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 5px;
+    background: linear-gradient(to right, var(--accent-color), var(--accent-light));
+    border-radius: 2px;
+    
+}
+
+
+.head-txt{
+    margin-top: -10px;
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+    font-family:Impact, sans-serif;
+}
+
+
+/* ============================================
+        EXPLORE GRID 
+   ============================================ */
+.explore{
+    width: min(950px,100%);
+    margin: 20px auto;
+    columns: 3 300px;
+    column-gap: 0.5rem;
+    
+    padding: 20px  0px  20px  30px; 
+}
+
+
+
+/* ============================================
+        CARD
+   ============================================ */
+.card-ha >img{
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    margin-bottom: 0.5rem;
+}
+
+
+.card-ha {
+    border:none;  
+    text-decoration: none;
+    transition: all 0.01s ease-out;
+    
+    flex: 0 0 calc(55% - 16px);
+    max-width:calc(55% - 16px);
+    max-width: 250px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 0.5rem;
+    break-inside: avoid; 
+    
+}
+
+
+/* ============================================
+         ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 992px) { 
+    .head-txt::after{
+        margin-bottom: 10px;
+    }
+
+}
+
+
+
+@media (max-width: 768px) {
+    .explore {
+        columns: 2 250px; 
+    }
+
+    .lib-container{
+        width: 90%;
+        border-radius: 0;
+        padding: 0 5px;
+    }  
+
+    .head-txt::after{
+        display: none;
+    }
+   
+    
+    .head{
+        margin-left: 50px;
+        text-align: center;
+    }
+    
+    .lib-nav{
+        margin: 0px -30px;
+    }
+    
+
+
+}
+
+@media(max-width:600px){
+    .lib-nav{
+        margin: 0px -22px;
+
+    }
+
+    .explore {
+        columns: 2 150px;
+        padding: 20px 15px 20px;
+    }
+    
+}
+
+
+@media (max-width: 480px) {
+
+    .fav-container{
+        width: 100%;
+        padding: 0.5rem;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+}

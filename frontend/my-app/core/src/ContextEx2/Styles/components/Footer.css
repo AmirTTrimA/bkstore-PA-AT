@@ -1,0 +1,289 @@
+
+/* ============================================
+        FOOTER CONTAINER
+   ============================================ */
+
+.container_footer{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: large;
+    font-weight: 500;
+    background-color: #464646;
+    color: white;
+
+    position: relative;
+
+    padding-top: 75px;
+    padding-bottom: 150px;
+    
+}
+
+
+
+
+
+        
+        
+footer {
+    padding: 20px 0 0px;
+}
+
+.footer-content {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 50px;
+}
+
+      
+.footer-column h3 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--accent-light);
+}
+
+.footer-column ul {
+    list-style: none;
+}
+
+.footer-column ul li {
+    margin-bottom: 10px;
+    margin-left: -25px;
+}
+
+.footer-column a {
+    color: #9ca3af;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.footer-column a:hover {
+    color: var(--accent-light);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.copyright {
+    position: absolute;
+    bottom: -5px;
+    margin-top: 50px;
+    text-align: center;
+    border-top: 1px solid var(--secondary-dark);
+    color: var(--text-secondary-f);
+    font-size: 0.7em;
+}
+
+
+
+.contact-text{
+  text-align: center;
+  font-weight: bold;
+  font-size: x-large;
+  margin-bottom: 0;
+  padding: 20px 0;
+
+}
+
+
+
+
+
+/* ============================================
+        ICONS
+   ============================================ */
+
+ul{
+  list-style: none;
+}
+
+.example-link {
+    display: flex; 
+    position: absolute;
+    bottom: 70px;
+    padding: 0;
+}
+.icon-content {
+    margin: 0 15px;
+    position: relative;
+}
+
+
+.icon-content a {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    color: #fff;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.18),
+      rgba(255, 255, 255, 0.06)
+  );
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    transition: all 0.35s ease-in-out;
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.45),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.18),
+      0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+
+
+
+.icon-content a::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0) 30%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 70%
+  );
+    transform: rotate(25deg) translateX(-100%);
+    transition: transform 0.8s ease;
+    z-index: 0;
+}
+
+.icon-content a:hover::before {
+      transform: rotate(25deg) translateX(100%);
+}
+
+.icon-content a:hover {
+      box-shadow: 3px 2px 45px 0px rgb(0 0 0 / 50%);
+}
+.icon-content a svg {
+    position: relative;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+}
+.icon-content a:hover {
+    color: white;
+}
+.icon-content a .filled {
+    position: absolute;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0;
+    background-color: #000;
+    transition: all 0.3s ease-in-out;
+}
+.icon-content a:hover .filled {
+    height: 100%;
+}
+
+
+.icon-content a {
+    text-decoration: none; 
+    overflow: hidden; 
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon-content a .filled {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    transition: all 0.3s ease-in-out;
+    border-radius: 20%;
+}
+
+
+.icon-content a[data-social="spotify"] .filled,
+.icon-content a[data-social="spotify"]  {
+    background: linear-gradient(135deg, #0f3d1f, #146b35, #1db954, #0d2916);
+    background-size: 400% 400%;
+    animation: premiumGradient 6s ease infinite;
+    backdrop-filter: blur(12px) saturate(200%);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
+    border: 1px solid rgba(29, 185, 84, 0.6);
+    box-shadow:
+      inset 0 0 12px rgba(29, 185, 84, 0.5),
+      0 0 24px rgba(29, 185, 84, 0.7);
+}
+
+
+.icon-content a[data-social="pinterest"] .filled,
+.icon-content a[data-social="pinterest"]  {
+    background: linear-gradient(135deg, #3d0a0f, #7a0f1c, #bd081c, #4a0b12);
+    background-size: 400% 400%;
+    animation: premiumGradient 6s ease infinite;
+    backdrop-filter: blur(12px) saturate(200%);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
+    border: 1px solid rgba(189, 8, 28, 0.6);
+    box-shadow:
+      inset 0 0 12px rgba(189, 8, 28, 0.5),
+      0 0 24px rgba(189, 8, 28, 0.7);
+}
+
+
+.icon-content a[data-social="dribbble"] .filled,
+.icon-content a[data-social="dribbble"]  {
+    background: linear-gradient(135deg, #3a0f24, #7a1f4d, #ea4c89, #4a0f2d);
+    background-size: 400% 400%;
+    animation: premiumGradient 6s ease infinite;
+    backdrop-filter: blur(12px) saturate(200%);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
+    border: 1px solid rgba(234, 76, 137, 0.6);
+    box-shadow:
+      inset 0 0 12px rgba(234, 76, 137, 0.5),
+      0 0 24px rgba(234, 76, 137, 0.7);
+}
+
+
+.icon-content a[data-social="telegram"] .filled,
+.icon-content a[data-social="telegram"]  {
+    background: linear-gradient(135deg, #0a1f2d, #0f4a66, #0088cc, #0a2e44);
+    background-size: 400% 400%;
+    animation: premiumGradient 6s ease infinite;
+    backdrop-filter: blur(12px) saturate(200%);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
+    border: 1px solid rgba(0, 136, 204, 0.6);
+    box-shadow:
+      inset 0 0 12px rgba(0, 136, 204, 0.5),
+      0 0 24px rgba(0, 136, 204, 0.7);
+}
+
+
+
+
+
+
+
+
+/* ============================================
+      ANIMATIONS
+   ============================================ */
+   @keyframes premiumGradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
