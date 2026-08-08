@@ -1,5 +1,6 @@
 # publishing/services/proposal_service.py
 
+from publishing.models.pricing import PriceChangeProposal
 from catalog.models import Book
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -228,4 +229,28 @@ class ProposalService:
 
     @staticmethod
     def _apply_price_change(proposal):
-        pass
+        """
+        Applies a price change proposal to an existing Book.
+
+        The Book.change_price() business method is used so that
+        price history and pricing rules remain centralized in the
+        catalog domain.
+        """
+
+        try:
+            price_proposal = proposal.price_change
+
+        except PriceChangeProposal.DoesNotExist:
+            raise ValidationError(
+                "Price change details are missing."
+            )
+
+        book = price_proposal.book
+
+        price = book.change_price(
+            value=price_proposal.value,
+            currency=price_proposal.currency,
+            min_price=price_proposal.min_price,
+        )
+
+        return price

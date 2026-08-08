@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from pricing.models import Price
+from publishing.models.pricing import PriceChangeProposal
 from publishing.models.catalog import BookUpdateProposal
 from catalog.models import Author, Book
 from publishing.models import (
@@ -208,4 +210,81 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(
             proposal.status,
             Proposal.Status.APPLIED,
+        )
+
+    def test_approve_price_change_proposal(self):
+
+        book = Book.objects.create(
+            author=self.author,
+            title="Pricing Test Book",
+            slug="pricing-test-book",
+            isbn="9781234567892",
+            description="Pricing test book.",
+            genre="TECH",
+            is_digital=True,
+            is_audio=False,
+        )
+
+        original_price = book.change_price(
+            value=50,
+            currency="USD",
+            min_price=20,
+        )
+
+        proposal = Proposal.objects.create(
+            title="Increase book price",
+            publisher=self.publisher,
+            submitted_by=self.publisher_user,
+            proposal_type=Proposal.ProposalType.PRICE_CHANGE,
+            status=Proposal.Status.SUBMITTED,
+        )
+
+        PriceChangeProposal.objects.create(
+            proposal=proposal,
+            book=book,
+            value=60,
+            currency="USD",
+            min_price=20,
+            reason="Annual price adjustment.",
+        )
+
+        ProposalService.approve(
+            proposal,
+            self.admin,
+        )
+
+        proposal.refresh_from_db()
+
+        self.assertEqual(
+            proposal.status,
+            Proposal.Status.APPLIED,
+        )
+
+        self.assertEqual(
+            Price.objects.filter(
+                book=book
+            ).count(),
+            2,
+        )
+
+        latest_price = (
+            Price.objects
+            .filter(book=book)
+            .order_by("-effective_from")
+            .first()
+        )
+
+        self.assertEqual(
+            latest_price.value,
+            60,
+        )
+
+        self.assertEqual(
+            latest_price.currency,
+            "USD",
+        )
+
+        self.assertEqual(
+            original_price.value,
+            50,
         )
