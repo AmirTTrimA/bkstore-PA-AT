@@ -1,6 +1,6 @@
 # core/urls.py
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -13,6 +13,7 @@ urlpatterns = [
                 path('', include('catalog.urls')),
                 path("pricing/", include("pricing.urls")),
                 path("cart/", include("cart.urls")),
+                path("publishing/", include("publishing.api.urls")),
             ]
         ),
     ),
