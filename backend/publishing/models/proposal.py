@@ -3,7 +3,6 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from .publisher import Publisher
@@ -121,12 +120,14 @@ class Proposal(models.Model):
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
 
-    def can_reject(self):
+    def is_submitted(self):
         return self.status == self.Status.SUBMITTED
+
+    def can_reject(self):
+        return self.is_submitted()
 
     def can_approve(self):
-        return self.status == self.Status.SUBMITTED
-
+        return self.is_submitted()
 
     def reject(self, reviewer, reason):
         self.status = self.Status.REJECTED
@@ -139,6 +140,3 @@ class Proposal(models.Model):
         self.reviewed_by = reviewer
         self.reviewed_at = timezone.now()
         self.applied_at = timezone.now()
-
-    def clean(self):
-        ...

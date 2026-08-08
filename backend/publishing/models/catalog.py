@@ -87,6 +87,7 @@ class BookCreateProposal(AbstractBookProposal):
     isbn = models.CharField(
         _("ISBN"),
         max_length=17,
+        db_index=True,
     )
 
     class Meta:
@@ -113,6 +114,9 @@ class BookUpdateProposal(AbstractBookProposal):
         on_delete=models.PROTECT,
         related_name="update_proposals",
     )
+
+    # ISBN and author are intentionally immutable through update proposals.
+    # Changing either should require a dedicated workflow or a new book entry.
 
     class Meta:
         verbose_name = _("Book Update Proposal")

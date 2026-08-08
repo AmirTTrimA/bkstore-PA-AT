@@ -50,6 +50,7 @@ class PriceChangeProposal(models.Model):
     class Meta:
         verbose_name = _("Price Change Proposal")
         verbose_name_plural = _("Price Change Proposals")
+        ordering = ["-proposal__created_at"]
 
     def __str__(self):
         return f"{self.book.title} → {self.value} {self.currency}"

@@ -95,7 +95,10 @@ class PublisherMembership(models.Model):
         on_delete=models.CASCADE,
         related_name="publisher_membership",
         verbose_name=_("User"),
-    )
+    )   
+        # Business rule: a platform user may belong to only one publisher
+        # organization at a time. Use ForeignKey if multi-publisher membership
+        # is required in the future.
 
     role = models.CharField(
         _("Role"),

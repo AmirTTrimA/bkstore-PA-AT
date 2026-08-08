@@ -1,13 +1,12 @@
 # publishing/services/proposal_service.py
 
-from publishing.models.pricing import PriceChangeProposal
 from catalog.models import Book
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.utils import timezone
 from django.utils.text import slugify
 
 from ..models.catalog import BookCreateProposal, BookUpdateProposal
+from ..models.pricing import PriceChangeProposal
 from ..models.proposal import Proposal
 
 
@@ -48,7 +47,7 @@ class ProposalService:
                 "Only submitted proposals can be rejected."
             )
 
-        if not reason:
+        if not reason or not reason.strip():
             raise ValidationError(
                 "A rejection reason is required."
             )
@@ -86,11 +85,11 @@ class ProposalService:
                 "Only submitted proposals can be approved."
             )
 
-        ProposalService.apply(proposal)
+        result = ProposalService.apply(proposal)
 
         proposal.mark_applied(
-            reviewer=reviewer
-        )
+                reviewer=reviewer
+            )
 
         proposal.save(
             update_fields=[
@@ -111,26 +110,34 @@ class ProposalService:
         Applies proposal-specific business changes.
         """
 
-        proposal_type = proposal.proposal_type
+        handlers = {
+            Proposal.ProposalType.BOOK_CREATE: ProposalService._apply_book_create,
+            Proposal.ProposalType.BOOK_UPDATE: ProposalService._apply_book_update,
+            Proposal.ProposalType.PRICE_CHANGE: ProposalService._apply_price_change,
+            # TODO: AUTHOR_CREATE, AUTHOR_UPDATE, BOOK_DELETE
+        }
 
-        if proposal_type == proposal.ProposalType.BOOK_CREATE:
-            return ProposalService._apply_book_create(
-                proposal
+        handler = handlers.get(proposal.proposal_type)
+
+        if handler is None:
+            raise ValidationError(
+                "Unsupported proposal type."
             )
 
-        if proposal_type == proposal.ProposalType.BOOK_UPDATE:
-            return ProposalService._apply_book_update(
-                proposal
-            )
+        return handler(proposal)
 
-        if proposal_type == proposal.ProposalType.PRICE_CHANGE:
-            return ProposalService._apply_price_change(
-                proposal
-            )
+    @staticmethod
+    def _generate_unique_book_slug(title):
 
-        raise ValidationError(
-            "Unsupported proposal type."
-        )
+        base_slug = slugify(title)
+        slug = base_slug
+        counter = 2
+
+        while Book.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
 
 
     @staticmethod
@@ -152,7 +159,7 @@ class ProposalService:
 
             title=book_proposal.title,
 
-            slug=slugify(
+            slug=ProposalService._generate_unique_book_slug(
                 book_proposal.title
             ),
 
@@ -247,10 +254,8 @@ class ProposalService:
 
         book = price_proposal.book
 
-        price = book.change_price(
+        return book.change_price(
             value=price_proposal.value,
             currency=price_proposal.currency,
             min_price=price_proposal.min_price,
         )
-
-        return price

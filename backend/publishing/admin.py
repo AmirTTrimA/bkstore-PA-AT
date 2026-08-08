@@ -41,6 +41,8 @@ class PublisherAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
+    list_per_page = 25
+
     def get_queryset(self, request):
 
         return (
@@ -114,6 +116,10 @@ class PublisherMembershipAdmin(admin.ModelAdmin):
         "joined_at",
     )
 
+    list_select_related = (
+        "publisher",
+        "user",
+    )
 
 # ============================================================
 # Proposal
@@ -143,10 +149,12 @@ class ProposalAdmin(admin.ModelAdmin):
         "publisher__name",
         "submitted_by__username",
         "submitted_by__email",
+        "review_notes",
     )
 
     ordering = (
         "-submitted_at",
+        "-created_at",
     )
 
     list_select_related = (
@@ -169,10 +177,16 @@ class ProposalAdmin(admin.ModelAdmin):
         "reject_selected",
     )
 
+    date_hierarchy = "submitted_at"
+
     @admin.action(
         description="Approve selected proposals"
     )
     def approve_selected(self, request, queryset):
+
+        queryset = queryset.filter(
+            status=Proposal.Status.SUBMITTED
+        )
 
         success = 0
 
@@ -206,6 +220,12 @@ class ProposalAdmin(admin.ModelAdmin):
     )
     def reject_selected(self, request, queryset):
 
+        queryset = queryset.filter(
+            status=Proposal.Status.SUBMITTED
+        )
+
+        success = 0
+
         for proposal in queryset:
 
             try:
@@ -215,6 +235,8 @@ class ProposalAdmin(admin.ModelAdmin):
                     "Rejected from admin action.",
                 )
 
+                success += 1
+
             except ValidationError as e:
 
                 self.message_user(
@@ -223,11 +245,12 @@ class ProposalAdmin(admin.ModelAdmin):
                     level=messages.ERROR,
                 )
 
-        self.message_user(
-            request,
-            "Selected proposals rejected.",
-            level=messages.SUCCESS,
-        )
+        if success:
+            self.message_user(
+                request,
+                f"{success} proposal(s) rejected.",
+                level=messages.SUCCESS,
+            )
 
     @admin.display(
         description="Status"
@@ -287,18 +310,31 @@ class BookCreateProposalAdmin(admin.ModelAdmin):
         "title",
         "author",
         "genre",
+        "created_book",
         "proposal",
     )
 
     search_fields = (
         "title",
         "author__name",
+        "created_book__title",
     )
 
     autocomplete_fields = (
         "author",
         "proposal",
+        "created_book",
     )
+
+    def get_readonly_fields(self, request, obj=None):
+
+        if obj and obj.proposal.status == Proposal.Status.APPLIED:
+            return [
+                field.name
+                for field in self.model._meta.fields
+            ]
+
+        return super().get_readonly_fields(request, obj)
 
 
 @admin.register(BookUpdateProposal)
