@@ -1,15 +1,19 @@
+# publishing/api/views.py
 from django.db.models import F
-from rest_framework import permissions
 from publishing.models import Proposal, Publisher
-from rest_framework import generics, status
+from rest_framework import generics, permissions, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .permissions import IsProposalPublisherMember, IsPublisherMember
-from .serializers import (BookCreateProposalSubmissionSerializer, BookUpdateProposalResponseSerializer, PriceChangeProposalResponseSerializer,
+from .serializers import (BookCreateProposalResponseSerializer,
+                          BookCreateProposalSubmissionSerializer,
+                          BookUpdateProposalResponseSerializer,
+                          BookUpdateProposalSubmissionSerializer,
+                          PriceChangeProposalResponseSerializer,
+                          PriceChangeProposalSubmissionSerializer,
                           ProposalDetailSerializer, ProposalListSerializer,
-                          ProposalSubmissionResponseSerializer,
-                          PublisherSerializer, BookUpdateProposalSubmissionSerializer, PriceChangeProposalSubmissionSerializer)
+                          PublisherSerializer)
 
 
 class MyPublishersView(generics.ListAPIView):
@@ -83,30 +87,28 @@ class ProposalDetailView(generics.RetrieveAPIView):
 class BookCreateProposalSubmissionView(generics.CreateAPIView):
     """
     Allows a publisher member to submit a new book creation proposal.
-    The request creates a Proposal + BookCreateProposal in SUBMITTED status.
     """
 
     serializer_class = BookCreateProposalSubmissionSerializer
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.get_serializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
 
         proposal = serializer.save()
 
-        response_data = {
-            "proposal_id": proposal.id,
-            "proposal_type": proposal.proposal_type,
-            "status": proposal.status,
-            "submitted_at": proposal.submitted_at,
-            "title": proposal.book_create.title,
-            "message": "Book creation proposal submitted successfully.",
-        }
-
-        response_serializer = ProposalSubmissionResponseSerializer( response_data )
-
-        return Response( response_serializer.data, status=status.HTTP_201_CREATED )
+        return Response(
+            BookCreateProposalResponseSerializer(
+                proposal.book_create
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 class BookUpdateProposalSubmissionView(generics.CreateAPIView):
     """
@@ -121,19 +123,6 @@ class BookUpdateProposalSubmissionView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         proposal = serializer.save()
-
-        response_data = {
-            "proposal_id": proposal.id,
-            "proposal_type": proposal.proposal_type,
-            "status": proposal.status,
-            "submitted_at": proposal.submitted_at,
-            "title": proposal.book_update.title,
-            "message": "Book update proposal submitted successfully.",
-        }
-
-        response_serializer = ProposalSubmissionResponseSerializer(
-            response_data
-        )
 
         return Response(
             BookUpdateProposalResponseSerializer(
@@ -150,10 +139,7 @@ class PriceChangeProposalCreateView(
         PriceChangeProposalSubmissionSerializer
     )
 
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
 

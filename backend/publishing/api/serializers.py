@@ -1,9 +1,12 @@
+# publishing/api/serializers.py
 from catalog.models import Book
 from django.utils import timezone
 from pricing.models import Price
 from publishing.models import (BookCreateProposal, BookUpdateProposal,
                                PriceChangeProposal, Proposal, Publisher,
                                PublisherMembership)
+from publishing.services.proposal_service import ProposalService
+from requests import Response
 from rest_framework import serializers
 
 
@@ -181,36 +184,97 @@ class BookCreateProposalSubmissionSerializer(serializers.ModelSerializer):
             "audio_file_path",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher):
         user = self.context["request"].user
 
-        is_member = PublisherMembership.objects.filter( publisher=publisher, user=user, is_active=True ).exists()
+        is_member = PublisherMembership.objects.filter(
+            publisher=publisher,
+            user=user,
+            is_active=True,
+        ).exists()
 
         if not is_member:
-            raise serializers.ValidationError( "You are not an active member of this publisher." )
+            raise serializers.ValidationError(
+                "You are not an active member of this publisher."
+            )
 
         return publisher
 
     def create(self, validated_data):
         publisher = validated_data.pop("publisher")
-        request = self.context["request"]
 
-        proposal = Proposal.objects.create( title=f"Create book: {validated_data['title']}", publisher=publisher, submitted_by=request.user, proposal_type=Proposal.ProposalType.BOOK_CREATE, status=Proposal.Status.SUBMITTED, submitted_at=timezone.now(), )
-
-        BookCreateProposal.objects.create(
-            proposal=proposal,
-            **validated_data
+        return ProposalService.submit_book_create(
+            publisher=publisher,
+            user=self.context["request"].user,
+            **validated_data,
         )
 
-        return proposal
+class BookCreateProposalResponseSerializer(
+    serializers.ModelSerializer
+):
+    proposal_id = serializers.IntegerField(
+        source="proposal.id"
+    )
 
-class ProposalSubmissionResponseSerializer(serializers.Serializer):
-    proposal_id = serializers.IntegerField()
-    proposal_type = serializers.CharField()
-    status = serializers.CharField()
-    submitted_at = serializers.DateTimeField()
-    title = serializers.CharField()
-    message = serializers.CharField()
+    proposal_type = serializers.CharField(
+        source="proposal.proposal_type"
+    )
+
+    status = serializers.CharField(
+        source="proposal.status"
+    )
+
+    submitted_at = serializers.DateTimeField(
+        source="proposal.submitted_at"
+    )
+
+    created_at = serializers.DateTimeField(
+        source="proposal.created_at"
+    )
+
+    author = serializers.SerializerMethodField()
+
+    proposed_book = serializers.SerializerMethodField()
+
+    message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BookCreateProposal
+
+        fields = (
+            "proposal_id",
+            "proposal_type",
+            "status",
+            "submitted_at",
+            "created_at",
+            "author",
+            "proposed_book",
+            "message",
+        )
+
+    def get_author(self, obj):
+        return {
+            "id": obj.author.id,
+            "name": obj.author.name,
+        }
+
+    def get_proposed_book(self, obj):
+        return {
+            "title": obj.title,
+            "isbn": obj.isbn,
+            "description": obj.description,
+            "cover_image_url": obj.cover_image_url,
+            "genre": obj.genre,
+            "is_digital": obj.is_digital,
+            "is_audio": obj.is_audio,
+            "digital_file_path": obj.digital_file_path,
+            "audio_file_path": obj.audio_file_path,
+        }
+
+    def get_message(self, obj):
+        return (
+            "Book creation proposal submitted successfully."
+        )
 
 class BookUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
     publisher_id = serializers.PrimaryKeyRelatedField(
@@ -234,11 +298,11 @@ class BookUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
             "audio_file_path",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher_id):
         user = self.context["request"].user
 
         is_member = PublisherMembership.objects.filter(
-            publisher=publisher,
+            publisher=publisher_id,
             user=user,
             is_active=True,
         ).exists()
@@ -248,44 +312,16 @@ class BookUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
                 "You are not an active member of this publisher."
             )
 
-        return publisher
+        return publisher_id
 
     def create(self, validated_data):
         publisher = validated_data.pop("publisher")
-        book = validated_data["book"]
-        request = self.context["request"]
 
-        proposal = Proposal.objects.create(
-            title=f"Update book: {book.title}",
+        return ProposalService.submit_book_update(
             publisher=publisher,
-            submitted_by=request.user,
-            proposal_type=Proposal.ProposalType.BOOK_UPDATE,
-            status=Proposal.Status.SUBMITTED,
-            submitted_at=timezone.now(),
-        )
-
-        BookUpdateProposal.objects.create(
-            proposal=proposal,
+            user=self.context["request"].user,
             **validated_data,
         )
-
-        return proposal
-
-    def validate(self, attrs):
-        book = attrs["book"]
-
-        exists = Proposal.objects.filter(
-            proposal_type=Proposal.ProposalType.BOOK_UPDATE,
-            status=Proposal.Status.SUBMITTED,
-            book_update__book=book,
-        ).exists()
-
-        if exists:
-            raise serializers.ValidationError(
-                "There is already a submitted update proposal for this book."
-            )
-
-        return attrs
 
 class BookUpdateProposalResponseSerializer(serializers.ModelSerializer):
 
@@ -363,8 +399,12 @@ class BookUpdateProposalResponseSerializer(serializers.ModelSerializer):
 
 class PriceChangeProposalSubmissionSerializer(serializers.Serializer):
 
-    publisher = serializers.PrimaryKeyRelatedField(
-        queryset=Publisher.objects.all(),
+    publisher_id = serializers.PrimaryKeyRelatedField(
+        source="publisher",
+        queryset=Publisher.objects.filter(
+            is_active=True,
+        ),
+        write_only=True,
     )
 
     book = serializers.PrimaryKeyRelatedField(
@@ -392,7 +432,6 @@ class PriceChangeProposalSubmissionSerializer(serializers.Serializer):
         required=False,
         allow_blank=True,
     )
-
 
     def validate(self, attrs):
 
@@ -424,38 +463,15 @@ class PriceChangeProposalSubmissionSerializer(serializers.Serializer):
 
         return attrs
 
-
     def create(self, validated_data):
 
-        publisher = validated_data.pop(
-            "publisher"
-        )
+        publisher = validated_data.pop("publisher")
 
-        book = validated_data.pop(
-            "book"
-        )
-
-        request = self.context["request"]
-
-
-        proposal = Proposal.objects.create(
-            title=f"Price update for {book.title}",
+        return ProposalService.submit_price_change(
             publisher=publisher,
-            submitted_by=request.user,
-            proposal_type=Proposal.ProposalType.PRICE_CHANGE,
-            status=Proposal.Status.SUBMITTED,
-            submitted_at=timezone.now(),
-        )
-
-
-        PriceChangeProposal.objects.create(
-            proposal=proposal,
-            book=book,
+            user=self.context["request"].user,
             **validated_data,
         )
-
-
-        return proposal
 
 class PriceChangeProposalResponseSerializer(serializers.ModelSerializer):
 
@@ -475,6 +491,10 @@ class PriceChangeProposalResponseSerializer(serializers.ModelSerializer):
         source="proposal.submitted_at"
     )
 
+    created_at = serializers.DateTimeField(
+        source="proposal.created_at"
+    )
+
     book = serializers.SerializerMethodField()
 
     requested_price = serializers.SerializerMethodField()
@@ -490,6 +510,7 @@ class PriceChangeProposalResponseSerializer(serializers.ModelSerializer):
             "proposal_type",
             "status",
             "submitted_at",
+            "created_at",
             "book",
             "requested_price",
             "reason",

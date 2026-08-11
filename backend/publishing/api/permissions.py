@@ -1,3 +1,4 @@
+# publishing/api/permissions.py
 from publishing.models import Proposal, PublisherMembership
 from rest_framework.permissions import BasePermission
 

@@ -222,7 +222,7 @@ class ProposalSubmissionAPITest(
         response = self.client.post(
             "/api/v1/publishing/proposals/price-change/",
             {
-                "publisher": self.publisher.id,
+                "publisher_id": self.publisher.id,
                 "book": self.book.id,
                 "value": "49.99",
                 "currency": "USD",

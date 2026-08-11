@@ -1,3 +1,4 @@
+# publishing/api/urls.py
 from django.urls import path
 
 from .views import MyPublishersView, PriceChangeProposalCreateView, PublisherProposalListView, ProposalDetailView, BookCreateProposalSubmissionView,BookUpdateProposalSubmissionView
