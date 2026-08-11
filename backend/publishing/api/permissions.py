@@ -1,11 +1,10 @@
-# publishing/api/permissions.py
-from publishing.models import Proposal, PublisherMembership
+from publishing.models import PublisherMembership
 from rest_framework.permissions import BasePermission
 
 
 class IsPublisherMember(BasePermission):
     """
-    Allows access only to active members of a publisher.
+    Allows access only to active members of an active publisher.
     """
 
     def has_permission(self, request, view):
@@ -15,11 +14,14 @@ class IsPublisherMember(BasePermission):
             publisher_id=publisher_id,
             user=request.user,
             is_active=True,
+            publisher__is_active=True,
         ).exists()
+
 
 class IsProposalPublisherMember(BasePermission):
     """
-    Allows access only to members of the proposal's publisher.
+    Allows access only to active members of the proposal's
+    active publisher.
     """
 
     def has_object_permission(self, request, view, obj):
@@ -27,4 +29,5 @@ class IsProposalPublisherMember(BasePermission):
             publisher=obj.publisher,
             user=request.user,
             is_active=True,
+            publisher__is_active=True,
         ).exists()

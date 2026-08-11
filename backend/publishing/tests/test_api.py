@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.utils import timezone as django_timezone
 
 from accounts.models import User
 from catalog.models import Author, Book
@@ -75,6 +76,27 @@ class PublishingAPITestCase(APITestCase):
             user=self.user
         )
 
+    def create_proposal(self, publisher, user):
+        proposal = Proposal.objects.create(
+            title="Test Proposal",
+            publisher=publisher,
+            submitted_by=user,
+            proposal_type=Proposal.ProposalType.BOOK_CREATE,
+            status=Proposal.Status.SUBMITTED,
+            submitted_at=django_timezone.now(),
+        )
+
+        BookCreateProposal.objects.create(
+            proposal=proposal,
+            author=self.author,
+            title="Proposed Book",
+            description="Proposed description",
+            genre="TECH",
+            isbn="9876543210123",
+        )
+
+        return proposal
+
 class PublisherAPITest(PublishingAPITestCase):
 
     def test_user_can_view_own_publishers(self):
@@ -117,6 +139,78 @@ class PublisherAPITest(PublishingAPITestCase):
         self.assertNotIn(
             "Other Publishing",
             names,
+        )
+
+    def test_inactive_membership_cannot_view_publisher_proposals(self):
+        membership = PublisherMembership.objects.get(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        membership.is_active = False
+        membership.save(update_fields=["is_active"])
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/proposals/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+
+    def test_member_cannot_view_inactive_publisher(self):
+        self.publisher.is_active = False
+        self.publisher.save(update_fields=["is_active"])
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/proposals/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_user_cannot_view_other_publishers_proposals(self):
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.other_publisher.id}/proposals/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_user_can_view_own_proposal(self):
+        proposal = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        response = self.client.get(
+            f"/api/v1/publishing/proposals/{proposal.id}/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_user_cannot_view_other_publishers_proposal(self):
+        proposal = self.create_proposal(
+            publisher=self.other_publisher,
+            user=self.other_user,
+        )
+
+        response = self.client.get(
+            f"/api/v1/publishing/proposals/{proposal.id}/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
         )
 
 class ProposalSubmissionAPITest(
@@ -255,7 +349,7 @@ class ProposalSubmissionAPITest(
         response = self.client.post(
             "/api/v1/publishing/proposals/book-create/",
             {
-                "publisher": self.other_publisher.id,
+                "publisher_id": self.other_publisher.id,
                 "title": "Unauthorized Book",
                 "description": "Should fail",
                 "genre": "TECH",
