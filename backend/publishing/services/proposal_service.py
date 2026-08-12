@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from ..models.catalog import BookCreateProposal, BookUpdateProposal, BookDeleteProposal
+from ..models.catalog import BookCreateProposal, BookUpdateProposal, BookDeleteProposal, AuthorCreateProposal, AuthorUpdateProposal
 from ..models.pricing import PriceChangeProposal
 from ..models.proposal import Proposal
 
@@ -123,6 +123,59 @@ class ProposalService:
             proposal=proposal,
             book=book,
             reason=reason,
+        )
+
+        return proposal
+
+    @staticmethod
+    @transaction.atomic
+    def submit_author_create(
+        publisher,
+        user,
+        name,
+        biography="",
+    ):
+        proposal = Proposal.objects.create(
+            title=f"Create author: {name}",
+            publisher=publisher,
+            submitted_by=user,
+            proposal_type=Proposal.ProposalType.AUTHOR_CREATE,
+            status=Proposal.Status.SUBMITTED,
+            submitted_at=timezone.now(),
+        )
+
+        AuthorCreateProposal.objects.create(
+            proposal=proposal,
+            name=name,
+            biography=biography,
+        )
+
+        return proposal
+
+
+    @staticmethod
+    @transaction.atomic
+    def submit_author_update(
+        publisher,
+        user,
+        author,
+        name,
+        biography="",
+    ):
+        proposal = Proposal.objects.create(
+            title=f"Update author: {author.name}",
+            publisher=publisher,
+            submitted_by=user,
+            proposal_type=Proposal.ProposalType.AUTHOR_UPDATE,
+            status=Proposal.Status.SUBMITTED,
+            submitted_at=timezone.now(),
+        )
+
+        AuthorUpdateProposal.objects.create(
+            proposal=proposal,
+            author=author,
+            name=name,
+            biography=biography,
         )
 
         return proposal
@@ -261,19 +314,12 @@ class ProposalService:
         """
 
         handlers = {
-            Proposal.ProposalType.BOOK_CREATE:
-                ProposalService._apply_book_create,
-
-            Proposal.ProposalType.BOOK_UPDATE:
-                ProposalService._apply_book_update,
-
-            Proposal.ProposalType.PRICE_CHANGE:
-                ProposalService._apply_price_change,
-
-            Proposal.ProposalType.BOOK_DELETE:
-                ProposalService._apply_book_delete,
-
-            # TODO: AUTHOR_CREATE, AUTHOR_UPDATE, BOOK_DELETE
+            Proposal.ProposalType.BOOK_CREATE: ProposalService._apply_book_create,
+            Proposal.ProposalType.BOOK_UPDATE: ProposalService._apply_book_update,
+            Proposal.ProposalType.BOOK_DELETE: ProposalService._apply_book_delete,
+            Proposal.ProposalType.AUTHOR_CREATE: ProposalService._apply_author_create,
+            Proposal.ProposalType.AUTHOR_UPDATE: ProposalService._apply_author_update,
+            Proposal.ProposalType.PRICE_CHANGE: ProposalService._apply_price_change,
         }
 
         handler = handlers.get(
@@ -440,3 +486,37 @@ class ProposalService:
             currency=price_proposal.currency,
             min_price=price_proposal.min_price,
         )
+
+    @staticmethod
+    def _apply_author_create(proposal):
+        try:
+            author_proposal = proposal.author_create
+
+        except AuthorCreateProposal.DoesNotExist:
+            raise ValidationError(
+                "Author creation details are missing."
+            )
+
+        return Author.objects.create(
+            name=author_proposal.name,
+            biography=author_proposal.biography,
+        )
+
+
+    @staticmethod
+    def _apply_author_update(proposal):
+        try:
+            update = proposal.author_update
+
+        except AuthorUpdateProposal.DoesNotExist:
+            raise ValidationError(
+                "Author update details are missing."
+            )
+
+        author = update.author
+
+        author.name = update.name
+        author.biography = update.biography
+        author.save()
+
+        return author

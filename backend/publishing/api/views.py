@@ -15,7 +15,10 @@ from .serializers import (BookCreateProposalResponseSerializer,
                           PriceChangeProposalResponseSerializer,
                           PriceChangeProposalSubmissionSerializer,
                           PublisherProposalDetailSerializer, ProposalListSerializer,
-                          PublisherSerializer)
+                          PublisherSerializer, AuthorCreateProposalResponseSerializer,
+                          AuthorCreateProposalSubmissionSerializer,
+                          AuthorUpdateProposalResponseSerializer,
+                          AuthorUpdateProposalSubmissionSerializer,)
 
 
 class MyPublishersView(generics.ListAPIView):
@@ -210,6 +213,49 @@ class PriceChangeProposalCreateView(
         return Response(
             PriceChangeProposalResponseSerializer(
                 proposal.price_change
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+class AuthorCreateProposalSubmissionView(generics.CreateAPIView):
+    """
+    Allows a publisher member to submit a new author creation proposal.
+    """
+
+    serializer_class = AuthorCreateProposalSubmissionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        proposal = serializer.save()
+
+        return Response(
+            AuthorCreateProposalResponseSerializer(
+                proposal.author_create
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AuthorUpdateProposalSubmissionView(generics.CreateAPIView):
+    """
+    Allows a publisher member to submit an author update proposal.
+    """
+
+    serializer_class = AuthorUpdateProposalSubmissionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        proposal = serializer.save()
+
+        return Response(
+            AuthorUpdateProposalResponseSerializer(
+                proposal.author_update
             ).data,
             status=status.HTTP_201_CREATED,
         )

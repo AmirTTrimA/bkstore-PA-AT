@@ -1,32 +1,58 @@
 # publishing/api/urls.py
 from django.urls import path
 
-from .views import MyPublishersView, PriceChangeProposalCreateView, PublisherProposalListView, ProposalDetailView, BookCreateProposalSubmissionView,BookUpdateProposalSubmissionView, BookDeleteProposalSubmissionView
+from .views import (BookCreateProposalSubmissionView,
+                    BookDeleteProposalSubmissionView,
+                    BookUpdateProposalSubmissionView, MyPublishersView,
+                    PriceChangeProposalCreateView, ProposalDetailView,
+                    PublisherProposalListView, AuthorCreateProposalSubmissionView,
+                    AuthorUpdateProposalSubmissionView
+                    )
 
 app_name = "publishing-api"
 
 urlpatterns = [
-    path( "publishers/", MyPublishersView.as_view(), name="my-publishers" ),
-    path( "publishers/<int:publisher_id>/proposals/", PublisherProposalListView.as_view(), name="publisher-proposals" ),
     path(
-    "proposals/<int:pk>/",
-    ProposalDetailView.as_view(),
-    name="proposal-detail",
+        "publishers/",
+        MyPublishersView.as_view(),
+        name="my-publishers" ),
+    path(
+        "publishers/<int:publisher_id>/proposals/",
+        PublisherProposalListView.as_view(),
+        name="publisher-proposals" ),
+    path(
+        "proposals/<int:pk>/",
+        ProposalDetailView.as_view(),
+        name="proposal-detail",
+        ),
+    path(
+        "proposals/book-create/",
+        BookCreateProposalSubmissionView.as_view(),
+        name="proposal-book-create" ),
+    path(
+        "proposals/book-update/",
+        BookUpdateProposalSubmissionView.as_view(),
+        name="proposal-book-update",
     ),
-    path( "proposals/book-create/", BookCreateProposalSubmissionView.as_view(), name="proposal-book-create" ),
     path(
-    "proposals/book-update/",
-    BookUpdateProposalSubmissionView.as_view(),
-    name="proposal-book-update",
+        "proposals/price-change/",
+        PriceChangeProposalCreateView.as_view(),
+        name="proposal-price-change",
     ),
     path(
-    "proposals/price-change/",
-    PriceChangeProposalCreateView.as_view(),
-    name="proposal-price-change",
+        "proposals/book-delete/",
+        BookDeleteProposalSubmissionView.as_view(),
+        name="proposal-book-delete",
     ),
     path(
-    "proposals/book-delete/",
-    BookDeleteProposalSubmissionView.as_view(),
-    name="proposal-book-delete",
+        "proposals/author-create/",
+        AuthorCreateProposalSubmissionView.as_view(),
+        name="proposal-author-create",
+    ),
+
+    path(
+        "proposals/author-update/",
+        AuthorUpdateProposalSubmissionView.as_view(),
+        name="proposal-author-update",
     ),
 ]

@@ -538,3 +538,116 @@ class ProposalSubmissionAPITest(
         self.assertTrue(
             Book.objects.filter(id=self.book.id).exists()
         )
+
+    def test_submit_author_create_proposal(self):
+        response = self.client.post(
+            "/api/v1/publishing/proposals/author-create/",
+            {
+                "publisher_id": self.publisher.id,
+                "name": "New Proposal Author",
+                "biography": "Biography for proposal testing.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        proposal = Proposal.objects.get(
+            id=response.data["proposal_id"]
+        )
+
+        self.assertEqual(
+            proposal.proposal_type,
+            Proposal.ProposalType.AUTHOR_CREATE,
+        )
+
+        self.assertEqual(
+            proposal.author_create.name,
+            "New Proposal Author",
+        )
+
+
+    def test_submit_author_update_proposal(self):
+        response = self.client.post(
+            "/api/v1/publishing/proposals/author-update/",
+            {
+                "publisher_id": self.publisher.id,
+                "author": self.author.id,
+                "name": "Updated Author Name",
+                "biography": "Updated biography for testing.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        proposal = Proposal.objects.get(
+            id=response.data["proposal_id"]
+        )
+
+        self.assertEqual(
+            proposal.proposal_type,
+            Proposal.ProposalType.AUTHOR_UPDATE,
+        )
+
+        self.assertEqual(
+            proposal.author_update.author,
+            self.author,
+        )
+
+
+    def test_cannot_submit_duplicate_author_update_proposal(self):
+        self.client.post(
+            "/api/v1/publishing/proposals/author-update/",
+            {
+                "publisher_id": self.publisher.id,
+                "author": self.author.id,
+                "name": "First Update",
+                "biography": "First biography update.",
+            },
+            format="json",
+        )
+
+        response = self.client.post(
+            "/api/v1/publishing/proposals/author-update/",
+            {
+                "publisher_id": self.publisher.id,
+                "author": self.author.id,
+                "name": "Second Update",
+                "biography": "Second biography update.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+
+    def test_author_is_not_modified_before_approval(self):
+        original_name = self.author.name
+
+        self.client.post(
+            "/api/v1/publishing/proposals/author-update/",
+            {
+                "publisher_id": self.publisher.id,
+                "author": self.author.id,
+                "name": "Premature Change",
+                "biography": "Should not be applied yet.",
+            },
+            format="json",
+        )
+
+        self.author.refresh_from_db()
+
+        self.assertEqual(
+            self.author.name,
+            original_name,
+        )

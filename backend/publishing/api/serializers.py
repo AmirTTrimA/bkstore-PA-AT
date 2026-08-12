@@ -4,7 +4,7 @@ from django.utils import timezone
 from pricing.models import Price
 from publishing.models import (BookCreateProposal, BookUpdateProposal, BookDeleteProposal,
                                PriceChangeProposal, Proposal, Publisher,
-                               PublisherMembership)
+                               PublisherMembership, AuthorCreateProposal, AuthorUpdateProposal)
 from publishing.services.proposal_service import ProposalService
 from requests import Response
 from rest_framework import serializers
@@ -693,3 +693,167 @@ class PriceChangeProposalResponseSerializer(serializers.ModelSerializer):
         return (
             "Price change proposal submitted successfully."
         )
+
+class AuthorCreateProposalSubmissionSerializer(serializers.ModelSerializer):
+    publisher_id = serializers.PrimaryKeyRelatedField(
+        source="publisher",
+        queryset=Publisher.objects.filter(is_active=True),
+        write_only=True,
+    )
+
+    class Meta:
+        model = AuthorCreateProposal
+
+        fields = [
+            "publisher_id",
+            "name",
+            "biography",
+        ]
+
+    def validate_publisher(self, publisher):
+        user = self.context["request"].user
+
+        is_member = PublisherMembership.objects.filter(
+            publisher=publisher,
+            user=user,
+            is_active=True,
+        ).exists()
+
+        if not is_member:
+            raise serializers.ValidationError(
+                "You are not an active member of this publisher."
+            )
+
+        return publisher
+
+    def create(self, validated_data):
+        publisher = validated_data.pop("publisher")
+
+        return ProposalService.submit_author_create(
+            publisher=publisher,
+            user=self.context["request"].user,
+            **validated_data,
+        )
+
+
+class AuthorCreateProposalResponseSerializer(serializers.ModelSerializer):
+    proposal_id = serializers.IntegerField(source="proposal.id")
+    proposal_type = serializers.CharField(source="proposal.proposal_type")
+    status = serializers.CharField(source="proposal.status")
+    submitted_at = serializers.DateTimeField(source="proposal.submitted_at")
+
+    message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuthorCreateProposal
+
+        fields = (
+            "proposal_id",
+            "proposal_type",
+            "status",
+            "submitted_at",
+            "name",
+            "biography",
+            "message",
+        )
+
+    def get_message(self, obj):
+        return "Author creation proposal submitted successfully."
+
+
+class AuthorUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
+    publisher_id = serializers.PrimaryKeyRelatedField(
+        source="publisher",
+        queryset=Publisher.objects.filter(is_active=True),
+        write_only=True,
+    )
+
+    class Meta:
+        model = AuthorUpdateProposal
+
+        fields = [
+            "publisher_id",
+            "author",
+            "name",
+            "biography",
+        ]
+
+    def validate_publisher(self, publisher):
+        user = self.context["request"].user
+
+        is_member = PublisherMembership.objects.filter(
+            publisher=publisher,
+            user=user,
+            is_active=True,
+        ).exists()
+
+        if not is_member:
+            raise serializers.ValidationError(
+                "You are not an active member of this publisher."
+            )
+
+        return publisher
+
+    def validate(self, attrs):
+        author = attrs["author"]
+
+        exists = Proposal.objects.filter(
+            proposal_type=Proposal.ProposalType.AUTHOR_UPDATE,
+            status=Proposal.Status.SUBMITTED,
+            author_update__author=author,
+        ).exists()
+
+        if exists:
+            raise serializers.ValidationError(
+                "There is already a submitted update proposal for this author."
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        publisher = validated_data.pop("publisher")
+
+        return ProposalService.submit_author_update(
+            publisher=publisher,
+            user=self.context["request"].user,
+            **validated_data,
+        )
+
+
+class AuthorUpdateProposalResponseSerializer(serializers.ModelSerializer):
+    proposal_id = serializers.IntegerField(source="proposal.id")
+    proposal_type = serializers.CharField(source="proposal.proposal_type")
+    status = serializers.CharField(source="proposal.status")
+    submitted_at = serializers.DateTimeField(source="proposal.submitted_at")
+
+    author = serializers.SerializerMethodField()
+    proposed_changes = serializers.SerializerMethodField()
+    message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuthorUpdateProposal
+
+        fields = (
+            "proposal_id",
+            "proposal_type",
+            "status",
+            "submitted_at",
+            "author",
+            "proposed_changes",
+            "message",
+        )
+
+    def get_author(self, obj):
+        return {
+            "id": obj.author.id,
+            "current_name": obj.author.name,
+        }
+
+    def get_proposed_changes(self, obj):
+        return {
+            "name": obj.name,
+            "biography": obj.biography,
+        }
+
+    def get_message(self, obj):
+        return "Author update proposal submitted successfully."
