@@ -52,13 +52,15 @@ class PublisherProposalListView(generics.ListAPIView):
     ]
 
     def get_queryset(self):
-        return (
+
+        queryset = (
             Proposal.objects
-            .filter(publisher_id=self.kwargs["publisher_id"])
+            .filter(
+                publisher_id=self.kwargs["publisher_id"]
+            )
             .select_related(
                 "publisher",
                 "submitted_by",
-                "reviewed_by",
             )
             .order_by(
                 "-submitted_at",
@@ -66,6 +68,25 @@ class PublisherProposalListView(generics.ListAPIView):
             )
         )
 
+        status_filter = self.request.query_params.get(
+            "status"
+        )
+
+        proposal_type_filter = self.request.query_params.get(
+            "proposal_type"
+        )
+
+        if status_filter in Proposal.Status.values:
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        if proposal_type_filter in Proposal.ProposalType.values:
+            queryset = queryset.filter(
+                proposal_type=proposal_type_filter
+            )
+
+        return queryset
 
 class ProposalDetailView(generics.RetrieveAPIView):
     """

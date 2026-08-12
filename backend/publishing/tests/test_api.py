@@ -231,6 +231,73 @@ class PublisherAPITest(PublishingAPITestCase):
         self.assertNotIn("review_notes", response.data)
         self.assertNotIn("reviewed_by_username", response.data)
 
+    def test_can_filter_proposals_by_status(self):
+
+        submitted = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        rejected = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        rejected.status = Proposal.Status.REJECTED
+        rejected.save(update_fields=["status"])
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/proposals/?status=SUBMITTED"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        proposal_ids = [
+            item["id"]
+            for item in response.data["results"]
+        ]
+
+        self.assertIn(submitted.id, proposal_ids)
+        self.assertNotIn(rejected.id, proposal_ids)
+
+    def test_can_filter_proposals_by_type(self):
+
+        proposal = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/proposals/?proposal_type=BOOK_CREATE"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        proposal_ids = [
+            item["id"]
+            for item in response.data["results"]
+        ]
+
+        self.assertIn(proposal.id, proposal_ids)
+
+    def test_invalid_filters_are_ignored(self):
+
+        self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/proposals/?status=INVALID"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertGreaterEqual(
+            response.data["count"],
+            1,
+        )
+
 class ProposalSubmissionAPITest(
     PublishingAPITestCase
 ):
