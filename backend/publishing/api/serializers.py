@@ -2,7 +2,7 @@
 from catalog.models import Book
 from django.utils import timezone
 from pricing.models import Price
-from publishing.models import (BookCreateProposal, BookUpdateProposal,
+from publishing.models import (BookCreateProposal, BookUpdateProposal, BookDeleteProposal,
                                PriceChangeProposal, Proposal, Publisher,
                                PublisherMembership)
 from publishing.services.proposal_service import ProposalService
@@ -447,6 +447,107 @@ class BookUpdateProposalResponseSerializer(serializers.ModelSerializer):
             "Book update proposal submitted successfully."
         )
 
+
+class BookDeleteProposalSubmissionSerializer(serializers.ModelSerializer):
+    publisher_id = serializers.PrimaryKeyRelatedField(
+        source="publisher",
+        queryset=Publisher.objects.filter(is_active=True),
+        write_only=True,
+    )
+
+    class Meta:
+        model = BookDeleteProposal
+
+        fields = [
+            "publisher_id",
+            "book",
+            "reason",
+        ]
+
+    def validate_publisher(self, publisher):
+        user = self.context["request"].user
+
+        is_member = PublisherMembership.objects.filter(
+            publisher=publisher,
+            user=user,
+            is_active=True,
+        ).exists()
+
+        if not is_member:
+            raise serializers.ValidationError(
+                "You are not an active member of this publisher."
+            )
+
+        return publisher
+
+    def validate(self, attrs):
+        book = attrs["book"]
+
+        exists = Proposal.objects.filter(
+            proposal_type=Proposal.ProposalType.BOOK_DELETE,
+            status=Proposal.Status.SUBMITTED,
+            book_delete__book=book,
+        ).exists()
+
+        if exists:
+            raise serializers.ValidationError(
+                "There is already a submitted deletion proposal for this book."
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        publisher = validated_data.pop("publisher")
+
+        return ProposalService.submit_book_delete(
+            publisher=publisher,
+            user=self.context["request"].user,
+            **validated_data,
+        )
+
+class BookDeleteProposalResponseSerializer(serializers.ModelSerializer):
+    proposal_id = serializers.IntegerField(
+        source="proposal.id"
+    )
+
+    proposal_type = serializers.CharField(
+        source="proposal.proposal_type"
+    )
+
+    status = serializers.CharField(
+        source="proposal.status"
+    )
+
+    submitted_at = serializers.DateTimeField(
+        source="proposal.submitted_at"
+    )
+
+    book = serializers.SerializerMethodField()
+
+    message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BookDeleteProposal
+
+        fields = (
+            "proposal_id",
+            "proposal_type",
+            "status",
+            "submitted_at",
+            "book",
+            "reason",
+            "message",
+        )
+
+    def get_book(self, obj):
+        return {
+            "id": obj.book.id,
+            "title": obj.book.title,
+            "isbn": obj.book.isbn,
+        }
+
+    def get_message(self, obj):
+        return "Book deletion proposal submitted successfully."
 
 class PriceChangeProposalSubmissionSerializer(serializers.Serializer):
 

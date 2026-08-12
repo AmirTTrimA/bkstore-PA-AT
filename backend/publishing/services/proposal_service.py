@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from ..models.catalog import BookCreateProposal, BookUpdateProposal
+from ..models.catalog import BookCreateProposal, BookUpdateProposal, BookDeleteProposal
 from ..models.pricing import PriceChangeProposal
 from ..models.proposal import Proposal
 
@@ -94,6 +94,35 @@ class ProposalService:
         BookUpdateProposal.objects.create(
             proposal=proposal,
             **validated_data,
+        )
+
+        return proposal
+
+    @staticmethod
+    @transaction.atomic
+    def submit_book_delete(
+        publisher,
+        user,
+        book,
+        reason,
+    ):
+        """
+        Creates a submitted book deletion proposal.
+        """
+
+        proposal = Proposal.objects.create(
+            title=f"Delete book: {book.title}",
+            publisher=publisher,
+            submitted_by=user,
+            proposal_type=Proposal.ProposalType.BOOK_DELETE,
+            status=Proposal.Status.SUBMITTED,
+            submitted_at=timezone.now(),
+        )
+
+        BookDeleteProposal.objects.create(
+            proposal=proposal,
+            book=book,
+            reason=reason,
         )
 
         return proposal
@@ -241,6 +270,9 @@ class ProposalService:
             Proposal.ProposalType.PRICE_CHANGE:
                 ProposalService._apply_price_change,
 
+            Proposal.ProposalType.BOOK_DELETE:
+                ProposalService._apply_book_delete,
+
             # TODO: AUTHOR_CREATE, AUTHOR_UPDATE, BOOK_DELETE
         }
 
@@ -356,6 +388,32 @@ class ProposalService:
         book.save()
 
         return book
+
+    @staticmethod
+    def _apply_book_delete(proposal):
+        """
+        Deletes a book from the catalog based on an approved proposal.
+        """
+
+        try:
+            delete_proposal = proposal.book_delete
+
+        except BookDeleteProposal.DoesNotExist:
+            raise ValidationError(
+                "Book deletion details are missing."
+            )
+
+        book = delete_proposal.book
+
+        deleted_book_id = book.id
+        deleted_book_title = book.title
+
+        book.delete()
+
+        return {
+            "deleted_book_id": deleted_book_id,
+            "deleted_book_title": deleted_book_title,
+        }
 
     @staticmethod
     def _apply_price_change(proposal):

@@ -1,7 +1,7 @@
 # publishing/api/urls.py
 from django.urls import path
 
-from .views import MyPublishersView, PriceChangeProposalCreateView, PublisherProposalListView, ProposalDetailView, BookCreateProposalSubmissionView,BookUpdateProposalSubmissionView
+from .views import MyPublishersView, PriceChangeProposalCreateView, PublisherProposalListView, ProposalDetailView, BookCreateProposalSubmissionView,BookUpdateProposalSubmissionView, BookDeleteProposalSubmissionView
 
 app_name = "publishing-api"
 
@@ -23,5 +23,10 @@ urlpatterns = [
     "proposals/price-change/",
     PriceChangeProposalCreateView.as_view(),
     name="proposal-price-change",
+    ),
+    path(
+    "proposals/book-delete/",
+    BookDeleteProposalSubmissionView.as_view(),
+    name="proposal-book-delete",
     ),
 ]

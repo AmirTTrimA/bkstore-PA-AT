@@ -10,6 +10,8 @@ from .serializers import (BookCreateProposalResponseSerializer,
                           BookCreateProposalSubmissionSerializer,
                           BookUpdateProposalResponseSerializer,
                           BookUpdateProposalSubmissionSerializer,
+                          BookDeleteProposalSubmissionSerializer,
+                          BookDeleteProposalResponseSerializer,
                           PriceChangeProposalResponseSerializer,
                           PriceChangeProposalSubmissionSerializer,
                           PublisherProposalDetailSerializer, ProposalListSerializer,
@@ -148,6 +150,36 @@ class BookUpdateProposalSubmissionView(generics.CreateAPIView):
         return Response(
             BookUpdateProposalResponseSerializer(
                 proposal.book_update
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+class BookDeleteProposalSubmissionView(generics.CreateAPIView):
+    """
+    Allows a publisher member to submit a book deletion proposal.
+    """
+
+    serializer_class = BookDeleteProposalSubmissionSerializer
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        proposal = serializer.save()
+
+        return Response(
+            BookDeleteProposalResponseSerializer(
+                proposal.book_delete
             ).data,
             status=status.HTTP_201_CREATED,
         )

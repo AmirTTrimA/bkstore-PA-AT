@@ -490,3 +490,51 @@ class ProposalSubmissionAPITest(
             Book.objects.count(),
             books_before,
         )
+
+    def test_submit_book_delete_proposal(self):
+
+        response = self.client.post(
+            "/api/v1/publishing/proposals/book-delete/",
+            {
+                "publisher_id": self.publisher.id,
+                "book": self.book.id,
+                "reason": "Duplicate catalog entry.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        proposal = Proposal.objects.get(
+            id=response.data["proposal_id"]
+        )
+
+        self.assertEqual(
+            proposal.proposal_type,
+            Proposal.ProposalType.BOOK_DELETE,
+        )
+
+        self.assertEqual(
+            proposal.book_delete.book,
+            self.book,
+        )
+
+
+    def test_book_is_not_deleted_before_approval(self):
+
+        self.client.post(
+            "/api/v1/publishing/proposals/book-delete/",
+            {
+                "publisher_id": self.publisher.id,
+                "book": self.book.id,
+                "reason": "Duplicate catalog entry.",
+            },
+            format="json",
+        )
+
+        self.assertTrue(
+            Book.objects.filter(id=self.book.id).exists()
+        )
