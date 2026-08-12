@@ -51,9 +51,11 @@ INSTALLED_APPS = [
     "cart",
     "content",
     "publishing",
+    "corsheaders",  # For handling CORS in development
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # For handling CORS in development
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",  # For bilingual support
@@ -246,3 +248,10 @@ CELERY_BEAT_SCHEDULE = {
     },
     # Note: send_order_confirmation_email is triggered immediately by the CheckoutView, not scheduled.
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
