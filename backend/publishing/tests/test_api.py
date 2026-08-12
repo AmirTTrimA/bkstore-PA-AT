@@ -213,6 +213,24 @@ class PublisherAPITest(PublishingAPITestCase):
             status.HTTP_403_FORBIDDEN,
         )
 
+    def test_proposal_detail_hides_internal_review_fields(self):
+        proposal = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        proposal.review_notes = "Internal moderation note"
+        proposal.save(update_fields=["review_notes"])
+
+        response = self.client.get(
+            f"/api/v1/publishing/proposals/{proposal.id}/"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertNotIn("review_notes", response.data)
+        self.assertNotIn("reviewed_by_username", response.data)
+
 class ProposalSubmissionAPITest(
     PublishingAPITestCase
 ):

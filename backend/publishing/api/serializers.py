@@ -112,7 +112,7 @@ class PriceChangeProposalDetailSerializer(serializers.ModelSerializer):
             "reason",
         ]
 
-class ProposalDetailSerializer(serializers.ModelSerializer):
+class AdminProposalDetailSerializer(serializers.ModelSerializer):
     publisher_name = serializers.CharField(
         source="publisher.name",
         read_only=True,
@@ -161,6 +161,57 @@ class ProposalDetailSerializer(serializers.ModelSerializer):
         if obj.proposal_type == Proposal.ProposalType.PRICE_CHANGE:
             if hasattr(obj, "price_change"):
                 return PriceChangeProposalDetailSerializer( obj.price_change ).data
+
+        return None
+
+class PublisherProposalDetailSerializer(serializers.ModelSerializer):
+    publisher_name = serializers.CharField(
+        source="publisher.name",
+        read_only=True,
+    )
+
+    submitted_by_username = serializers.CharField(
+        source="submitted_by.username",
+        read_only=True,
+    )
+
+    details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Proposal
+        fields = [
+            "id",
+            "title",
+            "proposal_type",
+            "status",
+            "publisher_name",
+            "submitted_by_username",
+            "created_at",
+            "submitted_at",
+            "reviewed_at",
+            "applied_at",
+            "details",
+        ]
+
+    def get_details(self, obj):
+
+        if obj.proposal_type == Proposal.ProposalType.BOOK_CREATE:
+            if hasattr(obj, "book_create"):
+                return BookCreateProposalDetailSerializer(
+                    obj.book_create
+                ).data
+
+        if obj.proposal_type == Proposal.ProposalType.BOOK_UPDATE:
+            if hasattr(obj, "book_update"):
+                return BookUpdateProposalDetailSerializer(
+                    obj.book_update
+                ).data
+
+        if obj.proposal_type == Proposal.ProposalType.PRICE_CHANGE:
+            if hasattr(obj, "price_change"):
+                return PriceChangeProposalDetailSerializer(
+                    obj.price_change
+                ).data
 
         return None
 

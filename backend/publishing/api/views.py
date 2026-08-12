@@ -12,7 +12,7 @@ from .serializers import (BookCreateProposalResponseSerializer,
                           BookUpdateProposalSubmissionSerializer,
                           PriceChangeProposalResponseSerializer,
                           PriceChangeProposalSubmissionSerializer,
-                          ProposalDetailSerializer, ProposalListSerializer,
+                          PublisherProposalDetailSerializer, ProposalListSerializer,
                           PublisherSerializer)
 
 
@@ -73,7 +73,7 @@ class ProposalDetailView(generics.RetrieveAPIView):
     Access is restricted to members of the proposal's publisher.
     """
 
-    serializer_class = ProposalDetailSerializer
+    serializer_class = PublisherProposalDetailSerializer
     permission_classes = [
         IsAuthenticated,
         IsProposalPublisherMember,
@@ -81,7 +81,7 @@ class ProposalDetailView(generics.RetrieveAPIView):
 
     queryset = (
         Proposal.objects
-        .select_related( "publisher", "submitted_by", "reviewed_by" )
+        .select_related( "publisher", "submitted_by" )
     )
 
 class BookCreateProposalSubmissionView(generics.CreateAPIView):
