@@ -7,7 +7,7 @@ from requests import Response  # For type hinting
 
 from accounts.models import User  # For type hinting
 from wallet.models.transaction import WalletTransaction
-from catalog.models import Book
+from catalog.models import Book, BookFormat
 from content.models import License
 from django.db import transaction
 from django.db.models import (  # F is not used yet, but kept for future queries
@@ -30,6 +30,7 @@ MINIMUM_PRICE_FLOOR = Decimal('1.00')
 @dataclass
 class SnapshotItem:
     book: Book
+    book_format: BookFormat
     quantity: int
     unit_price: Decimal
     snapshot_title: str
@@ -96,10 +97,12 @@ class CheckoutService:
         for cart_item in cart.items.select_related(
             "book",
             "book__author",
+            "book_format",
         ):
 
             result = PricingEngine(
                 book=cart_item.book,
+                book_format=cart_item.book_format,
                 user=self.user,
             ).calculate(
                 coupon_code=coupon_code,
@@ -118,6 +121,7 @@ class CheckoutService:
             items.append(
                 SnapshotItem(
                     book=cart_item.book,
+                    book_format=cart_item.book_format,
                     quantity=cart_item.quantity,
                     unit_price=result.final_price,
                     snapshot_title=cart_item.book.title,
@@ -167,6 +171,7 @@ class CheckoutService:
                 OrderItem(
                     order=order,
                     book=item.book,
+                    book_format=item.book_format,
                     quantity=item.quantity,
                     snapshot_price=item.unit_price,
                     snapshot_title=item.snapshot_title,

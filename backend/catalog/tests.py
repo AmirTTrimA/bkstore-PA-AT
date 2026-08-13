@@ -1,6 +1,8 @@
 # catalog/tests.py
 from decimal import Decimal
+from django.utils import timezone
 
+from pricing.models import Price
 from catalog.models import Author, Book
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -464,3 +466,58 @@ class BookFormatModelTest(APITestCase):
         )
 
         self.assertEqual(book.formats.count(), 2)
+
+class BookFormatApiTest(APITestCase):
+    def test_book_detail_includes_formats(self):
+        author = Author.objects.create(name="API Author")
+
+        book = Book.objects.create(
+            author=author,
+            title="API Book",
+            slug="api-book",
+            isbn="9784444444444",
+            description="Test",
+            genre="SCI_FI",
+        )
+
+        physical = BookFormat.objects.create(
+            book=book,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
+        digital = BookFormat.objects.create(
+            book=book,
+            format_type=BookFormat.FormatType.DIGITAL,
+        )
+
+        Price.objects.create(
+            book=book,
+            book_format=physical,
+            value=Decimal("30.00"),
+            currency="USD",
+            effective_from=timezone.now(),
+        )
+
+        Price.objects.create(
+            book=book,
+            book_format=digital,
+            value=Decimal("20.00"),
+            currency="USD",
+            effective_from=timezone.now(),
+        )
+
+        response = self.client.get(
+            f"/api/v1/books/{book.id}/"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("formats", response.data)
+        self.assertEqual(len(response.data["formats"]), 2)
+
+        formats = {
+            item["type"]: item
+            for item in response.data["formats"]
+        }
+
+        self.assertEqual(formats["PHYSICAL"]["price"], "30.00")
+        self.assertEqual(formats["DIGITAL"]["price"], "20.00")

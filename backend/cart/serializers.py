@@ -1,7 +1,7 @@
 # cart/serilaizers.py
 from decimal import Decimal  # 🔑 NEW: Import for safe decimal calculation
 
-from catalog.models import Book  # To check if book exists
+from catalog.models import Book, BookFormat  # To check if book exists
 from django.utils.translation import gettext_lazy as _
 from pricing.models import Price
 from rest_framework import serializers
@@ -15,51 +15,77 @@ from .models import Cart, Order, OrderItem, WishlistItem
 
 class CartItemInputSerializer(serializers.Serializer):
     """
-    Serializer for inputting data to modify the cart (add/update/remove item).
+    Serializer for adding, updating, and removing cart items.
     """
 
     book_id = serializers.IntegerField(required=True)
-    quantity = serializers.IntegerField(
-        min_value=1, required=False
-    )  # Optional for deletion
 
-    def validate_book_id(self, value):
-        """Checks if the book ID is valid before processing the cart action."""
+    format_id = serializers.IntegerField(required=True)
+
+    quantity = serializers.IntegerField(
+        min_value=1,
+        required=False,
+    )
+
+    def validate(self, attrs):
+        book_id = attrs["book_id"]
+        format_id = attrs["format_id"]
+
         try:
-            Book.objects.get(pk=value)
+            book = Book.objects.get(pk=book_id)
         except Book.DoesNotExist:
-            raise serializers.ValidationError(_("Book with this ID does not exist."))
-        return value
+            raise serializers.ValidationError({
+                "book_id": _("Book with this ID does not exist.")
+            })
+
+        try:
+            book_format = book.formats.get(
+                pk=format_id,
+                is_available=True,
+            )
+        except BookFormat.DoesNotExist:
+            raise serializers.ValidationError({
+                "format_id": _(
+                    "This format does not exist, does not belong "
+                    "to this book, or is unavailable."
+                )
+            })
+
+        attrs["book"] = book
+        attrs["book_format"] = book_format
+
+        return attrs
 
 
 class CartItemOutputSerializer(serializers.Serializer):
     """
-    Serializer to represent a single item in the cart (used for displaying the current state).
-    Note: This is used to display the final cart state in the views.
+    Serializer for displaying the current cart.
     """
 
     book_id = serializers.IntegerField()
     title = serializers.CharField()
+
+    format_id = serializers.IntegerField()
+    format_type = serializers.CharField()
+
     quantity = serializers.IntegerField()
-    # 🔑 CRITICAL CHANGE: subtotal is dynamic (SerializerMethodField)
+
     subtotal = serializers.SerializerMethodField()
-    cover_image_url = serializers.URLField()
 
-    # Placeholder for the future price service integration
+    cover_image_url = serializers.URLField(
+        allow_null=True,
+    )
+
     def get_subtotal(self, item):
-        """
-        Calculates the item subtotal based on current active price and quantity.
-        This method will integrate the Price Lookup Service (Phase 2, Step 1).
-        """
-        # 🔑 FIX: Removed MOCK Price. The view MUST now pass the calculated unit price
-        # (or the Book object) via the serializer's context.
-        # Since the view will compute and inject the final price, the serializer
-        # relies on receiving the 'unit_price' in the item dictionary.
+        unit_price = item.get(
+            "unit_price",
+            Decimal("0.00"),
+        )
 
-        # Fallback in case unit_price is not provided by the view logic:
-        current_unit_price = item.get("unit_price", Decimal("0.00"))
-
-        return round(item["quantity"] * current_unit_price, 2)
+        return round(
+            item["quantity"] * unit_price,
+            2,
+        )
 
 
 class WishlistItemSerializer(serializers.ModelSerializer):
@@ -153,6 +179,7 @@ class OrderItemOutputSerializer(serializers.ModelSerializer):
             "book_title",
             "author_name",
             "quantity",
+            "book_format",
             "snapshot_price",  # The price locked in at the time of purchase
         )
 

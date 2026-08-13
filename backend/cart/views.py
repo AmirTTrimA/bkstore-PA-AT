@@ -45,8 +45,16 @@ def get_storage_manager(request):
         # Authenticated: Use Database (persistent storage)
         cart, created = Cart.objects.get_or_create(user=request.user)
         # Convert DB items to a dictionary {book_id: quantity} for easy processing
-        db_items = CartItem.objects.filter(cart=cart).values("book_id", "quantity")
-        return {str(item["book_id"]): item["quantity"] for item in db_items}
+        db_items = CartItem.objects.filter(cart=cart).values(
+            "book_id",
+            "book_format_id",
+            "quantity",
+        )
+
+        return {
+            f'{item["book_id"]}:{item["book_format_id"]}': item["quantity"]
+            for item in db_items
+        }
     else:
         # Anonymous: Use Session (temporary storage)
         return request.session.get(CART_SESSION_KEY, {})
@@ -63,10 +71,32 @@ def save_storage_manager(request, cart_data):
         # Atomically update DB: Delete old items and insert new ones
         with transaction.atomic():
             CartItem.objects.filter(cart=cart).delete()
-            for book_id, quantity in cart_data.items():
-                if quantity > 0:
-                    book = get_object_or_404(Book, pk=int(book_id))
-                    CartItem.objects.create(cart=cart, book=book, quantity=quantity)
+            for cart_key, quantity in cart_data.items():
+                if quantity <= 0:
+                    continue
+
+                book_id, format_id = map(
+                    int,
+                    cart_key.split(":"),
+                )
+
+                book = get_object_or_404(
+                    Book,
+                    pk=book_id,
+                )
+
+                book_format = get_object_or_404(
+                    book.formats,
+                    pk=format_id,
+                    is_available=True,
+                )
+
+                CartItem.objects.create(
+                    cart=cart,
+                    book=book,
+                    book_format=book_format,
+                    quantity=quantity,
+                )
     else:
         # Anonymous: Save to Session
         request.session[CART_SESSION_KEY] = cart_data
@@ -115,45 +145,98 @@ class CartItemHandlerView(generics.GenericAPIView):
     permission_classes = []
 
     def get(self, request, *args, **kwargs):
-        """Retrieves and displays the current cart contents (DB or Session)."""
+        """
+        Retrieves and displays the current cart contents.
+        """
+
         cart_data = get_storage_manager(request)
 
-        # Fetch book objects in bulk for efficiency
-        book_ids = [int(pk) for pk in cart_data.keys()]
-        books = Book.objects.filter(pk__in=book_ids).in_bulk()
+        if not cart_data:
+            return Response(
+                [],
+                status=status.HTTP_200_OK,
+            )
+
+        # Extract book IDs from composite cart keys.
+        book_ids = {
+            int(cart_key.split(":")[0])
+            for cart_key in cart_data
+        }
+
+        books = (
+            Book.objects
+            .filter(pk__in=book_ids)
+            .prefetch_related("formats")
+            .in_bulk()
+        )
 
         cart_output = []
-        for book_id, quantity in cart_data.items():
-            book = books.get(int(book_id))
+
+        for cart_key, quantity in cart_data.items():
+
+            book_id, format_id = map(
+                int,
+                cart_key.split(":"),
+            )
+
+            book = books.get(book_id)
 
             if not book:
                 continue
 
-            # Use the actual price from the map, default to 0 if not found
+            # Find the selected format from the prefetched formats.
+            book_format = next(
+                (
+                    fmt
+                    for fmt in book.formats.all()
+                    if fmt.pk == format_id
+                    and fmt.is_available
+                ),
+                None,
+            )
+
+            if not book_format:
+                continue
+
             pricing = PricingEngine(
-                book=book,
-                user=request.user if request.user.is_authenticated else None,
+                book_format=book_format,
+                user=(
+                    request.user
+                    if request.user.is_authenticated
+                    else None
+                ),
             ).calculate()
 
             unit_price = pricing.final_price
 
-            if book:
-                # 🔑 FIX: Pass the calculated unit price to the serializer's context (item dictionary)
-                cart_output.append(
-                    {
-                        "book_id": book.pk,
-                        "title": book.title,
-                        "quantity": quantity,
-                        "unit_price": unit_price,  # 🔑 NEW: Unit price passed for subtotal calc in serializer
-                        "cover_image_url": book.cover_image_url,
-                    }
-                )
+            cart_output.append(
+                {
+                    "book_id": book.pk,
+                    "title": book.title,
+                    "format_id": book_format.pk,
+                    "format_type": book_format.get_format_type_display(),
+                    "quantity": quantity,
+                    "unit_price": unit_price,
+                    "cover_image_url": book.cover_image_url,
+                }
+            )
 
-        # Sort output for consistent display
-        serializer = CartItemOutputSerializer(
-            sorted(cart_output, key=lambda x: x["book_id"]), many=True
+        cart_output.sort(
+            key=lambda item: (
+                item["book_id"],
+                item["format_id"],
+            )
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer = CartItemOutputSerializer(
+            cart_output,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request, *args, **kwargs):
         """Adds a new item or updates quantity of an existing item."""
@@ -161,13 +244,17 @@ class CartItemHandlerView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        book_id = str(serializer.validated_data["book_id"])
+        book_id = serializer.validated_data["book_id"]
+        book_format = serializer.validated_data["book_format"]
         quantity = serializer.validated_data.get("quantity", 1)
+
+        cart_key = f"{book_id}:{book_format.pk}"
 
         cart_data = get_storage_manager(request)
 
-        # Add or update quantity
-        cart_data[book_id] = cart_data.get(book_id, 0) + quantity
+        cart_data[cart_key] = (
+            cart_data.get(cart_key, 0) + quantity
+        )
 
         save_storage_manager(request, cart_data)
 
@@ -178,11 +265,14 @@ class CartItemHandlerView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        book_id = str(serializer.validated_data["book_id"])
+        book_id = serializer.validated_data["book_id"]
+        book_format = serializer.validated_data["book_format"]
+
+        cart_key = f"{book_id}:{book_format.pk}"
         cart_data = get_storage_manager(request)
 
-        if book_id in cart_data:
-            del cart_data[book_id]
+        if cart_key in cart_data:
+            del cart_data[cart_key]
             save_storage_manager(request, cart_data)
             return Response(
                 {"detail": _("Item removed from cart.")},
@@ -219,18 +309,17 @@ class CartMergeView(generics.GenericAPIView):
         user = request.user
 
         # 1. Get the target (database) cart data
-        database_cart_data = get_storage_manager(request)  # Retrieves current DB state
+        database_cart_data = get_storage_manager(request)
 
-        # 2. Perform item-by-item merge (appending quantities)
-        # Note: Merging session items (anonymous) into DB items (persistent)
-        for book_id, quantity in session_cart.items():
-            book_id_str = str(book_id)
-            database_cart_data[book_id_str] = (
-                database_cart_data.get(book_id_str, 0) + quantity
+        for cart_key, quantity in session_cart.items():
+            database_cart_data[cart_key] = (
+                database_cart_data.get(cart_key, 0) + quantity
             )
 
-        # 3. Save the merged cart back to the database
-        save_storage_manager(request, database_cart_data)
+        save_storage_manager(
+            request,
+            database_cart_data,
+        )
 
         # 4. Clear the anonymous session cart (CRITICAL)
         request.session[CART_SESSION_KEY] = {}

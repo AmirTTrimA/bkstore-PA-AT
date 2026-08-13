@@ -95,7 +95,10 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         return BookListSerializer
 
     def get_queryset(self):
-        return self.get_filtered_queryset().order_by("-created_at")
+        return self.get_filtered_queryset().order_by("-created_at").prefetch_related(
+            "formats",
+            "formats__prices",
+        )
     
     def get_filtered_queryset(self):
         search_query_param = self.request.query_params.get("search", None)
