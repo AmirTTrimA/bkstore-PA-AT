@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from pricing.models import (Discount, DiscountCode, Price, SubscriptionPlan,
                             UserSubscription)
+from requests import session
 from rest_framework import serializers, status
 from rest_framework.test import APITestCase
 from wallet.models import Wallet
@@ -28,255 +29,683 @@ CART_SESSION_KEY = getattr(settings, "CART_SESSION_KEY", "cart")
 
 class CartCRUDTest(APITestCase):
     """
-    Part 1: Tests for Cart Item Management (CRUD) and Persistence (Session vs DB).
-    Verifies the CartItemHandlerView functionality for both anonymous and authenticated users.
+    Tests cart item CRUD behavior for both anonymous and authenticated users.
+
+    Cart identity is now:
+        (book, book_format)
+
+    Anonymous carts store that identity in the session as:
+        "<book_id>:<format_id>"
     """
 
     @classmethod
     def setUpTestData(cls):
-        """Setup test users and books once for the entire test suite."""
-        # 🔑 FIX 1: Removed client login logic from here, as 'cls.client' does not exist.
         cls.user = User.objects.create_user(
             username="cart_tester",
             email="cart@test.com",
             password="testpassword",
         )
-        cls.author = Author.objects.create(name="Test Author")
+
+        cls.author = Author.objects.create(
+            name="Test Author",
+        )
+
         cls.book_1 = Book.objects.create(
             author=cls.author,
             title="Digital Guide",
             slug="digital-guide",
             isbn="978-0000000001",
-            is_digital=True,  # Mark as digital for subscription discount tests
+            description="Test digital book",
+            genre="SCI_FI",
+            is_digital=True,
         )
+
         cls.book_2 = Book.objects.create(
             author=cls.author,
             title="Physical Manual",
             slug="physical-manual",
             isbn="978-0000000002",
-            is_digital=False,  # Mark as physical
-        )
-        cls.book_1.change_price(
-            value=Decimal("20.00"),
+            description="Test physical book",
+            genre="SCIENCE",
+            is_digital=False,
         )
 
-        cls.book_2.change_price(
-            value=Decimal("30.00"),
+        cls.book_1_format = BookFormat.objects.create(
+            book=cls.book_1,
+            format_type=BookFormat.FormatType.DIGITAL,
         )
+
+        cls.book_2_format = BookFormat.objects.create(
+            book=cls.book_2,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
+        Price.objects.create(
+            book=cls.book_1,
+            book_format=cls.book_1_format,
+            value=Decimal("20.00"),
+            currency="USD",
+            effective_from=timezone.now(),
+        )
+
+        Price.objects.create(
+            book=cls.book_2,
+            book_format=cls.book_2_format,
+            value=Decimal("30.00"),
+            currency="USD",
+            effective_from=timezone.now(),
+        )
+
         cls.cart_url = reverse("cart-items")
         cls.login_url = reverse("login")
-        cls.merge_url = reverse("cart-merge")  # 🔑 NEW: Merge URL
 
-    # 🔑 FIX 2: Added setUp method to access self.client for authentication
     def setUp(self):
-        """Runs before every test: logs in the user and generates the auth token."""
-        # Log in the user and get token for authenticated requests
+        """
+        Authenticate before each test.
+        """
         response = self.client.post(
             self.login_url,
-            {"username": "cart_tester", "password": "testpassword"},
+            {
+                "username": "cart_tester",
+                "password": "testpassword",
+            },
             format="json",
         )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
         self.auth_token = response.data["access"]
 
-    # --- ANONYMOUS (SESSION) TESTS ---
+    # ============================================================
+    # Anonymous cart
+    # ============================================================
 
     def test_anonymous_cart_add_and_view(self):
-        """Verifies an anonymous user can add items and view them in the session."""
+        """
+        Anonymous users can add a specific book format to the
+        session cart and retrieve it.
+        """
+
         book_id = self.book_1.pk
+        format_id = self.book_1_format.pk
 
-        # 1. POST (Add item)
         response_post = self.client.post(
-            self.cart_url, {"book_id": book_id, "quantity": 3}, format="json"
+            self.cart_url,
+            {
+                "book_id": book_id,
+                "format_id": format_id,
+                "quantity": 2,
+            },
+            format="json",
         )
-        self.assertEqual(response_post.status_code, status.HTTP_200_OK)
 
-        # 2. VERIFY SESSION: Check the Django session directly
-        session_cart = self.client.session.get(CART_SESSION_KEY, {})
-        self.assertIn(str(book_id), session_cart)
-        self.assertEqual(session_cart[str(book_id)], 3)
+        self.assertEqual(
+            response_post.status_code,
+            status.HTTP_200_OK,
+        )
 
-        # 3. GET (View cart)
-        response_get = self.client.get(self.cart_url)
-        self.assertEqual(response_get.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response_get.data), 1)
-        self.assertEqual(response_get.data[0]["book_id"], book_id)
-        self.assertEqual(response_get.data[0]["quantity"], 3)
+        # Adding the same format again should increase quantity.
+        response_post = self.client.post(
+            self.cart_url,
+            {
+                "book_id": book_id,
+                "format_id": format_id,
+                "quantity": 1,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response_post.status_code,
+            status.HTTP_200_OK,
+        )
+
+        session_cart = self.client.session.get(
+            CART_SESSION_KEY,
+            {},
+        )
+
+        cart_key = f"{book_id}:{format_id}"
+
+        self.assertIn(
+            cart_key,
+            session_cart,
+        )
+
+        self.assertEqual(
+            session_cart[cart_key],
+            3,
+        )
+
+        response_get = self.client.get(
+            self.cart_url,
+        )
+
+        self.assertEqual(
+            response_get.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response_get.data),
+            1,
+        )
+
+        item = response_get.data[0]
+
+        self.assertEqual(
+            item["book_id"],
+            book_id,
+        )
+
+        self.assertEqual(
+            item["format_id"],
+            format_id,
+        )
+
+        self.assertEqual(
+            item["quantity"],
+            3,
+        )
+
+        self.assertEqual(
+            item["format_type"],
+            "Digital",
+        )
 
     def test_anonymous_cart_delete_item(self):
-        """Verifies an anonymous user can remove items from the session."""
-        # Setup: Add an item directly to the session first
+        """
+        Anonymous users can remove a specific book format
+        from the session cart.
+        """
+
+        book_id = self.book_1.pk
+        format_id = self.book_1_format.pk
+
+        cart_key = f"{book_id}:{format_id}"
+
         session = self.client.session
-        session[CART_SESSION_KEY] = {str(self.book_1.pk): 5}
+
+        session[CART_SESSION_KEY] = {
+            cart_key: 5,
+        }
+
         session.save()
 
-        # 1. DELETE (Remove item)
         response_delete = self.client.delete(
-            self.cart_url, {"book_id": self.book_1.pk}, format="json"
+            self.cart_url,
+            {
+                "book_id": book_id,
+                "format_id": format_id,
+            },
+            format="json",
         )
-        self.assertEqual(response_delete.status_code, status.HTTP_204_NO_CONTENT)
 
-        # 2. VERIFY SESSION: Check that the item is gone
-        session_cart = self.client.session.get(CART_SESSION_KEY, {})
-        self.assertNotIn(str(self.book_1.pk), session_cart)
+        self.assertEqual(
+            response_delete.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
 
-    # --- AUTHENTICATED (DATABASE) TESTS ---
+        session_cart = self.client.session.get(
+            CART_SESSION_KEY,
+            {},
+        )
+
+        self.assertNotIn(
+            cart_key,
+            session_cart,
+        )
+
+    # ============================================================
+    # Authenticated cart
+    # ============================================================
 
     def test_authenticated_cart_add_and_view(self):
-        """Verifies a logged-in user can add items and views them from the DB."""
-        book_id = self.book_2.pk
+        """
+        Authenticated users can add a specific book format to
+        their persistent cart and retrieve it.
+        """
 
-        # 1. POST (Add item)
+        book_id = self.book_2.pk
+        format_id = self.book_2_format.pk
+
+        auth_headers = {
+            "HTTP_AUTHORIZATION": f"Bearer {self.auth_token}",
+        }
+
+        # --------------------------------------------------------
+        # Add 2 copies
+        # --------------------------------------------------------
+
         response_post = self.client.post(
             self.cart_url,
-            {"book_id": book_id, "quantity": 2},
+            {
+                "book_id": book_id,
+                "format_id": format_id,
+                "quantity": 2,
+            },
             format="json",
-            HTTP_AUTHORIZATION=f"Bearer {self.auth_token}",
+            **auth_headers,
         )
-        self.assertEqual(response_post.status_code, status.HTTP_200_OK)
 
-        # 2. VERIFY DB: Check CartItem count in the database
-        user_cart = get_object_or_404(Cart, user=self.user)
-        self.assertEqual(CartItem.objects.filter(cart=user_cart).count(), 1)
-        self.assertEqual(CartItem.objects.get(cart=user_cart).quantity, 2)
+        self.assertEqual(
+            response_post.status_code,
+            status.HTTP_200_OK,
+        )
 
-        # 3. POST (Update quantity for the same item)
+        user_cart = get_object_or_404(
+            Cart,
+            user=self.user,
+        )
+
+        cart_item = get_object_or_404(
+            CartItem,
+            cart=user_cart,
+            book=self.book_2,
+            book_format=self.book_2_format,
+        )
+
+        self.assertEqual(
+            cart_item.quantity,
+            2,
+        )
+
+        # --------------------------------------------------------
+        # Add one more copy
+        # --------------------------------------------------------
+
         response_update = self.client.post(
             self.cart_url,
-            {"book_id": book_id, "quantity": 1},
+            {
+                "book_id": book_id,
+                "format_id": format_id,
+                "quantity": 1,
+            },
             format="json",
-            HTTP_AUTHORIZATION=f"Bearer {self.auth_token}",
+            **auth_headers,
         )
-        # Note: The view logic adds quantity (2 + 1 = 3)
-        self.assertEqual(response_update.status_code, status.HTTP_200_OK)
-        self.assertEqual(CartItem.objects.get(cart=user_cart).quantity, 3)
 
-        # 4. GET (View cart)
-        response_get = self.client.get(
-            self.cart_url, HTTP_AUTHORIZATION=f"Bearer {self.auth_token}"
+        self.assertEqual(
+            response_update.status_code,
+            status.HTTP_200_OK,
         )
-        self.assertEqual(response_get.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response_get.data), 1)
-        self.assertEqual(response_get.data[0]["book_id"], book_id)
+
+        # Re-query instead of refresh_from_db().
+        #
+        # The current storage implementation may replace the
+        # CartItem row rather than updating the same database row.
+        cart_item = get_object_or_404(
+            CartItem,
+            cart=user_cart,
+            book=self.book_2,
+            book_format=self.book_2_format,
+        )
+
+        self.assertEqual(
+            cart_item.quantity,
+            3,
+        )
+
+        # --------------------------------------------------------
+        # View cart
+        # --------------------------------------------------------
+
+        response_get = self.client.get(
+            self.cart_url,
+            **auth_headers,
+        )
+
+        self.assertEqual(
+            response_get.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response_get.data),
+            1,
+        )
+
+        item = response_get.data[0]
+
+        self.assertEqual(
+            item["book_id"],
+            book_id,
+        )
+
+        self.assertEqual(
+            item["format_id"],
+            format_id,
+        )
+
+        self.assertEqual(
+            item["quantity"],
+            3,
+        )
 
     def test_authenticated_cart_delete_item(self):
-        """Verifies a logged-in user can remove items from the DB."""
-        book = self.book_1
+        """
+        Authenticated users can remove a specific book format
+        from their persistent cart.
+        """
 
-        # Setup: Add item directly to the DB Cart
-        user_cart, _ = Cart.objects.get_or_create(user=self.user)
-        CartItem.objects.create(cart=user_cart, book=book, quantity=5)
-        self.assertEqual(CartItem.objects.filter(cart=user_cart).count(), 1)
+        user_cart = Cart.objects.create(
+            user=self.user,
+        )
 
-        # 1. DELETE (Remove item)
+        CartItem.objects.create(
+            cart=user_cart,
+            book=self.book_1,
+            book_format=self.book_1_format,
+            quantity=5,
+        )
+
+        self.assertEqual(
+            CartItem.objects.filter(
+                cart=user_cart,
+            ).count(),
+            1,
+        )
+
         response_delete = self.client.delete(
             self.cart_url,
-            {"book_id": book.pk},
+            {
+                "book_id": self.book_1.pk,
+                "format_id": self.book_1_format.pk,
+            },
             format="json",
             HTTP_AUTHORIZATION=f"Bearer {self.auth_token}",
         )
-        self.assertEqual(response_delete.status_code, status.HTTP_204_NO_CONTENT)
 
-        # 2. VERIFY DB: Check that the item is gone from the database
-        self.assertEqual(CartItem.objects.filter(cart=user_cart).count(), 0)
+        self.assertEqual(
+            response_delete.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
 
+        self.assertFalse(
+            CartItem.objects.filter(
+                cart=user_cart,
+                book=self.book_1,
+                book_format=self.book_1_format,
+            ).exists()
+        )
 
 class CartMergeTest(APITestCase):
     """
-    Part 2: Tests the Cart Merge logic (Anonymous Session -> Persistent DB).
-    Verifies that item quantities are correctly merged and the session is cleared.
+    Tests merging an anonymous session cart into a user's
+    persistent database cart.
+
+    Cart item identity is:
+        (book, book_format)
+
+    Verifies that:
+    - anonymous items are transferred to the database cart;
+    - matching book + format quantities are stacked;
+    - different formats remain distinct cart items;
+    - the anonymous session is cleared after a successful merge.
     """
 
     @classmethod
     def setUpTestData(cls):
-        """Setup test data for the merge test."""
-        # Note: This user must be different from the one used in CartCRUDTest setup
         cls.user_merge = User.objects.create_user(
             username="merge_user",
             email="merge@test.com",
             password="testpassword",
         )
-        cls.author = Author.objects.create(name="Merge Author")
+
+        cls.author = Author.objects.create(
+            name="Merge Author",
+        )
+
         cls.book_A = Book.objects.create(
-            author=cls.author, title="Book A", slug="book-a", isbn="978-0111111111"
+            author=cls.author,
+            title="Book A",
+            slug="book-a",
+            isbn="978-0111111111",
+            description="Merge test book A",
+            genre="FICTION",
         )
+
         cls.book_B = Book.objects.create(
-            author=cls.author, title="Book B", slug="book-b", isbn="978-0222222222"
+            author=cls.author,
+            title="Book B",
+            slug="book-b",
+            isbn="978-0222222222",
+            description="Merge test book B",
+            genre="FICTION",
         )
+
+        cls.book_A_format = BookFormat.objects.create(
+            book=cls.book_A,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
+        cls.book_B_format = BookFormat.objects.create(
+            book=cls.book_B,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
         cls.merge_url = reverse("cart-merge")
-        cls.cart_url = reverse("cart-items")
         cls.login_url = reverse("login")
 
     def setUp(self):
-        """Logs in the user for the merge and clears initial cart state."""
+        """
+        Authenticate the user and start each test with an empty
+        persistent cart and anonymous session cart.
+        """
+
         response = self.client.post(
             self.login_url,
-            {"username": "merge_user", "password": "testpassword"},
+            {
+                "username": "merge_user",
+                "password": "testpassword",
+            },
             format="json",
         )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
         self.auth_token = response.data["access"]
 
-        # Ensure user's persistent cart is empty before merge test begins
-        CartItem.objects.filter(cart__user=self.user_merge).delete()
-        # Ensure session starts clean
-        self.client.session[CART_SESSION_KEY] = {}
-        self.client.session.modified = True
+        # Clear any persistent cart items from previous test state.
+        CartItem.objects.filter(
+            cart__user=self.user_merge,
+        ).delete()
+
+        # Start with an empty anonymous cart.
+        session = self.client.session
+        session[CART_SESSION_KEY] = {}
+        session.save()
 
     def test_merge_anonymous_into_empty_db_cart(self):
-        """Scenario: Anonymous cart (2x B) merges into empty DB cart."""
+        """
+        An anonymous cart containing 2x Book B in a specific format
+        is transferred into an empty persistent cart.
+        """
 
-        # 1. SETUP ANONYMOUS SESSION: Add 2x Book B to the session
+        book_id = self.book_B.pk
+        format_id = self.book_B_format.pk
+
+        # --------------------------------------------------------
+        # Anonymous cart
+        # --------------------------------------------------------
+
         session = self.client.session
-        session[CART_SESSION_KEY] = {str(self.book_B.pk): 2}
+
+        session[CART_SESSION_KEY] = {
+            f"{book_id}:{format_id}": 2,
+        }
+
         session.save()
 
-        # 2. EXECUTE MERGE
+        # --------------------------------------------------------
+        # Merge
+        # --------------------------------------------------------
+
         response = self.client.post(
-            self.merge_url, HTTP_AUTHORIZATION=f"Bearer {self.auth_token}"
+            self.merge_url,
+            HTTP_AUTHORIZATION=f"Bearer {self.auth_token}",
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # 3. VERIFY DB: Cart should now have 2x Book B
-        db_cart = get_object_or_404(Cart, user=self.user_merge)
-        self.assertEqual(CartItem.objects.filter(cart=db_cart).count(), 1)
         self.assertEqual(
-            CartItem.objects.get(cart=db_cart, book=self.book_B).quantity, 2
+            response.status_code,
+            status.HTTP_200_OK,
         )
 
-        # 4. VERIFY SESSION CLEAR: Anonymous session should be empty
-        self.assertEqual(self.client.session.get(CART_SESSION_KEY, {}), {})
+        # --------------------------------------------------------
+        # Persistent cart
+        # --------------------------------------------------------
+
+        db_cart = get_object_or_404(
+            Cart,
+            user=self.user_merge,
+        )
+
+        self.assertEqual(
+            CartItem.objects.filter(
+                cart=db_cart,
+            ).count(),
+            1,
+        )
+
+        cart_item = get_object_or_404(
+            CartItem,
+            cart=db_cart,
+            book=self.book_B,
+            book_format=self.book_B_format,
+        )
+
+        self.assertEqual(
+            cart_item.quantity,
+            2,
+        )
+
+        # --------------------------------------------------------
+        # Anonymous cart must be cleared
+        # --------------------------------------------------------
+
+        self.assertEqual(
+            self.client.session.get(
+                CART_SESSION_KEY,
+                {},
+            ),
+            {},
+        )
 
     def test_merge_with_quantity_stacking(self):
-        """Scenario: Anonymous cart (3x A) merges with existing DB cart (2x A)."""
+        """
+        If the persistent cart already contains the same
+        book + format, the anonymous quantity is added to it.
 
-        # 1. SETUP DB: User already has 2x Book A in their persistent cart
-        db_cart, _ = Cart.objects.get_or_create(user=self.user_merge)
-        CartItem.objects.create(cart=db_cart, book=self.book_A, quantity=2)
+        DB:
+            Book A / Physical = 2
 
-        # 2. SETUP ANONYMOUS SESSION: Add 3x Book A to the session
+        Session:
+            Book A / Physical = 3
+            Book B / Physical = 1
+
+        Expected:
+            Book A / Physical = 5
+            Book B / Physical = 1
+        """
+
+        # --------------------------------------------------------
+        # Persistent cart
+        # --------------------------------------------------------
+
+        db_cart = Cart.objects.create(
+            user=self.user_merge,
+        )
+
+        CartItem.objects.create(
+            cart=db_cart,
+            book=self.book_A,
+            book_format=self.book_A_format,
+            quantity=2,
+        )
+
+        # --------------------------------------------------------
+        # Anonymous cart
+        # --------------------------------------------------------
+
         session = self.client.session
+
         session[CART_SESSION_KEY] = {
-            str(self.book_A.pk): 3,
-            str(self.book_B.pk): 1,
-        }  # 3xA (stack) + 1xB (new)
+            f"{self.book_A.pk}:{self.book_A_format.pk}": 3,
+            f"{self.book_B.pk}:{self.book_B_format.pk}": 1,
+        }
+
         session.save()
 
-        # 3. EXECUTE MERGE
+        # --------------------------------------------------------
+        # Merge
+        # --------------------------------------------------------
+
         response = self.client.post(
-            self.merge_url, HTTP_AUTHORIZATION=f"Bearer {self.auth_token}"
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # 4. VERIFY DB STATE: Should have 2 items total.
-        self.assertEqual(CartItem.objects.filter(cart=db_cart).count(), 2)
-
-        # 5. VERIFY STACKING: Book A quantity should be 2 (DB) + 3 (Session) = 5
-        self.assertEqual(
-            CartItem.objects.get(cart=db_cart, book=self.book_A).quantity, 5
+            self.merge_url,
+            HTTP_AUTHORIZATION=f"Bearer {self.auth_token}",
         )
 
-        # 6. VERIFY NEW ITEM: Book B quantity should be 1
         self.assertEqual(
-            CartItem.objects.get(cart=db_cart, book=self.book_B).quantity, 1
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        # --------------------------------------------------------
+        # Book A: matching book + format must stack
+        # --------------------------------------------------------
+
+        book_a_item = get_object_or_404(
+            CartItem,
+            cart=db_cart,
+            book=self.book_A,
+            book_format=self.book_A_format,
+        )
+
+        self.assertEqual(
+            book_a_item.quantity,
+            5,
+        )
+
+        # --------------------------------------------------------
+        # Book B: new book + format must be created
+        # --------------------------------------------------------
+
+        book_b_item = get_object_or_404(
+            CartItem,
+            cart=db_cart,
+            book=self.book_B,
+            book_format=self.book_B_format,
+        )
+
+        self.assertEqual(
+            book_b_item.quantity,
+            1,
+        )
+
+        # Two distinct cart items should now exist.
+        self.assertEqual(
+            CartItem.objects.filter(
+                cart=db_cart,
+            ).count(),
+            2,
+        )
+
+        # --------------------------------------------------------
+        # Session must be cleared
+        # --------------------------------------------------------
+
+        self.assertEqual(
+            self.client.session.get(
+                CART_SESSION_KEY,
+                {},
+            ),
+            {},
         )
 
 
@@ -286,7 +715,7 @@ class CheckoutServiceTestCase(TestCase):
 
     Pricing rules themselves are covered by PricingEngine tests.
     These tests verify that checkout correctly persists and finalizes
-    an order.
+    an order while preserving the selected book format.
     """
 
     @classmethod
@@ -324,14 +753,30 @@ class CheckoutServiceTestCase(TestCase):
             is_digital=False,
         )
 
-        cls.book_digital.change_price(
-            value=Decimal("40.00"),
-            currency="USD",
+        cls.digital_format = BookFormat.objects.create(
+            book=cls.book_digital,
+            format_type=BookFormat.FormatType.DIGITAL,
         )
 
-        cls.book_physical.change_price(
+        cls.physical_format = BookFormat.objects.create(
+            book=cls.book_physical,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
+        Price.objects.create(
+            book=cls.book_digital,
+            book_format=cls.digital_format,
+            value=Decimal("40.00"),
+            currency="USD",
+            effective_from=timezone.now(),
+        )
+
+        Price.objects.create(
+            book=cls.book_physical,
+            book_format=cls.physical_format,
             value=Decimal("20.00"),
             currency="USD",
+            effective_from=timezone.now(),
         )
 
     def setUp(self):
@@ -348,24 +793,52 @@ class CheckoutServiceTestCase(TestCase):
 
         self.service = CheckoutService(self.user)
 
-    def add_item(self, book, quantity=1):
-        CartItem.objects.create(
+    def add_item(self, book, quantity=1, book_format=None):
+        """
+        Adds a specific book format to the test cart.
+        """
+
+        if book_format is None:
+            if book == self.book_digital:
+                book_format = self.digital_format
+            elif book == self.book_physical:
+                book_format = self.physical_format
+            else:
+                raise ValueError(
+                    f"No default format configured for {book!r}."
+                )
+
+        return CartItem.objects.create(
             cart=self.cart,
             book=book,
+            book_format=book_format,
             quantity=quantity,
         )
 
+    # ============================================================
+    # Checkout
+    # ============================================================
+
     def test_creates_order(self):
-        self.add_item(self.book_digital)
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
 
         order = self.service.checkout(
             cart=self.cart,
             shipping_data=self.shipping,
         )
 
-        self.assertIsInstance(order, Order)
+        self.assertIsInstance(
+            order,
+            Order,
+        )
 
-        self.assertEqual(order.user, self.user)
+        self.assertEqual(
+            order.user,
+            self.user,
+        )
 
         self.assertEqual(
             order.shipping_name,
@@ -378,19 +851,37 @@ class CheckoutServiceTestCase(TestCase):
         )
 
     def test_creates_order_items(self):
-        self.add_item(self.book_digital, 2)
-        self.add_item(self.book_physical, 1)
+        self.add_item(
+            self.book_digital,
+            quantity=2,
+            book_format=self.digital_format,
+        )
+
+        self.add_item(
+            self.book_physical,
+            quantity=1,
+            book_format=self.physical_format,
+        )
 
         order = self.service.checkout(
             cart=self.cart,
             shipping_data=self.shipping,
         )
 
-        self.assertEqual(order.items.count(), 2)
+        self.assertEqual(
+            order.items.count(),
+            2,
+        )
 
-        digital = order.items.get(book=self.book_digital)
+        digital = order.items.get(
+            book=self.book_digital,
+        )
 
-        self.assertEqual(digital.quantity, 2)
+        self.assertEqual(
+            digital.quantity,
+            2,
+        )
+
         self.assertEqual(
             digital.snapshot_title,
             self.book_digital.title,
@@ -401,8 +892,36 @@ class CheckoutServiceTestCase(TestCase):
             self.author.name,
         )
 
+    def test_checkout_preserves_format_specific_price(self):
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
+
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+        order_item = order.items.get(
+            book=self.book_digital,
+        )
+
+        self.assertEqual(
+            order_item.book_format,
+            self.digital_format,
+        )
+
+        self.assertEqual(
+            order_item.snapshot_price,
+            Decimal("40.00"),
+        )
+
     def test_clears_cart(self):
-        self.add_item(self.book_digital)
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
 
         self.service.checkout(
             cart=self.cart,
@@ -414,32 +933,44 @@ class CheckoutServiceTestCase(TestCase):
             0,
         )
 
+    # ============================================================
+    # Licensing
+    # ============================================================
+
     def test_grants_license_for_digital_books(self):
-        self.add_item(self.book_digital)
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
 
         order = self.service.checkout(
             cart=self.cart,
             shipping_data=self.shipping,
         )
 
-        license = License.objects.get(
+        license_obj = License.objects.get(
             user=self.user,
             book=self.book_digital,
         )
 
         self.assertEqual(
-            license.order,
+            license_obj.order,
             order,
         )
 
-        self.assertTrue(license.is_active)
+        self.assertTrue(
+            license_obj.is_active,
+        )
 
         self.assertIsNone(
-            license.valid_until,
+            license_obj.valid_until,
         )
 
     def test_physical_books_receive_no_license(self):
-        self.add_item(self.book_physical)
+        self.add_item(
+            self.book_physical,
+            book_format=self.physical_format,
+        )
 
         self.service.checkout(
             cart=self.cart,
@@ -452,6 +983,10 @@ class CheckoutServiceTestCase(TestCase):
                 book=self.book_physical,
             ).exists()
         )
+
+    # ============================================================
+    # Coupons
+    # ============================================================
 
     def test_consumes_coupon(self):
         discount = Discount.objects.create(
@@ -468,7 +1003,10 @@ class CheckoutServiceTestCase(TestCase):
             code="SAVE10",
         )
 
-        self.add_item(self.book_digital)
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
 
         self.service.checkout(
             cart=self.cart,
@@ -486,7 +1024,10 @@ class CheckoutServiceTestCase(TestCase):
         )
 
     def test_checkout_without_coupon_does_not_consume_coupon(self):
-        self.add_item(self.book_digital)
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
 
         self.service.checkout(
             cart=self.cart,
@@ -498,8 +1039,15 @@ class CheckoutServiceTestCase(TestCase):
             0,
         )
 
+    # ============================================================
+    # Shipping
+    # ============================================================
+
     def test_shipping_snapshot_is_saved(self):
-        self.add_item(self.book_digital)
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
 
         order = self.service.checkout(
             cart=self.cart,
@@ -526,6 +1074,10 @@ class CheckoutServiceTestCase(TestCase):
             "USA",
         )
 
+    # ============================================================
+    # Validation
+    # ============================================================
+
     def test_empty_cart_raises_validation_error(self):
         with self.assertRaises(serializers.ValidationError):
             self.service.checkout(
@@ -533,9 +1085,11 @@ class CheckoutServiceTestCase(TestCase):
                 shipping_data=self.shipping,
             )
 
-
     def test_checkout_returns_created_order(self):
-        self.add_item(self.book_digital)
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
 
         order = self.service.checkout(
             cart=self.cart,
@@ -548,16 +1102,31 @@ class CheckoutServiceTestCase(TestCase):
             ).exists()
         )
 
+    # ============================================================
+    # Cancellation / Refund
+    # ============================================================
+
     def _create_paid_order(self):
         """
-        Helper that creates a paid order through the normal checkout flow.
+        Creates a paid order through the normal checkout flow.
         """
 
-        wallet = Wallet.objects.get(user=self.user)
-        wallet.balance = Decimal("200.00")
-        wallet.save(update_fields=["balance"])
+        wallet = Wallet.objects.get(
+            user=self.user,
+        )
 
-        self.cart.items.create(book=self.book_digital, quantity=1)
+        wallet.balance = Decimal("200.00")
+        wallet.save(
+            update_fields=["balance"],
+        )
+
+        self.cart.items.all().delete()
+
+        self.cart.items.create(
+            book=self.book_digital,
+            book_format=self.digital_format,
+            quantity=1,
+        )
 
         return self.service.checkout(
             cart=self.cart,
@@ -567,14 +1136,23 @@ class CheckoutServiceTestCase(TestCase):
     def test_cancel_order_refunds_wallet_and_revokes_license(self):
         order = self._create_paid_order()
 
-        wallet = Wallet.objects.get(user=self.user)
-        self.assertEqual(wallet.balance, Decimal("160.00"))
+        wallet = Wallet.objects.get(
+            user=self.user,
+        )
+
+        self.assertEqual(
+            wallet.balance,
+            Decimal("160.00"),
+        )
 
         license_obj = License.objects.get(
             user=self.user,
             book=self.book_digital,
         )
-        self.assertTrue(license_obj.is_active)
+
+        self.assertTrue(
+            license_obj.is_active,
+        )
 
         self.service.cancel_order(order)
 
@@ -582,15 +1160,27 @@ class CheckoutServiceTestCase(TestCase):
         wallet.refresh_from_db()
         license_obj.refresh_from_db()
 
-        self.assertEqual(order.status, "REFUNDED")
-        self.assertEqual(wallet.balance, Decimal("200.00"))
-        self.assertFalse(license_obj.is_active)
+        self.assertEqual(
+            order.status,
+            "REFUNDED",
+        )
+
+        self.assertEqual(
+            wallet.balance,
+            Decimal("200.00"),
+        )
+
+        self.assertFalse(
+            license_obj.is_active,
+        )
 
     def test_cancel_order_rejects_non_cancellable_status(self):
         order = self._create_paid_order()
 
         order.status = "DELIVERED"
-        order.save(update_fields=["status"])
+        order.save(
+            update_fields=["status"],
+        )
 
         with self.assertRaisesMessage(
             serializers.ValidationError,
@@ -606,14 +1196,15 @@ class CheckoutServiceTestCase(TestCase):
             password="password123",
         )
 
-        other_service = CheckoutService(other_user)
+        other_service = CheckoutService(
+            other_user,
+        )
 
         with self.assertRaisesMessage(
             serializers.ValidationError,
             "You cannot cancel this order.",
         ):
             other_service.cancel_order(order)
-
 
 class WishlistTest(APITestCase):
     """
@@ -762,6 +1353,11 @@ class OrderApiTest(APITestCase):
             is_digital=True,
         )
 
+        cls.book_format = BookFormat.objects.create(
+            book=cls.book,
+            format_type=BookFormat.FormatType.DIGITAL,
+        )
+
         cls.order = Order.objects.create(
             user=cls.user,
             subtotal=Decimal("100.00"),
@@ -777,6 +1373,7 @@ class OrderApiTest(APITestCase):
         OrderItem.objects.create(
             order=cls.order,
             book=cls.book,
+            book_format=cls.book_format,
             quantity=2,
             snapshot_price=Decimal("40.00"),
             snapshot_title=cls.book.title,
@@ -803,7 +1400,9 @@ class OrderApiTest(APITestCase):
             format="json",
         )
 
-        self.cart, _ = Cart.objects.get_or_create(user=self.user)
+        self.cart, _ = Cart.objects.get_or_create(
+            user=self.user,
+        )
 
         self.book.change_price(
             value=Decimal("40.00"),
@@ -863,9 +1462,16 @@ class OrderApiTest(APITestCase):
             1,
         )
 
+        item = response.data["items"][0]
+
         self.assertEqual(
-            response.data["items"][0]["book_title"],
+            item["book_title"],
             self.book.title,
+        )
+
+        self.assertEqual(
+            item["book_format"],
+            self.book_format.id,
         )
 
     def test_user_cannot_access_other_users_order(self):
@@ -929,10 +1535,15 @@ class OrderApiTest(APITestCase):
 
     def test_user_can_cancel_own_order_via_api(self):
         wallet = Wallet.objects.get(user=self.user)
+
         wallet.balance = Decimal("200.00")
         wallet.save(update_fields=["balance"])
 
-        self.cart.items.create(book=self.book, quantity=1)
+        self.cart.items.create(
+            book=self.book,
+            book_format=self.book_format,
+            quantity=1,
+        )
 
         checkout_response = self.client.post(
             "/api/v1/cart/checkout/",
@@ -945,7 +1556,10 @@ class OrderApiTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(checkout_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            checkout_response.status_code,
+            status.HTTP_201_CREATED,
+        )
 
         order_id = checkout_response.data["id"]
 
@@ -955,12 +1569,22 @@ class OrderApiTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["status"], "REFUNDED")
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["status"],
+            "REFUNDED",
+        )
 
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("200.00"))
 
+        self.assertEqual(
+            wallet.balance,
+            Decimal("200.00"),
+        )
 
     def test_user_cannot_cancel_other_users_order_via_api(self):
         other_user = User.objects.create_user(
@@ -968,12 +1592,22 @@ class OrderApiTest(APITestCase):
             password="testpass123",
         )
 
-        other_wallet = Wallet.objects.get(user=other_user)
+        other_wallet = Wallet.objects.get(
+            user=other_user,
+        )
+
         other_wallet.balance = Decimal("200.00")
         other_wallet.save(update_fields=["balance"])
 
-        other_cart, _ = Cart.objects.get_or_create(user=other_user)
-        other_cart.items.create(book=self.book, quantity=1)
+        other_cart, _ = Cart.objects.get_or_create(
+            user=other_user,
+        )
+
+        other_cart.items.create(
+            book=self.book,
+            book_format=self.book_format,
+            quantity=1,
+        )
 
         order = CheckoutService(other_user).checkout(
             cart=other_cart,
@@ -991,7 +1625,10 @@ class OrderApiTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
 
 from decimal import Decimal
 
@@ -1006,6 +1643,7 @@ User = get_user_model()
 
 
 class CheckoutWalletIntegrationTest(APITestCase):
+    """Tests wallet charging through the checkout API."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -1017,44 +1655,87 @@ class CheckoutWalletIntegrationTest(APITestCase):
         wallet.balance = Decimal("100.00")
         wallet.save(update_fields=["balance"])
 
-        self.author = Author.objects.create(name="Test Author")
+        self.author = Author.objects.create(
+            name="Test Author",
+        )
 
         self.book = Book.objects.create(
             author=self.author,
             title="Checkout Book",
             slug="checkout-book",
             isbn="1234567890123",
+            description="Test checkout book",
             genre="TECH",
             is_digital=True,
             digital_file_path="books/checkout.epub",
         )
 
-        Price.objects.create(book=self.book, value=Decimal("25.00"))
+        self.book_format = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.DIGITAL,
+        )
 
-        cart = Cart.objects.create(user=self.user)
-        CartItem.objects.create(cart=cart, book=self.book, quantity=1)
+        Price.objects.create(
+            book=self.book,
+            book_format=self.book_format,
+            value=Decimal("25.00"),
+            currency="USD",
+        )
 
-        self.client.force_authenticate(user=self.user)
+        self.cart = Cart.objects.create(
+            user=self.user,
+        )
+
+        CartItem.objects.create(
+            cart=self.cart,
+            book=self.book,
+            book_format=self.book_format,
+            quantity=1,
+        )
+
+        self.checkout_url = "/api/v1/cart/checkout/"
+
+        self.shipping_data = {
+            "shipping_name": "John Doe",
+            "shipping_address_line1": "123 Main St",
+            "shipping_city": "Amsterdam",
+            "shipping_country": "Netherlands",
+        }
+
+        self.client.force_authenticate(
+            user=self.user,
+        )
 
     def test_checkout_deducts_wallet_balance(self):
         response = self.client.post(
-            "/api/v1/cart/checkout/",
-            {
-                "shipping_name": "John Doe",
-                "shipping_address_line1": "123 Main St",
-                "shipping_city": "Amsterdam",
-                "shipping_country": "Netherlands",
-            },
+            self.checkout_url,
+            self.shipping_data,
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
 
         self.user.wallet.refresh_from_db()
-        self.assertEqual(self.user.wallet.balance, Decimal("75.00"))
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            Decimal("75.00"),
+        )
 
         order = Order.objects.get()
-        self.assertEqual(order.status, "PROCESSING")
+
+        self.assertEqual(
+            order.status,
+            "PROCESSING",
+        )
+
+        self.assertEqual(
+            order.total_amount,
+            Decimal("25.00"),
+        )
 
     def test_checkout_fails_when_wallet_balance_is_insufficient(self):
         wallet = self.user.wallet
@@ -1062,16 +1743,337 @@ class CheckoutWalletIntegrationTest(APITestCase):
         wallet.save(update_fields=["balance"])
 
         response = self.client.post(
-            "/api/v1/cart/checkout/",
+            self.checkout_url,
+            self.shipping_data,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "wallet",
+            response.data,
+        )
+
+        self.assertEqual(
+            Order.objects.count(),
+            0,
+        )
+
+        wallet.refresh_from_db()
+
+        self.assertEqual(
+            wallet.balance,
+            Decimal("5.00"),
+        )
+
+from decimal import Decimal
+
+from catalog.models import Author, Book, BookFormat
+from django.contrib.auth import get_user_model
+from pricing.models import Price
+from rest_framework.test import APITestCase
+
+from .models import Cart, CartItem
+
+User = get_user_model()
+
+
+class CartFormatTest(APITestCase):
+    """Tests cart behavior when books have multiple purchasable formats."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="cart-test-user",
+            password="testpass123",
+        )
+
+        self.author = Author.objects.create(
+            name="Cart Test Author",
+        )
+
+        self.book = Book.objects.create(
+            author=self.author,
+            title="Cart Test Book",
+            slug="cart-test-book",
+            isbn="9781234567890",
+            description="Test book",
+            genre="SCI_FI",
+        )
+
+        self.physical = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
+        self.digital = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.DIGITAL,
+        )
+
+        Price.objects.create(
+            book=self.book,
+            book_format=self.physical,
+            value=Decimal("30.00"),
+            currency="USD",
+        )
+
+        Price.objects.create(
+            book=self.book,
+            book_format=self.digital,
+            value=Decimal("20.00"),
+            currency="USD",
+        )
+
+        self.cart_url = "/api/v1/cart/items/"
+
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+    def test_add_format_to_cart(self):
+        response = self.client.post(
+            self.cart_url,
             {
-                "shipping_name": "John Doe",
-                "shipping_address_line1": "123 Main St",
-                "shipping_city": "Amsterdam",
-                "shipping_country": "Netherlands",
+                "book_id": self.book.id,
+                "format_id": self.digital.id,
+                "quantity": 1,
             },
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("wallet", response.data)
-        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        item = CartItem.objects.get(
+            cart__user=self.user,
+        )
+
+        self.assertEqual(
+            item.book,
+            self.book,
+        )
+
+        self.assertEqual(
+            item.book_format,
+            self.digital,
+        )
+
+        self.assertEqual(
+            item.quantity,
+            1,
+        )
+
+    def test_same_book_can_have_multiple_formats(self):
+        physical_response = self.client.post(
+            self.cart_url,
+            {
+                "book_id": self.book.id,
+                "format_id": self.physical.id,
+                "quantity": 1,
+            },
+            format="json",
+        )
+
+        digital_response = self.client.post(
+            self.cart_url,
+            {
+                "book_id": self.book.id,
+                "format_id": self.digital.id,
+                "quantity": 2,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            physical_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            digital_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        cart = Cart.objects.get(
+            user=self.user,
+        )
+
+        items = CartItem.objects.filter(
+            cart=cart,
+        )
+
+        self.assertEqual(
+            items.count(),
+            2,
+        )
+
+        physical_item = items.get(
+            book_format=self.physical,
+        )
+
+        digital_item = items.get(
+            book_format=self.digital,
+        )
+
+        self.assertEqual(
+            physical_item.quantity,
+            1,
+        )
+
+        self.assertEqual(
+            digital_item.quantity,
+            2,
+        )
+
+    def test_cart_uses_format_specific_price(self):
+        response_post = self.client.post(
+            self.cart_url,
+            {
+                "book_id": self.book.id,
+                "format_id": self.digital.id,
+                "quantity": 1,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response_post.status_code,
+            status.HTTP_200_OK,
+        )
+
+        response = self.client.get(
+            self.cart_url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        item = response.data[0]
+
+        self.assertEqual(
+            item["format_id"],
+            self.digital.id,
+        )
+
+        self.assertEqual(
+            item["format_type"],
+            "Digital",
+        )
+
+        self.assertEqual(
+            item["subtotal"],
+            Decimal("20.00"),
+        )
+
+    def test_cannot_add_format_from_another_book(self):
+        other_book = Book.objects.create(
+            author=self.author,
+            title="Other Book",
+            slug="other-book",
+            isbn="9781234567891",
+            description="Other test book",
+            genre="SCI_FI",
+        )
+
+        other_format = BookFormat.objects.create(
+            book=other_book,
+            format_type=BookFormat.FormatType.DIGITAL,
+        )
+
+        response = self.client.post(
+            self.cart_url,
+            {
+                "book_id": self.book.id,
+                "format_id": other_format.id,
+                "quantity": 1,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(
+            CartItem.objects.filter(
+                cart__user=self.user,
+            ).count(),
+            0,
+        )
+
+    def test_delete_only_selected_format(self):
+        physical_response = self.client.post(
+            self.cart_url,
+            {
+                "book_id": self.book.id,
+                "format_id": self.physical.id,
+                "quantity": 1,
+            },
+            format="json",
+        )
+
+        digital_response = self.client.post(
+            self.cart_url,
+            {
+                "book_id": self.book.id,
+                "format_id": self.digital.id,
+                "quantity": 1,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            physical_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            digital_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        response = self.client.delete(
+            self.cart_url,
+            {
+                "book_id": self.book.id,
+                "format_id": self.digital.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        cart = Cart.objects.get(
+            user=self.user,
+        )
+
+        self.assertTrue(
+            CartItem.objects.filter(
+                cart=cart,
+                book_format=self.physical,
+            ).exists()
+        )
+
+        self.assertFalse(
+            CartItem.objects.filter(
+                cart=cart,
+                book_format=self.digital,
+            ).exists()
+        )

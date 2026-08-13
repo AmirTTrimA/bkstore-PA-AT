@@ -943,6 +943,7 @@ class Command(BaseCommand):
         )
 
         cart_count = 0
+        cart_item_count = 0
 
         for user in users_with_carts:
 
@@ -957,17 +958,30 @@ class Command(BaseCommand):
 
             for book in available_books:
 
+                available_formats = list(
+                    book.formats.filter(is_available=True)
+                )
+
+                if not available_formats:
+                    continue
+
+                book_format = random.choice(available_formats)
+
                 CartItem.objects.create(
                     cart=cart,
                     book=book,
-                    quantity=random.randint(1, 3),
+                    book_format=book_format,
+                    quantity=random.randint(1, 2),
                 )
+
+                cart_item_count += 1
 
             cart_count += 1
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Created {cart_count} shopping carts."
+                f"Created {cart_count} shopping carts "
+                f"with {cart_item_count} cart items."
             )
         )
 
@@ -1036,9 +1050,19 @@ class Command(BaseCommand):
 
             for book in books:
 
+                available_formats = list(
+                    book.formats.filter(is_available=True)
+                )
+
+                if not available_formats:
+                    continue
+
+                book_format = random.choice(available_formats)
+
                 CartItem.objects.create(
                     cart=cart,
                     book=book,
+                    book_format=book_format,
                     quantity=random.randint(1, 2),
                 )
 

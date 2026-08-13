@@ -1,5 +1,5 @@
 # cart/models.py
-from catalog.models import Book
+from catalog.models import Book, BookFormat
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -43,16 +43,22 @@ class CartItem(models.Model):
     )
     # Links to the Book being purchased
     book = models.ForeignKey(Book, on_delete=models.CASCADE, verbose_name=_("Book"))
+    book_format = models.ForeignKey(
+        BookFormat,
+        on_delete=models.CASCADE,
+        related_name="cart_items",
+        verbose_name=_("Book Format"),
+    )
     quantity = models.PositiveIntegerField(_("Quantity"), default=1)
 
     class Meta:
         verbose_name = _("Cart Item")
         verbose_name_plural = _("Cart Items")
         # Ensure a user doesn't add the same book twice to the same cart
-        unique_together = ("cart", "book")
+        unique_together = ("cart", "book", "book_format")
 
     def __str__(self):
-        return f"{self.quantity}x {self.book.title}"
+        return f"{self.quantity}x {self.book.title} ({self.book_format.format_type}) in Cart for {self.cart.user.username}"
 
 
 class Order(models.Model):
@@ -139,6 +145,13 @@ class OrderItem(models.Model):
     book = models.ForeignKey(
         Book, on_delete=models.PROTECT, verbose_name=_("Book")
     )  # PROTECT to keep reference
+
+    book_format = models.ForeignKey(
+        BookFormat,
+        on_delete=models.PROTECT,
+        related_name="order_items",
+        verbose_name=_("Book Format"),
+    )
 
     # --- Snapshot Details (IMMUTABLE) ---
     quantity = models.PositiveIntegerField(_("Quantity"), default=1)
