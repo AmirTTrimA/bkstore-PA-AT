@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "cart",
     "content",
     "publishing",
-    "wallet",
+    "wallet.apps.WalletConfig",
 ]
 
 MIDDLEWARE = [

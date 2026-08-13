@@ -56,3 +56,14 @@ class WalletServiceTest(TestCase):
         transaction_record = WalletTransaction.objects.first()
 
         self.assertEqual(transaction_record.transaction_type, WalletTransaction.TransactionType.REFUND)
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="walletuser",
+            password="testpass123",
+        )
+
+        # Wallet is created automatically by the signal
+        self.wallet = self.user.wallet
+        self.wallet.balance = Decimal("100.00")
+        self.wallet.save(update_fields=["balance"])
