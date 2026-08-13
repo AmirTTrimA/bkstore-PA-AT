@@ -243,7 +243,7 @@ class AuthAPITestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
 
         # Check that the code was saved to the DB
-        otp_entry = self.user.otpcode_set.order_by("-created_at").first()
+        otp_entry = self.user.otp_codes.order_by("-created_at").first()
         self.assertIsNotNone(otp_entry)
         self.assertEqual(len(otp_entry.code), 6)
 
@@ -263,7 +263,7 @@ class AuthAPITestCase(APITestCase):
         self.client.post(
             self.otp_request_url, {"username_or_email": self.user.email}, format="json"
         )
-        otp_entry = self.user.otpcode_set.order_by("-created_at").first()
+        otp_entry = self.user.otp_codes.order_by("-created_at").first()
         valid_code = otp_entry.code
 
         login_data = {"username_or_email": self.user.username, "code": valid_code}
@@ -303,7 +303,7 @@ class AuthAPITestCase(APITestCase):
         self.client.post(
             self.otp_request_url, {"username_or_email": self.user.email}, format="json"
         )
-        otp_entry = self.user.otpcode_set.order_by("-created_at").first()
+        otp_entry = self.user.otp_codes.order_by("-created_at").first()
         valid_code = otp_entry.code
 
         verify_data = {"code": valid_code}

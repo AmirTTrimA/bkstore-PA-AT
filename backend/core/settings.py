@@ -208,7 +208,7 @@ ACCOUNT_RATE_LIMITS = {
 }
 
 # Explicitly states which fields are required during signup (uses custom user model fields)
-ACCOUNT_SIGNUP_FIELDS = ["email", "username", "job_or_major", "hobbies_or_likings"]
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "job_or_major", "hobbies_or_likings"]
 
 ACCOUNT_EMAIL_VERIFICATION = "none"  # Set to 'mandatory' for production security
 
