@@ -15,7 +15,7 @@ from pricing.models import (Discount, DiscountCode, Price, SubscriptionPlan,
                             UserSubscription)
 from rest_framework import serializers, status
 from rest_framework.test import APITestCase
-from wallet.models import wallet
+from wallet.models import Wallet
 
 from .models import CartItem, WishlistItem
 from .services import CheckoutService
@@ -547,6 +547,72 @@ class CheckoutServiceTestCase(TestCase):
                 pk=order.pk,
             ).exists()
         )
+
+    def _create_paid_order(self):
+        """
+        Helper that creates a paid order through the normal checkout flow.
+        """
+
+        wallet = Wallet.objects.get(user=self.user)
+        wallet.balance = Decimal("200.00")
+        wallet.save(update_fields=["balance"])
+
+        self.cart.items.create(book=self.book_digital, quantity=1)
+
+        return self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+    def test_cancel_order_refunds_wallet_and_revokes_license(self):
+        order = self._create_paid_order()
+
+        wallet = Wallet.objects.get(user=self.user)
+        self.assertEqual(wallet.balance, Decimal("160.00"))
+
+        license_obj = License.objects.get(
+            user=self.user,
+            book=self.book_digital,
+        )
+        self.assertTrue(license_obj.is_active)
+
+        self.service.cancel_order(order)
+
+        order.refresh_from_db()
+        wallet.refresh_from_db()
+        license_obj.refresh_from_db()
+
+        self.assertEqual(order.status, "REFUNDED")
+        self.assertEqual(wallet.balance, Decimal("200.00"))
+        self.assertFalse(license_obj.is_active)
+
+    def test_cancel_order_rejects_non_cancellable_status(self):
+        order = self._create_paid_order()
+
+        order.status = "DELIVERED"
+        order.save(update_fields=["status"])
+
+        with self.assertRaisesMessage(
+            serializers.ValidationError,
+            "This order cannot be cancelled.",
+        ):
+            self.service.cancel_order(order)
+
+    def test_cancel_order_rejects_other_users_order(self):
+        order = self._create_paid_order()
+
+        other_user = User.objects.create_user(
+            username="intruder",
+            password="password123",
+        )
+
+        other_service = CheckoutService(other_user)
+
+        with self.assertRaisesMessage(
+            serializers.ValidationError,
+            "You cannot cancel this order.",
+        ):
+            other_service.cancel_order(order)
 
 
 class WishlistTest(APITestCase):

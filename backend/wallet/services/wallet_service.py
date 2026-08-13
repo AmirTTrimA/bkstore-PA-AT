@@ -17,7 +17,13 @@ class WalletService:
 
     @staticmethod
     @transaction.atomic
-    def deposit(user, amount, description=""):
+    @staticmethod
+    def deposit(
+        user,
+        amount,
+        description="",
+        transaction_type="DEPOSIT",
+    ):
         amount = Decimal(str(amount))
 
         if amount <= 0:
