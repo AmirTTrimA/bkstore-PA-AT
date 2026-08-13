@@ -14,6 +14,7 @@ urlpatterns = [
                 path("pricing/", include("pricing.urls")),
                 path("cart/", include("cart.urls")),
                 path("publishing/", include("publishing.api.urls")),
+                path("wallet/", include("wallet.api.urls")),
             ]
         ),
     ),
