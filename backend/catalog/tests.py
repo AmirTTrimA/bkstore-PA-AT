@@ -513,3 +513,11 @@ class BookFormatApiTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("formats", response.data)
         self.assertEqual(len(response.data["formats"]), 2)
+
+        formats = {
+            item["type"]: item
+            for item in response.data["formats"]
+        }
+
+        self.assertEqual(formats["PHYSICAL"]["price"], "30.00")
+        self.assertEqual(formats["DIGITAL"]["price"], "20.00")

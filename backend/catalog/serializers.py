@@ -47,8 +47,8 @@ class BookFormatSerializer(serializers.ModelSerializer):
     def get_price(self, obj):
         from pricing.services import PricingEngine
 
-        result = PricingEngine(book_format=obj).calculate()
-        return result.final_price
+        price = PricingEngine(book_format=obj).get_current_price()
+        return str(price.value) if price else None
 
 
 class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
