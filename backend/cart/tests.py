@@ -15,6 +15,7 @@ from pricing.models import (Discount, DiscountCode, Price, SubscriptionPlan,
                             UserSubscription)
 from rest_framework import serializers, status
 from rest_framework.test import APITestCase
+from wallet.models import wallet
 
 from .models import CartItem, WishlistItem
 from .services import CheckoutService
@@ -294,6 +295,10 @@ class CheckoutServiceTestCase(TestCase):
             username="checkout_user",
             password="password123",
         )
+
+        wallet = cls.user.wallet
+        wallet.balance = Decimal("1000.00")
+        wallet.save(update_fields=["balance"])
 
         cls.author = Author.objects.create(
             name="Douglas Adams",
@@ -848,3 +853,86 @@ class OrderApiTest(APITestCase):
             response.data["results"][1]["id"],
             self.order.id,
         )
+
+from decimal import Decimal
+
+from cart.models import Cart, CartItem, Order
+from catalog.models import Author, Book
+from django.contrib.auth import get_user_model
+from pricing.models import Price
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+User = get_user_model()
+
+
+class CheckoutWalletIntegrationTest(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="checkoutuser",
+            password="testpass123",
+        )
+
+        wallet = self.user.wallet
+        wallet.balance = Decimal("100.00")
+        wallet.save(update_fields=["balance"])
+
+        self.author = Author.objects.create(name="Test Author")
+
+        self.book = Book.objects.create(
+            author=self.author,
+            title="Checkout Book",
+            slug="checkout-book",
+            isbn="1234567890123",
+            genre="TECH",
+            is_digital=True,
+            digital_file_path="books/checkout.epub",
+        )
+
+        Price.objects.create(book=self.book, value=Decimal("25.00"))
+
+        cart = Cart.objects.create(user=self.user)
+        CartItem.objects.create(cart=cart, book=self.book, quantity=1)
+
+        self.client.force_authenticate(user=self.user)
+
+    def test_checkout_deducts_wallet_balance(self):
+        response = self.client.post(
+            "/api/v1/cart/checkout/",
+            {
+                "shipping_name": "John Doe",
+                "shipping_address_line1": "123 Main St",
+                "shipping_city": "Amsterdam",
+                "shipping_country": "Netherlands",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.user.wallet.refresh_from_db()
+        self.assertEqual(self.user.wallet.balance, Decimal("75.00"))
+
+        order = Order.objects.get()
+        self.assertEqual(order.status, "PROCESSING")
+
+    def test_checkout_fails_when_wallet_balance_is_insufficient(self):
+        wallet = self.user.wallet
+        wallet.balance = Decimal("5.00")
+        wallet.save(update_fields=["balance"])
+
+        response = self.client.post(
+            "/api/v1/cart/checkout/",
+            {
+                "shipping_name": "John Doe",
+                "shipping_address_line1": "123 Main St",
+                "shipping_city": "Amsterdam",
+                "shipping_country": "Netherlands",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("wallet", response.data)
+        self.assertEqual(Order.objects.count(), 0)

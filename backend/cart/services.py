@@ -1,7 +1,9 @@
 # cart/services.py
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Optional, Union  # For type hinting
+from typing import Optional, Union
+
+from requests import Response  # For type hinting
 
 from accounts.models import User  # For type hinting
 from catalog.models import Book
@@ -12,11 +14,14 @@ from django.db.models import (  # F is not used yet, but kept for future queries
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from .models import Cart, Order, OrderItem
 from pricing.models import DiscountCode, Price, UserSubscription
 from pricing.services import PricingEngine
 from rest_framework import \
     serializers  # Must be imported for serializers.ValidationError
+from wallet.exceptions import InsufficientBalanceError
+from wallet.services import WalletService
+
+from .models import Cart, Order, OrderItem
 
 # Define the minimum allowed price floor for any single item after all discounts
 MINIMUM_PRICE_FLOOR = Decimal('1.00')
@@ -170,6 +175,17 @@ class CheckoutService:
 
         OrderItem.objects.bulk_create(order_items)
 
+    def _charge_wallet(self, amount: Decimal):
+        """
+        Charges the customer's wallet for the order amount.
+        """
+
+        return WalletService.withdraw(
+            user=self.user,
+            amount=amount,
+            description=f"Bookstore order payment",
+        )
+
     def _grant_licenses(
         self,
         order: Order,
@@ -221,19 +237,13 @@ class CheckoutService:
         cart.items.all().delete()
 
     @transaction.atomic
-    def checkout(
-        self,
-        cart: Cart,
-        shipping_data: dict,
-    ):
+    def checkout(self, cart: Cart, shipping_data: dict):
         """
         Executes the complete checkout workflow.
         """
 
         if not cart.items.exists():
-            raise serializers.ValidationError(
-                _("Your cart is empty.")
-            )
+            raise serializers.ValidationError(_("Your cart is empty."))
 
         coupon_code = shipping_data.get("discount_code")
 
@@ -242,25 +252,25 @@ class CheckoutService:
             coupon_code=coupon_code,
         )
 
+        try:
+            self._charge_wallet(snapshot.total_amount)
+        except InsufficientBalanceError as exc:
+            raise serializers.ValidationError({
+                "wallet": exc.messages
+            })
+
         order = self._create_order(
             snapshot=snapshot,
             shipping_data=shipping_data,
         )
 
-        self._create_order_items(
-            order=order,
-            snapshot=snapshot,
-        )
+        # Wallet payment succeeded, so the order is already paid
+        order.status = "PROCESSING"
+        order.save(update_fields=["status"])
 
-        self._grant_licenses(
-            order=order,
-            snapshot=snapshot,
-        )
-
-        self._consume_coupon(
-            snapshot.applied_coupon,
-        )
-
+        self._create_order_items(order, snapshot)
+        self._grant_licenses(order, snapshot)
+        self._consume_coupon(snapshot.applied_coupon)
         self._clear_cart(cart)
 
         return order

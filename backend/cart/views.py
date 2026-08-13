@@ -316,7 +316,7 @@ class CheckoutView(generics.GenericAPIView):
             )
         except serializers.ValidationError as exc:
             return Response(
-                {"detail": exc.detail},
+                exc.detail,
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
