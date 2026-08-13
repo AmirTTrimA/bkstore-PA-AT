@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from accounts.models import User
-from catalog.models import Author, Book
+from catalog.models import Author, Book, BookFormat
 from catalog.serializers import BookListSerializer
 from django.test import TestCase
 from django.urls import reverse
@@ -1286,3 +1286,30 @@ class PricingEngineCouponApplicationTestCase(
             result.coupon_discount_amount,
             Decimal("10.00"),
         )
+
+class PriceFormatBridgeTest(TestCase):
+    def test_existing_price_has_book_format(self):
+        author = Author.objects.create(name="Bridge Author")
+
+        book = Book.objects.create(
+            author=author,
+            title="Bridge Book",
+            slug="bridge-book",
+            isbn="9782222222222",
+            description="Test",
+            genre="SCI_FI",
+        )
+
+        fmt = BookFormat.objects.create(
+            book=book,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
+        price = Price.objects.create(
+            book=book,
+            book_format=fmt,
+            value=Decimal("19.99"),
+            currency="USD",
+        )
+
+        self.assertEqual(price.book_format, fmt)

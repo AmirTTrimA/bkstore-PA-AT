@@ -1,7 +1,7 @@
 # pricing/models.py
 from datetime import timedelta
 
-from catalog.models import Book  # Import the Book model
+from catalog.models import Book, BookFormat  # Import the Book model
 from django.conf import settings  # For accessing AUTH_USER_MODEL
 from django.db import models, transaction
 from django.utils import timezone
@@ -18,6 +18,16 @@ class Price(models.Model):
     # --- Relationships ---
     book = models.ForeignKey(
         Book, on_delete=models.CASCADE, related_name="prices", verbose_name=_("Book")
+    )
+
+    # NEW: temporary bridge to the format-specific model
+    book_format = models.ForeignKey(
+        BookFormat,
+        on_delete=models.CASCADE,
+        related_name="prices",
+        null=True,
+        blank=True,
+        verbose_name=_("Book Format"),
     )
 
     # --- Price Details ---
