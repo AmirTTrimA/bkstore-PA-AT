@@ -390,18 +390,24 @@ class Command(BaseCommand):
 
         for user in self.user_list:
 
-            wallet = Wallet.objects.create(
-                user=user,
-                currency="USD",
-            )
-
             # Give each user an initial deposit between $40 and $250.
             initial_balance = Decimal(
                 str(round(random.uniform(40, 250), 2))
             )
 
+            # Wallets are automatically created by signals.
+            wallet, _ = Wallet.objects.get_or_create(
+                user=user,
+                defaults={
+                    "currency": "USD",
+                    "balance": initial_balance,
+                },
+            )
+
+            # If the wallet already existed, reset it to the demo balance.
+            wallet.currency = "USD"
             wallet.balance = initial_balance
-            wallet.save(update_fields=["balance"])
+            wallet.save(update_fields=["currency", "balance"])
 
             deposit = WalletTransaction.objects.create(
                 wallet=wallet,
@@ -619,21 +625,26 @@ class Command(BaseCommand):
 
     def create_prices(self):
         """
-        Creates realistic price histories for demo books.
+        Creates realistic price histories for every available book format.
 
-        Most books receive a single active price.
-        Around 20% receive multiple historical price changes.
+        - Physical editions use the base genre price.
+        - Digital editions are cheaper.
+        - Audio editions are slightly cheaper than physical editions.
+        - Historical price chains are preserved per format.
         """
 
         self.stdout.write("Creating prices...")
 
         now = timezone.now()
 
+        created_count = 0
+
         for book in self.books.values():
 
             minimum, maximum = self.PRICE_RANGES[book.genre]
 
-            current_price = Decimal(
+            # Base physical-style price for this title
+            base_price = Decimal(
                 str(
                     round(
                         random.uniform(minimum, maximum),
@@ -642,93 +653,119 @@ class Command(BaseCommand):
                 )
             )
 
-            min_price = (
-                current_price * Decimal("0.40")
-            ).quantize(
-                Decimal("0.01")
-            )
+            for book_format in book.formats.all():
 
-            # --------------------------------------------------
-            # Most books only receive one price.
-            # --------------------------------------------------
+                # --------------------------------------------------
+                # Format-specific price adjustment
+                # --------------------------------------------------
 
-            if random.random() >= 0.20:
+                if book_format.format_type == BookFormat.FormatType.PHYSICAL:
+                    current_price = base_price
 
-                price = book.change_price(
-                    value=current_price,
-                    currency="USD",
-                    min_price=min_price,
+                elif book_format.format_type == BookFormat.FormatType.DIGITAL:
+                    current_price = (
+                        base_price * Decimal("0.70")
+                    ).quantize(Decimal("0.01"))
+
+                else:  # AUDIO
+                    current_price = (
+                        base_price * Decimal("0.90")
+                    ).quantize(Decimal("0.01"))
+
+                min_price = (
+                    current_price * Decimal("0.40")
+                ).quantize(Decimal("0.01"))
+
+                # --------------------------------------------------
+                # Most formats receive one active price.
+                # --------------------------------------------------
+
+                if random.random() >= 0.20:
+
+                    price = Price.objects.create(
+                        book=book,
+                        book_format=book_format,
+                        value=current_price,
+                        currency="USD",
+                        min_price=min_price,
+                        effective_from=now,
+                    )
+
+                    self.prices[
+                        f"{book.isbn}:{book_format.format_type}"
+                    ] = price
+
+                    created_count += 1
+
+                    continue
+
+                # --------------------------------------------------
+                # Build a realistic price history for this format.
+                # --------------------------------------------------
+
+                history_count = random.randint(2, 4)
+
+                dates = sorted(
+                    random.sample(
+                        range(30, 700),
+                        history_count - 1,
+                    ),
+                    reverse=True,
                 )
 
-                self.prices[book.isbn] = price
+                dates.append(0)
 
-                continue
+                value = current_price
+                previous_price = None
 
-            # --------------------------------------------------
-            # Build a realistic price history.
-            # --------------------------------------------------
+                for days_ago in dates:
 
-            history_count = random.randint(2, 4)
+                    if previous_price is not None:
 
-            dates = sorted(
-                random.sample(
-                    range(30, 700),
-                    history_count - 1,
-                ),
-                reverse=True,
-            )
-
-            dates.append(0)
-
-            value = current_price
-
-            previous_price = None
-
-            for days_ago in dates:
-
-                if previous_price is not None:
-
-                    change = Decimal(
-                        str(
-                            round(
-                                random.uniform(-0.20, 0.20),
-                                2,
+                        change = Decimal(
+                            str(
+                                round(
+                                    random.uniform(-0.20, 0.20),
+                                    2,
+                                )
                             )
                         )
+
+                        value = (
+                            value * (Decimal("1.00") + change)
+                        ).quantize(Decimal("0.01"))
+
+                        if value < min_price:
+                            value = min_price
+
+                    price = Price.objects.create(
+                        book=book,
+                        book_format=book_format,
+                        value=value,
+                        currency="USD",
+                        min_price=min_price,
+                        effective_from=now - timedelta(days=days_ago),
                     )
 
-                    value = (
-                        value * (Decimal("1.00") + change)
-                    ).quantize(
-                        Decimal("0.01")
-                    )
+                    if previous_price is not None:
+                        previous_price.effective_until = (
+                            now - timedelta(days=days_ago)
+                        )
+                        previous_price.save(
+                            update_fields=["effective_until"]
+                        )
 
-                    if value < min_price:
-                        value = min_price
+                    previous_price = price
+                    created_count += 1
 
-                price = book.change_price(
-                    value=value,
-                    currency="USD",
-                    min_price=min_price,
-                )
-
-                timestamp = now - timedelta(days=days_ago)
-
-                price.effective_from = timestamp
-
-                if previous_price is not None:
-                    previous_price.effective_until = timestamp
-                    previous_price.save(update_fields=["effective_until"])
-
-                price.save(update_fields=["effective_from"])
-
-                previous_price = price
-
-            self.prices[book.isbn] = previous_price
+                # Store the currently active price for this format
+                self.prices[
+                    f"{book.isbn}:{book_format.format_type}"
+                ] = previous_price
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Created prices for {len(self.books)} books."
+                f"Created {created_count} format-specific price records."
             )
         )
 
@@ -990,6 +1027,8 @@ class Command(BaseCommand):
                 user=user,
             )
 
+            cart.items.all().delete()
+
             books = random.sample(
                 self.book_list,
                 k=random.randint(1, 4),
@@ -1008,7 +1047,39 @@ class Command(BaseCommand):
             if random.random() < 0.30:
                 coupon = random.choice(self.coupon_codes).code
 
-            CheckoutService(user=user).checkout(
+            # --------------------------------------------------
+            # Ensure the user can afford the generated order.
+            # --------------------------------------------------
+
+            service = CheckoutService(user=user)
+
+            snapshot = service._build_order_snapshot(
+                cart=cart,
+                coupon_code=coupon,
+            )
+
+            wallet = self.wallets[user.username]
+
+            if wallet.balance < snapshot.total_amount:
+
+                top_up = (
+                    snapshot.total_amount
+                    - wallet.balance
+                    + Decimal("10.00")
+                )
+
+                wallet.balance += top_up
+                wallet.save(update_fields=["balance"])
+
+                WalletTransaction.objects.create(
+                    wallet=wallet,
+                    transaction_type=WalletTransaction.TransactionType.DEPOSIT,
+                    amount=top_up,
+                    balance_after=wallet.balance,
+                    description="Automatic demo order funding",
+                )
+
+            service.checkout(
                 cart=cart,
                 shipping_data=self.build_shipping_data(
                     user=user,
@@ -1036,8 +1107,8 @@ class Command(BaseCommand):
         created = 0
 
         statuses = [
-            Proposal.Status.SUBMITTED,
-            Proposal.Status.UNDER_REVIEW,
+            Proposal.Status.PENDING,
+            # Proposal.Status.UNDER_REVIEW,
             Proposal.Status.REJECTED,
         ]
 
@@ -1194,7 +1265,7 @@ class Command(BaseCommand):
 
             if proposal.status in [
                 Proposal.Status.REJECTED,
-                Proposal.Status.UNDER_REVIEW,
+                # Proposal.Status.UNDER_REVIEW,
             ]:
 
                 proposal.reviewed_by = User.objects.filter(

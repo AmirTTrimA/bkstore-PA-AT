@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .models import Author, Book
+from .models import Author, Book, BookFormat
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -36,11 +36,27 @@ class CurrentPriceMixin(serializers.Serializer):
         current_price = obj.current_price
         return str(current_price.value) if current_price else None
 
+class BookFormatSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(source="format_type", read_only=True)
+    price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BookFormat
+        fields = ("id", "type", "price")
+
+    def get_price(self, obj):
+        from pricing.services import PricingEngine
+
+        result = PricingEngine(book_format=obj).calculate()
+        return result.final_price
+
 
 class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
     """Serializer for the public Book list and search results."""
 
     author_name = serializers.CharField(source="author.name")
+
+    formats = BookFormatSerializer(many=True, read_only=True)
 
     class Meta:
         model = Book
@@ -50,6 +66,7 @@ class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
             "slug",
             "author_name",
             "cover_image_url",
+            "formats",
             "price",
         )
 
