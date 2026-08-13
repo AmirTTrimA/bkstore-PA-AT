@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "dj_rest_auth",
+    "corsheaders",  # For handling CORS in development
     "haystack",  # For search functionality
     # Local apps
     "accounts",
@@ -51,7 +52,7 @@ INSTALLED_APPS = [
     "cart",
     "content",
     "publishing",
-    "corsheaders",  # For handling CORS in development
+    "wallet",
 ]
 
 MIDDLEWARE = [

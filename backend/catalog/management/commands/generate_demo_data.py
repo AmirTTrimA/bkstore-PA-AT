@@ -17,6 +17,7 @@ from publishing.models import (AuthorCreateProposal, AuthorUpdateProposal,
                                BookCreateProposal, BookDeleteProposal,
                                BookUpdateProposal, PriceChangeProposal,
                                Proposal, Publisher, PublisherMembership)
+from wallet.models import Wallet, WalletTransaction
 
 User = get_user_model()
 
@@ -263,9 +264,14 @@ class Command(BaseCommand):
         self.publishers = {}
         self.proposals = []
 
+        self.wallets = {}
+        self.wallet_transactions = []
+
         self.reset_demo_data()
 
         self.create_users()
+
+        self.create_wallets()
 
         self.create_publishers()
 
@@ -298,29 +304,43 @@ class Command(BaseCommand):
 
         self.stdout.write("Removing existing demo data...")
 
-        # Child models first
-        License.objects.all().delete()
-        WishlistItem.objects.all().delete()
-        CartItem.objects.all().delete()
-        Cart.objects.all().delete()
+        # --- Publishing proposal details ---
+        BookDeleteProposal.objects.all().delete()
+        BookUpdateProposal.objects.all().delete()
+        BookCreateProposal.objects.all().delete()
 
-        UserSubscription.objects.all().delete()
+        AuthorUpdateProposal.objects.all().delete()
+        AuthorCreateProposal.objects.all().delete()
 
+        PriceChangeProposal.objects.all().delete()
+
+        # --- Generic proposals ---
+        Proposal.objects.all().delete()
+
+        # --- Publisher memberships / publishers ---
+        PublisherMembership.objects.all().delete()
+        Publisher.objects.all().delete()
+
+        # --- Orders ---
         OrderItem.objects.all().delete()
         Order.objects.all().delete()
 
-        DiscountCode.objects.all().delete()
-        Discount.objects.all().delete()
+        # --- Wallets ---
+        WalletTransaction.objects.all().delete()
+        Wallet.objects.all().delete()
 
+        # --- Licensing ---
+        License.objects.all().delete()
+        UserSubscription.objects.all().delete()
+
+        # --- Pricing ---
         Price.objects.all().delete()
-
+        DiscountCode.objects.all().delete()
         SubscriptionPlan.objects.all().delete()
 
+        # --- Catalog ---
         Book.objects.all().delete()
         Author.objects.all().delete()
-
-        PublisherMembership.objects.all().delete()
-        Publisher.objects.all().delete()
 
         # Remove demo users but leave superusers intact.
         User.objects.filter(is_superuser=False).delete()
@@ -356,6 +376,71 @@ class Command(BaseCommand):
                 f"Created {len(self.users)} demo users."
             )
     )
+
+    def create_wallets(self):
+        """
+        Creates wallets and realistic transaction history for demo users.
+        """
+
+        self.stdout.write("Creating wallets...")
+
+        transaction_count = 0
+
+        for user in self.user_list:
+
+            wallet = Wallet.objects.create(
+                user=user,
+                currency="USD",
+            )
+
+            # Give each user an initial deposit between $40 and $250.
+            initial_balance = Decimal(
+                str(round(random.uniform(40, 250), 2))
+            )
+
+            wallet.balance = initial_balance
+            wallet.save(update_fields=["balance"])
+
+            deposit = WalletTransaction.objects.create(
+                wallet=wallet,
+                transaction_type=WalletTransaction.TransactionType.DEPOSIT,
+                amount=initial_balance,
+                balance_after=initial_balance,
+                description="Initial demo wallet funding",
+            )
+
+            self.wallets[user.username] = wallet
+            self.wallet_transactions.append(deposit)
+
+            transaction_count += 1
+
+            # Roughly half the users get a second deposit transaction.
+            if random.random() < 0.50:
+
+                extra_amount = Decimal(
+                    str(round(random.uniform(10, 75), 2))
+                )
+
+                wallet.balance += extra_amount
+                wallet.save(update_fields=["balance"])
+
+                extra_deposit = WalletTransaction.objects.create(
+                    wallet=wallet,
+                    transaction_type=WalletTransaction.TransactionType.DEPOSIT,
+                    amount=extra_amount,
+                    balance_after=wallet.balance,
+                    description="Additional demo funding",
+                )
+
+                self.wallet_transactions.append(extra_deposit)
+                transaction_count += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {len(self.wallets)} wallets "
+                f"and {transaction_count} wallet transactions."
+            )
+        )
 
     def create_publishers(self):
         """
@@ -1134,6 +1219,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  Coupon Codes:       {DiscountCode.objects.count()}")
 
         self.stdout.write(f"  User Subscriptions: {UserSubscription.objects.count()}")
+
+        self.stdout.write(f"  Wallets:            {Wallet.objects.count()}")
+        self.stdout.write(f"  Wallet Transactions:{WalletTransaction.objects.count()}")
 
         self.stdout.write(f"  Shopping Carts:     {Cart.objects.count()}")
         self.stdout.write(f"  Cart Items:         {CartItem.objects.count()}")
