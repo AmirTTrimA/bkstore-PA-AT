@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from .models import Discount, DiscountCode
+from django.db.models import Q
+from django.utils import timezone
+
+from .models import Discount, DiscountCode, Price
 
 
 @dataclass
@@ -24,16 +27,52 @@ class PricingEngine:
     Calculates the effective selling price for a single book.
     """
 
-    def __init__(self, book, user=None, coupon_code=None):
-        self.book = book
+    def __init__(self, book=None, book_format=None, user=None, coupon_code=None):
+        if book is None and book_format is None:
+            raise ValueError("Either book or book_format must be provided.")
+
+        self.book = book or book_format.book
+        self.book_format = book_format
         self.user = user
         self.coupon_code = coupon_code
 
     def get_current_price(self):
         """
         Returns the currently active Price object.
+        Supports both format-aware and legacy book-level pricing.
         """
-        return self.book.current_price
+
+        return self._get_active_price()
+
+
+    def _get_active_price(self):
+        """
+        Returns the currently active price for the selected format.
+        Falls back to the legacy book-level relation during the migration phase.
+        """
+
+        now = timezone.now()
+
+        def active_prices(queryset):
+            return queryset.filter(
+                effective_from__lte=now
+            ).filter(
+                Q(effective_until__isnull=True)
+                | Q(effective_until__gte=now)
+            )
+
+        if self.book_format is not None:
+            price = active_prices(
+                Price.objects.filter(book_format=self.book_format)
+            ).order_by("-effective_from").first()
+
+            if price is not None:
+                return price
+
+        # Legacy fallback
+        return active_prices(
+            Price.objects.filter(book=self.book)
+        ).order_by("-effective_from").first()
 
     def get_applicable_discounts(self):
         discounts = Discount.objects.filter(
@@ -168,12 +207,13 @@ class PricingEngine:
 
         # Base price
         price = self.get_current_price()
-        current_price = price.value
 
         if price is None:
             raise ValueError(
                 f"Book '{self.book}' has no active price."
             )
+
+        current_price = price.value
 
         # Automatic discounts
         automatic_discount, current_price = (
