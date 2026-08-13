@@ -1,8 +1,14 @@
 from django.contrib import admin
 from django.db.models import Count
 
-from .models import Author, Book
+from .models import Author, Book, BookFormat
 
+
+@admin.register(BookFormat)
+class BookFormatAdmin(admin.ModelAdmin):
+    list_display = ("book", "format_type", "is_available")
+    list_filter = ("format_type", "is_available")
+    search_fields = ("book__title",)
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):

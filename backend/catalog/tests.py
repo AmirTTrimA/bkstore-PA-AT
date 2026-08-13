@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Author, Book
+from .models import Author, Book, BookFormat
 
 # ----------------------------------------------------------------------
 # 🎯 CATALOG APPLICATION TEST SUITE
@@ -439,3 +439,28 @@ class CatalogAPITestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsNone(response.data["price"])
+
+class BookFormatModelTest(APITestCase):
+    def test_book_can_have_multiple_formats(self):
+        author = Author.objects.create(name="Format Author")
+
+        book = Book.objects.create(
+            author=author,
+            title="Format Book",
+            slug="format-book",
+            isbn="9781111111111",
+            description="Test",
+            genre="SCI_FI",
+        )
+
+        BookFormat.objects.create(
+            book=book,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+
+        BookFormat.objects.create(
+            book=book,
+            format_type=BookFormat.FormatType.DIGITAL,
+        )
+
+        self.assertEqual(book.formats.count(), 2)

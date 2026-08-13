@@ -141,3 +141,35 @@ class Book(models.Model):
 
     def __str__(self):
         return f"{self.title}"
+
+class BookFormat(models.Model):
+    class FormatType(models.TextChoices):
+        PHYSICAL = "PHYSICAL", _("Physical")
+        DIGITAL = "DIGITAL", _("Digital")
+        AUDIO = "AUDIO", _("Audio")
+
+    book = models.ForeignKey(
+        Book,
+        on_delete=models.CASCADE,
+        related_name="formats",
+        verbose_name=_("Book"),
+    )
+
+    format_type = models.CharField(
+        _("Format Type"),
+        max_length=20,
+        choices=FormatType.choices,
+    )
+
+    is_available = models.BooleanField(_("Available"), default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Book Format")
+        verbose_name_plural = _("Book Formats")
+        unique_together = ("book", "format_type")
+        ordering = ["book", "format_type"]
+
+    def __str__(self):
+        return f"{self.book.title} ({self.get_format_type_display()})"

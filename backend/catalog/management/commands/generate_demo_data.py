@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from cart.models import Cart, CartItem, Order, OrderItem, WishlistItem
 from cart.services import CheckoutService
-from catalog.models import Author, Book
+from catalog.models import Author, Book, BookFormat
 from content.models import License
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
@@ -279,6 +279,8 @@ class Command(BaseCommand):
 
         self.create_books()
 
+        self.create_book_formats()
+        
         self.create_prices()
 
         self.create_subscription_plans()
@@ -578,6 +580,41 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"Created {len(self.books)} books."
             )
+        )
+
+    def create_book_formats(self):
+        self.stdout.write("Creating book formats...")
+
+        created = 0
+
+        for book in Book.objects.all():
+            has_format = False
+
+            if book.is_digital:
+                BookFormat.objects.get_or_create(
+                    book=book,
+                    format_type=BookFormat.FormatType.DIGITAL,
+                )
+                has_format = True
+                created += 1
+
+            if book.is_audio:
+                BookFormat.objects.get_or_create(
+                    book=book,
+                    format_type=BookFormat.FormatType.AUDIO,
+                )
+                has_format = True
+                created += 1
+
+            if not has_format:
+                BookFormat.objects.get_or_create(
+                    book=book,
+                    format_type=BookFormat.FormatType.PHYSICAL,
+                )
+                created += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(f"Created {created} book formats.")
         )
 
     def create_prices(self):
