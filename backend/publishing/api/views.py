@@ -4,6 +4,7 @@ from publishing.models import Proposal, Publisher
 from rest_framework import generics, permissions, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .permissions import IsProposalPublisherMember, IsPublisherMember
 from .serializers import (BookCreateProposalResponseSerializer,
@@ -13,7 +14,7 @@ from .serializers import (BookCreateProposalResponseSerializer,
                           BookDeleteProposalSubmissionSerializer,
                           BookDeleteProposalResponseSerializer,
                           PriceChangeProposalResponseSerializer,
-                          PriceChangeProposalSubmissionSerializer,
+                          PriceChangeProposalSubmissionSerializer, ProposalWithdrawalSerializer,
                           PublisherProposalDetailSerializer, ProposalListSerializer,
                           PublisherSerializer, AuthorCreateProposalResponseSerializer,
                           AuthorCreateProposalSubmissionSerializer,
@@ -259,3 +260,52 @@ class AuthorUpdateProposalSubmissionView(generics.CreateAPIView):
             ).data,
             status=status.HTTP_201_CREATED,
         )
+
+from django.shortcuts import get_object_or_404
+
+
+class ProposalWithdrawalView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsProposalPublisherMember,
+    ]
+
+    def post(self, request, proposal_id):
+        proposal = get_object_or_404(Proposal, pk=proposal_id)
+
+        self.check_object_permissions(request, proposal)
+
+        if proposal.submitted_by != request.user:
+            return Response(
+                {
+                    "detail": "You can only withdraw proposals you submitted."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not proposal.can_withdraw():
+            return Response(
+                {
+                    "detail": "Only pending proposals can be withdrawn."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ProposalWithdrawalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        reason = serializer.validated_data.get("reason", "").strip()
+
+        note = (
+            f"Withdrawn by submitter: {reason}"
+            if reason
+            else "Withdrawn by submitter."
+        )
+
+        proposal.mark_withdrawn(note=note)
+
+        return Response({
+            "proposal_id": proposal.id,
+            "status": proposal.status,
+            "message": "Proposal withdrawn successfully.",
+        })

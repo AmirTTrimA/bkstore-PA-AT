@@ -82,7 +82,7 @@ class PublishingAPITestCase(APITestCase):
             publisher=publisher,
             submitted_by=user,
             proposal_type=Proposal.ProposalType.BOOK_CREATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             submitted_at=django_timezone.now(),
         )
 
@@ -247,7 +247,7 @@ class PublisherAPITest(PublishingAPITestCase):
         rejected.save(update_fields=["status"])
 
         response = self.client.get(
-            f"/api/v1/publishing/publishers/{self.publisher.id}/proposals/?status=SUBMITTED"
+            f"/api/v1/publishing/publishers/{self.publisher.id}/proposals/?status=PENDING"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -344,7 +344,7 @@ class ProposalSubmissionAPITest(
 
         self.assertEqual(
             proposal.status,
-            Proposal.Status.SUBMITTED,
+            Proposal.Status.PENDING,
         )
 
 
@@ -650,4 +650,80 @@ class ProposalSubmissionAPITest(
         self.assertEqual(
             self.author.name,
             original_name,
+        )
+
+class ProposalWithdrawalAPITest(PublishingAPITestCase):
+    def test_submitter_can_withdraw_pending_proposal(self):
+        proposal = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        response = self.client.post(
+            f"/api/v1/publishing/proposals/{proposal.id}/withdraw/",
+            {"reason": "Wrong ISBN"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        proposal.refresh_from_db()
+
+        self.assertEqual(
+            proposal.status,
+            Proposal.Status.WITHDRAWN,
+        )
+
+        self.assertIn(
+            "Wrong ISBN",
+            proposal.review_notes,
+        )
+
+    def test_cannot_withdraw_non_pending_proposal(self):
+        proposal = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+
+        proposal.status = Proposal.Status.APPROVED
+        proposal.save(update_fields=["status"])
+
+        response = self.client.post(
+            f"/api/v1/publishing/proposals/{proposal.id}/withdraw/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_cannot_withdraw_another_users_proposal(self):
+        teammate = User.objects.create_user(
+            username="publisher_teammate",
+            email="teammate@test.com",
+            password="testpass123",
+        )
+
+        PublisherMembership.objects.create(
+            publisher=self.publisher,
+            user=teammate,
+            role=PublisherMembership.Role.EDITOR,
+        )
+
+        proposal = self.create_proposal(
+            publisher=self.publisher,
+            user=teammate,
+        )
+
+        response = self.client.post(
+            f"/api/v1/publishing/proposals/{proposal.id}/withdraw/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
         )

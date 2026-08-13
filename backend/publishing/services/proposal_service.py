@@ -43,7 +43,7 @@ class ProposalService:
             publisher=publisher,
             submitted_by=user,
             proposal_type=Proposal.ProposalType.BOOK_CREATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status. PENDING,
             submitted_at=timezone.now(),
         )
 
@@ -72,7 +72,7 @@ class ProposalService:
 
         existing_proposal = Proposal.objects.filter(
             proposal_type=Proposal.ProposalType.BOOK_UPDATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             book_update__book=book,
         ).exists()
 
@@ -87,7 +87,7 @@ class ProposalService:
             publisher=publisher,
             submitted_by=user,
             proposal_type=Proposal.ProposalType.BOOK_UPDATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             submitted_at=timezone.now(),
         )
 
@@ -115,7 +115,7 @@ class ProposalService:
             publisher=publisher,
             submitted_by=user,
             proposal_type=Proposal.ProposalType.BOOK_DELETE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             submitted_at=timezone.now(),
         )
 
@@ -140,7 +140,7 @@ class ProposalService:
             publisher=publisher,
             submitted_by=user,
             proposal_type=Proposal.ProposalType.AUTHOR_CREATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             submitted_at=timezone.now(),
         )
 
@@ -167,7 +167,7 @@ class ProposalService:
             publisher=publisher,
             submitted_by=user,
             proposal_type=Proposal.ProposalType.AUTHOR_UPDATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             submitted_at=timezone.now(),
         )
 
@@ -201,7 +201,7 @@ class ProposalService:
             publisher=publisher,
             submitted_by=user,
             proposal_type=Proposal.ProposalType.PRICE_CHANGE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             submitted_at=timezone.now(),
         )
 

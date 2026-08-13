@@ -28,16 +28,11 @@ class Proposal(models.Model):
         PRICE_CHANGE = "PRICE_CHANGE", _("Price Change")
 
     class Status(models.TextChoices):
-
-        DRAFT = "DRAFT", _("Draft")
-
-        SUBMITTED = "SUBMITTED", _("Submitted")
-
-        UNDER_REVIEW = "UNDER_REVIEW", _("Under Review")
-
-        APPLIED = "APPLIED", _("Applied")
-
+        PENDING = "PENDING", _("Pending")
+        APPROVED = "APPROVED", _("Approved")
         REJECTED = "REJECTED", _("Rejected")
+        WITHDRAWN = "WITHDRAWN", _("Withdrawn")
+        APPLIED = "APPLIED", _("Applied")
 
     title = models.CharField(
         _("Title"),
@@ -83,7 +78,7 @@ class Proposal(models.Model):
         _("Status"),
         max_length=20,
         choices=Status.choices,
-        default=Status.DRAFT,
+        default=Status.PENDING,
     )
 
     review_notes = models.TextField(
@@ -121,7 +116,7 @@ class Proposal(models.Model):
         return f"{self.title} ({self.get_status_display()})"
 
     def is_submitted(self):
-        return self.status == self.Status.SUBMITTED
+        return self.status == self.Status.PENDING
 
     def can_reject(self):
         return self.is_submitted()
@@ -140,3 +135,15 @@ class Proposal(models.Model):
         self.reviewed_by = reviewer
         self.reviewed_at = timezone.now()
         self.applied_at = timezone.now()
+
+    def can_withdraw(self):
+        return self.status == self.Status.PENDING
+
+
+    def mark_withdrawn(self, note="Withdrawn by submitter."):
+        if not self.can_withdraw():
+            raise ValueError("Only pending proposals can be withdrawn.")
+
+        self.status = self.Status.WITHDRAWN
+        self.review_notes = note
+        self.save(update_fields=["status", "review_notes"])
