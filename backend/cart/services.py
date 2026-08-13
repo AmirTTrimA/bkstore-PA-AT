@@ -6,6 +6,7 @@ from typing import Optional, Union
 from requests import Response  # For type hinting
 
 from accounts.models import User  # For type hinting
+from wallet.models.transaction import WalletTransaction
 from catalog.models import Book
 from content.models import License
 from django.db import transaction
@@ -272,5 +273,31 @@ class CheckoutService:
         self._grant_licenses(order, snapshot)
         self._consume_coupon(snapshot.applied_coupon)
         self._clear_cart(cart)
+
+        return order
+
+    @transaction.atomic
+    def cancel_order(self, order: Order):
+        if order.user != self.user:
+            raise serializers.ValidationError(_("You cannot cancel this order."))
+
+        if not order.can_cancel():
+            raise serializers.ValidationError(_("This order cannot be cancelled."))
+
+        # Refund wallet
+        WalletService.deposit(
+            user=self.user,
+            amount=order.total_amount,
+            transaction_type="REFUND",
+            description=f"Refund for Order #{order.pk}",
+        )
+
+        # Revoke licenses
+        License.objects.filter(
+            user=self.user,
+            order=order,
+        ).update(is_active=False)
+
+        order.mark_refunded()
 
         return order

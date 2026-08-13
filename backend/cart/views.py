@@ -4,6 +4,7 @@ from decimal import Decimal
 from catalog.models import Book
 from content.models import License
 from django.conf import settings
+from django.contrib.admin import action
 from django.db import models, transaction
 from django.db.models import Prefetch
 from django.db.utils import IntegrityError
@@ -13,10 +14,12 @@ from django.utils.translation import gettext_lazy as _
 from pricing.models import Price
 from pricing.services import PricingEngine
 from rest_framework import generics, serializers, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from wallet.api.serializers import OrderCancellationSerializer
 
 from .models import Cart, CartItem, Order, OrderItem, WishlistItem
 from .serializers import (CartItemInputSerializer, CartItemOutputSerializer,
@@ -354,3 +357,22 @@ class OrderViewSet(ReadOnlyModelViewSet):
             )
             .order_by("-created_at")
         )
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        """
+        Cancels a refundable order and returns the refunded state.
+        """
+
+        order = self.get_object()
+
+        serializer = OrderCancellationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        CheckoutService(request.user).cancel_order(order)
+
+        return Response({
+            "message": "Order refunded successfully.",
+            "status": "REFUNDED",
+            "order_id": order.id,
+        })

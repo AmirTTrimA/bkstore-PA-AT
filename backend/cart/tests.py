@@ -15,7 +15,7 @@ from pricing.models import (Discount, DiscountCode, Price, SubscriptionPlan,
                             UserSubscription)
 from rest_framework import serializers, status
 from rest_framework.test import APITestCase
-from wallet.models import wallet
+from wallet.models import Wallet
 
 from .models import CartItem, WishlistItem
 from .services import CheckoutService
@@ -548,6 +548,72 @@ class CheckoutServiceTestCase(TestCase):
             ).exists()
         )
 
+    def _create_paid_order(self):
+        """
+        Helper that creates a paid order through the normal checkout flow.
+        """
+
+        wallet = Wallet.objects.get(user=self.user)
+        wallet.balance = Decimal("200.00")
+        wallet.save(update_fields=["balance"])
+
+        self.cart.items.create(book=self.book_digital, quantity=1)
+
+        return self.service.checkout(
+            cart=self.cart,
+            shipping_data=self.shipping,
+        )
+
+    def test_cancel_order_refunds_wallet_and_revokes_license(self):
+        order = self._create_paid_order()
+
+        wallet = Wallet.objects.get(user=self.user)
+        self.assertEqual(wallet.balance, Decimal("160.00"))
+
+        license_obj = License.objects.get(
+            user=self.user,
+            book=self.book_digital,
+        )
+        self.assertTrue(license_obj.is_active)
+
+        self.service.cancel_order(order)
+
+        order.refresh_from_db()
+        wallet.refresh_from_db()
+        license_obj.refresh_from_db()
+
+        self.assertEqual(order.status, "REFUNDED")
+        self.assertEqual(wallet.balance, Decimal("200.00"))
+        self.assertFalse(license_obj.is_active)
+
+    def test_cancel_order_rejects_non_cancellable_status(self):
+        order = self._create_paid_order()
+
+        order.status = "DELIVERED"
+        order.save(update_fields=["status"])
+
+        with self.assertRaisesMessage(
+            serializers.ValidationError,
+            "This order cannot be cancelled.",
+        ):
+            self.service.cancel_order(order)
+
+    def test_cancel_order_rejects_other_users_order(self):
+        order = self._create_paid_order()
+
+        other_user = User.objects.create_user(
+            username="intruder",
+            password="password123",
+        )
+
+        other_service = CheckoutService(other_user)
+
+        with self.assertRaisesMessage(
+            serializers.ValidationError,
+            "You cannot cancel this order.",
+        ):
+            other_service.cancel_order(order)
+
 
 class WishlistTest(APITestCase):
     """
@@ -737,6 +803,13 @@ class OrderApiTest(APITestCase):
             format="json",
         )
 
+        self.cart, _ = Cart.objects.get_or_create(user=self.user)
+
+        self.book.change_price(
+            value=Decimal("40.00"),
+            currency="USD",
+        )
+
         self.client.credentials(
             HTTP_AUTHORIZATION=f"Bearer {login.data['access']}"
         )
@@ -853,6 +926,72 @@ class OrderApiTest(APITestCase):
             response.data["results"][1]["id"],
             self.order.id,
         )
+
+    def test_user_can_cancel_own_order_via_api(self):
+        wallet = Wallet.objects.get(user=self.user)
+        wallet.balance = Decimal("200.00")
+        wallet.save(update_fields=["balance"])
+
+        self.cart.items.create(book=self.book, quantity=1)
+
+        checkout_response = self.client.post(
+            "/api/v1/cart/checkout/",
+            {
+                "shipping_name": "John Doe",
+                "shipping_address_line1": "123 Test Street",
+                "shipping_city": "Testville",
+                "shipping_country": "USA",
+            },
+            format="json",
+        )
+
+        self.assertEqual(checkout_response.status_code, status.HTTP_201_CREATED)
+
+        order_id = checkout_response.data["id"]
+
+        response = self.client.post(
+            f"/api/v1/cart/orders/{order_id}/cancel/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "REFUNDED")
+
+        wallet.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("200.00"))
+
+
+    def test_user_cannot_cancel_other_users_order_via_api(self):
+        other_user = User.objects.create_user(
+            username="other_customer",
+            password="testpass123",
+        )
+
+        other_wallet = Wallet.objects.get(user=other_user)
+        other_wallet.balance = Decimal("200.00")
+        other_wallet.save(update_fields=["balance"])
+
+        other_cart, _ = Cart.objects.get_or_create(user=other_user)
+        other_cart.items.create(book=self.book, quantity=1)
+
+        order = CheckoutService(other_user).checkout(
+            cart=other_cart,
+            shipping_data={
+                "shipping_name": "Other User",
+                "shipping_address_line1": "456 Other Street",
+                "shipping_city": "Elsewhere",
+                "shipping_country": "USA",
+            },
+        )
+
+        response = self.client.post(
+            f"/api/v1/cart/orders/{order.id}/cancel/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 from decimal import Decimal
 

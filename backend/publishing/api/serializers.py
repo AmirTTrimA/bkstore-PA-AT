@@ -485,7 +485,7 @@ class BookDeleteProposalSubmissionSerializer(serializers.ModelSerializer):
 
         exists = Proposal.objects.filter(
             proposal_type=Proposal.ProposalType.BOOK_DELETE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             book_delete__book=book,
         ).exists()
 
@@ -799,7 +799,7 @@ class AuthorUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
 
         exists = Proposal.objects.filter(
             proposal_type=Proposal.ProposalType.AUTHOR_UPDATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
             author_update__author=author,
         ).exists()
 
@@ -857,3 +857,9 @@ class AuthorUpdateProposalResponseSerializer(serializers.ModelSerializer):
 
     def get_message(self, obj):
         return "Author update proposal submitted successfully."
+
+class ProposalWithdrawalSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )

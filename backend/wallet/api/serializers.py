@@ -32,3 +32,14 @@ class WalletTransactionSerializer(serializers.ModelSerializer):
             "description",
             "created_at",
         ]
+
+class OrderCancellationSerializer(serializers.Serializer):
+    """
+    Input serializer for order cancellation requests.
+    Reserved for future cancellation reasons and audit metadata.
+    """
+
+    reason = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )

@@ -4,7 +4,7 @@ from django.urls import path
 from .views import (BookCreateProposalSubmissionView,
                     BookDeleteProposalSubmissionView,
                     BookUpdateProposalSubmissionView, MyPublishersView,
-                    PriceChangeProposalCreateView, ProposalDetailView,
+                    PriceChangeProposalCreateView, ProposalDetailView, ProposalWithdrawalView,
                     PublisherProposalListView, AuthorCreateProposalSubmissionView,
                     AuthorUpdateProposalSubmissionView
                     )
@@ -54,5 +54,10 @@ urlpatterns = [
         "proposals/author-update/",
         AuthorUpdateProposalSubmissionView.as_view(),
         name="proposal-author-update",
+    ),
+    path(
+        "proposals/<int:proposal_id>/withdraw/",
+        ProposalWithdrawalView.as_view(),
+        name="proposal-withdraw",
     ),
 ]

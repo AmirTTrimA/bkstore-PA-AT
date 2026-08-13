@@ -67,6 +67,7 @@ class Order(models.Model):
         ("SHIPPED", _("Shipped")),
         ("DELIVERED", _("Delivered")),
         ("CANCELLED", _("Cancelled")),
+        ("REFUNDED", _("Refunded")),
     ]
 
     # --- Relationships ---
@@ -117,6 +118,13 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.pk} by {self.user.username}"
+
+    def can_cancel(self):
+        return self.status in {"PENDING", "PROCESSING"}
+
+    def mark_refunded(self):
+        self.status = "REFUNDED"
+        self.save(update_fields=["status"])
 
 
 class OrderItem(models.Model):

@@ -55,7 +55,7 @@ class ProposalServiceTests(TestCase):
             publisher=self.publisher,
             submitted_by=self.publisher_user,
             proposal_type=Proposal.ProposalType.BOOK_CREATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
         )
 
 
@@ -91,7 +91,7 @@ class ProposalServiceTests(TestCase):
             publisher=self.publisher,
             submitted_by=self.publisher_user,
             proposal_type=Proposal.ProposalType.BOOK_CREATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
         )
 
 
@@ -163,7 +163,7 @@ class ProposalServiceTests(TestCase):
             publisher=self.publisher,
             submitted_by=self.publisher_user,
             proposal_type=Proposal.ProposalType.BOOK_UPDATE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
         )
 
 
@@ -236,7 +236,7 @@ class ProposalServiceTests(TestCase):
             publisher=self.publisher,
             submitted_by=self.publisher_user,
             proposal_type=Proposal.ProposalType.PRICE_CHANGE,
-            status=Proposal.Status.SUBMITTED,
+            status=Proposal.Status.PENDING,
         )
 
         PriceChangeProposal.objects.create(
