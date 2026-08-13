@@ -803,6 +803,13 @@ class OrderApiTest(APITestCase):
             format="json",
         )
 
+        self.cart, _ = Cart.objects.get_or_create(user=self.user)
+
+        self.book.change_price(
+            value=Decimal("40.00"),
+            currency="USD",
+        )
+
         self.client.credentials(
             HTTP_AUTHORIZATION=f"Bearer {login.data['access']}"
         )
@@ -919,6 +926,72 @@ class OrderApiTest(APITestCase):
             response.data["results"][1]["id"],
             self.order.id,
         )
+
+    def test_user_can_cancel_own_order_via_api(self):
+        wallet = Wallet.objects.get(user=self.user)
+        wallet.balance = Decimal("200.00")
+        wallet.save(update_fields=["balance"])
+
+        self.cart.items.create(book=self.book, quantity=1)
+
+        checkout_response = self.client.post(
+            "/api/v1/cart/checkout/",
+            {
+                "shipping_name": "John Doe",
+                "shipping_address_line1": "123 Test Street",
+                "shipping_city": "Testville",
+                "shipping_country": "USA",
+            },
+            format="json",
+        )
+
+        self.assertEqual(checkout_response.status_code, status.HTTP_201_CREATED)
+
+        order_id = checkout_response.data["id"]
+
+        response = self.client.post(
+            f"/api/v1/cart/orders/{order_id}/cancel/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "REFUNDED")
+
+        wallet.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("200.00"))
+
+
+    def test_user_cannot_cancel_other_users_order_via_api(self):
+        other_user = User.objects.create_user(
+            username="other_customer",
+            password="testpass123",
+        )
+
+        other_wallet = Wallet.objects.get(user=other_user)
+        other_wallet.balance = Decimal("200.00")
+        other_wallet.save(update_fields=["balance"])
+
+        other_cart, _ = Cart.objects.get_or_create(user=other_user)
+        other_cart.items.create(book=self.book, quantity=1)
+
+        order = CheckoutService(other_user).checkout(
+            cart=other_cart,
+            shipping_data={
+                "shipping_name": "Other User",
+                "shipping_address_line1": "456 Other Street",
+                "shipping_city": "Elsewhere",
+                "shipping_country": "USA",
+            },
+        )
+
+        response = self.client.post(
+            f"/api/v1/cart/orders/{order.id}/cancel/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 from decimal import Decimal
 
