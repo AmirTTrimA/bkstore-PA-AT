@@ -1,138 +1,131 @@
-// ✅
-import React,{useState,useEffect} from 'react'
-import { useAuth } from '../../Context/AuthContext'
-import { useNavigate } from 'react-router-dom'
-import ApiClient from '../../Services/ApiClient'
-import "../../Styles/components/ConfirmEmail.css"
-
-
-
-
-
-
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../Context/AuthContext';
+import ApiClient from '../../Services/ApiClient';
+import "../../Styles/components/ConfirmEmail.css";
 
 // ============================================
-//    Constants
+// Constants
 // ============================================
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ERROR_DURATION = 2000;
 
-
-
 // ============================================
-//    Main 
+// Main
 // ============================================
 export default function ConfirmEmail() {
 
+  const { error, setError, clearError } = useAuth();
 
-    const {error,setError,clearError} = useAuth()   
-    const navigate= useNavigate()
-    
-    
-    // ---State---
-    const [email,setEmail]=useState('')
-    const [isLoading, setIsLoading] = useState(false);
+  // --- State ---
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState('');
 
-// ---Effects---
+  // ============================================
+  // Effects
+  // ============================================
 
-// Auto clear error
-    useEffect(()=>{
-        if (error) {
-          const timer = setTimeout(() => {
-            clearError();
-          }, ERROR_DURATION);
-      
-          return () => clearTimeout(timer);}
-    },[error,clearError])
+  // Auto-clear error
+  useEffect(() => {
+    if (!error) return;
 
+    const timer = setTimeout(() => {
+      clearError();
+    }, ERROR_DURATION);
 
-    // Dark mode
-    useEffect(() => {
-        document.body.style.backgroundColor = '#2d2d2d';
-        return () => {
-          document.body.style.backgroundColor = '';
-          document.body.style.color = '';
-        };
-    }, []);
-      
+    return () => clearTimeout(timer);
+  }, [error, clearError]);
 
+  // ============================================
+  // Handlers
+  // ============================================
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    setError('');
+    setSuccess('');
 
-    // ---Handler---
-    const handleSubmit = async (e)=>{
-        
-        
-        e.preventDefault()
-        setError("")
-        setIsLoading(true)
+    const trimmedEmail = email.trim();
 
-        
-        const trimmedEmail = email.trim();
-
-
-        //email-validation
-        if(!EMAIL_REGEX.test(trimmedEmail)){
-          setError('Not Valid Email')
-          setIsLoading(false)
-          return false
-        }
-
-
-      try{
-        const res = await ApiClient.post("/auth/request-otp",{
-          email:email.trim(),
-        });
-
-        if(res.data.success){
-          localStorage.setItem("resetEmail",email.trim());
-          navigate('/forgetpass')
-        }else{
-          setError(res.data.message || "Failed to Send OTP")
-        }
-
-      }catch(err){
-        if(err.response) setError(err.response?.data?.message|| "Error Send OTP")
-        else setError("Server error")
-      }finally{
-        setIsLoading(false)
-      }
-
+    // Validate email
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setError('Not Valid Email');
+      return;
     }
 
+    setIsLoading(true);
 
+    try {
+      await ApiClient.post(
+        "/auth/password/reset/",
+        {
+          email: trimmedEmail,
+        }
+      );
 
+      setSuccess(
+        "If an account exists with this email, a password reset link has been sent."
+      );
 
+    } catch (err) {
+      setError(
+        err.response?.data?.detail ||
+        "Failed to request password reset."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ============================================
+  // Render
+  // ============================================
 
   return (
-    <div className='confirm-container'>
-      <form className="confirm-form" onSubmit={handleSubmit}>
-        <h4 className='form-title'>Enter your Email </h4>
+    <div className="confirm-container">
+      <form
+        className="confirm-form"
+        onSubmit={handleSubmit}
+      >
+        <h4 className="form-title">
+          Enter your Email
+        </h4>
+
         <span className="input-span">
-          <input type="email"
-                 onChange={(e)=>setEmail(e.target.value)}
-                 name="email"
-                 placeholder='enter your email'
-                 style={{textAlign:"center"}}
-                 disabled={isLoading}
-                 autoComplete='off'
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            name="email"
+            placeholder="enter your email"
+            style={{ textAlign: "center" }}
+            disabled={isLoading}
+            autoComplete="email"
           />
         </span>
-        <button 
+
+        <button
           type="submit"
           className="submit"
           disabled={isLoading || !email.trim()}
         >
-          OK
+          {isLoading ? "Sending..." : "Send Reset Link"}
         </button>
-        {error && (
-                    <div className="error-message auto-hide">
-                      <i className='fas fa-exclamation-circle'></i>
-                      {error}
-                    </div>
-                  )} 
-      </form>
 
+        {error && (
+          <div className="error-message auto-hide">
+            <i className="fas fa-exclamation-circle"></i>
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="success-message">
+            {success}
+          </div>
+        )}
+      </form>
     </div>
-  )
+  );
 }

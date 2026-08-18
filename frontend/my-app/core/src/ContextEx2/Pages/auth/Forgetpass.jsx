@@ -1,211 +1,207 @@
-// ✅
-import React, { useRef,useEffect,useState,useCallback } from 'react'
-import { useAuth } from '../../Context/AuthContext';
-import {useNavigate } from 'react-router-dom';
-import ApiClient from "../../Services/ApiClient" 
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
-import '../../Styles/components/Forgetpass.css'
-
-
-
+import ApiClient from '../../Services/ApiClient';
+import '../../Styles/components/Forgetpass.css';
 
 // ============================================
-//    Constants
+// Constants
 // ============================================
-const OTP_LENGTH = 4;
-const ERROR_DURATION = 2000;
-
+const ERROR_DURATION = 3000;
 
 // ============================================
-//     Main 
+// Main
 // ============================================
 export default function Forgetpass() {
-    
-  
-    const {loginWithEmail} = useAuth()
-    const navigate = useNavigate()
-    const inputsRef = useRef([])
 
-    // ---State---
-    const[error,setError]=useState("")
-    const[isLoading,setIsLoading]=useState(false)
+  const navigate = useNavigate();
+  const { uid, token } = useParams();
 
-    
+  // --- State ---
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
 
-// ---Effects---
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  //Auto-clear error 
-  useEffect(()=>{
-    if (error) {
-      const timer = setTimeout(() => {
-        setError('')
-      }, ERROR_DURATION);
-      return () => clearTimeout(timer);}
-  },[error])
+  // ============================================
+  // Effects
+  // ============================================
 
+  // Auto-clear error
+  useEffect(() => {
+    if (!error) return;
 
-
-
-// ---Handlers---
-    const handleChange = (e, index) => {
-      
-      const value = e.target.value;
-       // Only allow numbers
-      if (value && !/^\d$/.test(value)) {
-        e.target.value = ''
-        return
-      }
-       // Move to next input if value exists
-      if(value && index < inputsRef.current.length -1){
-        inputsRef.current[index+1].focus()
-      }
-    }
-
-
-    const handleKeyDown=(e,index)=>{
-
-      // Move to previous input on backspace
-      if(e.key ==='Backspace' && !e.target.value && index>0){
-        inputsRef.current[index-1].focus()
-      }
-    }
-
-
-    // copy-paste option
-    const handlePaste = useCallback((e) => {
-      const paste = e.clipboardData.getData("text").trim();
-      if (/^\d+$/.test(paste)) {
-        paste.split("").forEach((char, i) => {
-          if (inputsRef.current[i]) {
-            inputsRef.current[i].value = char;
-          }
-        });
-        const nextIndex = Math.min(paste.length, inputsRef.current.length - 1);
-        inputsRef.current[nextIndex].focus();
-      }
-    },[])
-  
-
-
-    const handleVerify = useCallback(async() => {
-      const code = inputsRef.current.map((input) => input.value).join("");
-      
-      // Validate OTP length
-      if (code.length !== OTP_LENGTH) {
-        setError(`Please enter all ${OTP_LENGTH} digits`);
-        return;
-      }
-
-      setIsLoading(true);
+    const timer = setTimeout(() => {
       setError('');
+    }, ERROR_DURATION);
 
-      try{
-        const {data} = await ApiClient.post("/auth/verify-otp",{
-          email:localStorage.getItem("resetEmail"),
-          otp:code,
-        });
+    return () => clearTimeout(timer);
+  }, [error]);
 
-        
-        // save token and login
-        localStorage.setItem("token",data.token)
-        loginWithEmail(data.token)
-        navigate('/dashboard')
+  // ============================================
+  // Handlers
+  // ============================================
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-      }catch(err){
-        if(err.response){
-          setError(err.response.data.message || "Incorrect code");
-        }else{
-          setError("Server error")
-        } 
-      }finally{
-        setIsLoading(false)
+    setError('');
+    setSuccess('');
+
+    // Basic validation
+    if (!password || !password2) {
+      setError('Please fill in both password fields.');
+      return;
+    }
+
+    if (password !== password2) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (!uid || !token) {
+      setError('Invalid or incomplete password reset link.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await ApiClient.post(
+        '/auth/password/reset/confirm/',
+        {
+          uid,
+          token,
+          new_password1: password,
+          new_password2: password2,
+        }
+      );
+
+      setSuccess(
+        'Your password has been reset successfully.'
+      );
+
+      setPassword('');
+      setPassword2('');
+
+    } catch (err) {
+      const responseData = err.response?.data;
+
+      if (responseData) {
+        if (typeof responseData === 'string') {
+          setError(responseData);
+        } else if (responseData.detail) {
+          setError(responseData.detail);
+        } else if (responseData.new_password1) {
+          setError(
+            Array.isArray(responseData.new_password1)
+              ? responseData.new_password1[0]
+              : responseData.new_password1
+          );
+        } else {
+          setError('Failed to reset password.');
+        }
+      } else {
+        setError('Server error. Please try again.');
       }
-      
-    },[navigate,loginWithEmail])
-  
 
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-
-    // clear-entered-pass
-    const handleClear = () => {
-      inputsRef.current.forEach((input) => (input.value = ""));
-      inputsRef.current[0].focus();
-    };
-
-
-
-
+  // ============================================
+  // Render
+  // ============================================
 
   return (
-<div className='form-container' >
-  <form 
-      className="form"
-      onPaste={handlePaste}
-      onSubmit={(e) => e.preventDefault()}
-  >
-      {/* Close Button */}
-      <button 
+    <div className="form-container">
+
+      <form
+        className="form"
+        onSubmit={handleSubmit}
+      >
+
+        {/* Close Button */}
+        <button
           type="button"
           className="close"
-          onClick={()=>navigate('/login')}
-      >
+          onClick={() => navigate('/login')}
+          disabled={isLoading}
+        >
           X
-      </button>
+        </button>
 
-      {/* Header */}
-      <div className="forget-info">
-          <span className="title">Two-Factor Verification</span>
+        {/* Header */}
+        <div className="forget-info">
+          <span className="title">
+            Reset Password
+          </span>
+
           <p className="forget-description">
-            Enter the 4-digit code we send to your account.
+            Enter your new password below.
           </p>
-      </div>
-
-    {/* OTP inputs */}
-    <div className="input-fields">
-          {[0,1,2,3].map((_, index) => (
-            <input
-              key={index}
-              type="tel"
-              maxLength="1"
-              ref={(el) => (inputsRef.current[index] = el)}
-              onChange={(e) => handleChange(e, index)}
-              onKeyDown={(e) => handleKeyDown(e, index)}
-              disabled={isLoading}
-            />
-          ))}
-    </div>
-
-    {/* Error Message */}
-    {error && (
-        <div className="error-message auto-hide">
-          <i className='fas fa-exclamation-circle'></i>
-          {error}
         </div>
-    )} 
 
-    {/* Action Buttons */}
-    <div className="action-btns">
-          <button 
+        {/* Password fields */}
+        <div className="input-fields">
+
+          <input
+            type="password"
+            placeholder="New password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+            autoComplete="new-password"
+          />
+
+          <input
+            type="password"
+            placeholder="Confirm new password"
+            value={password2}
+            onChange={(e) => setPassword2(e.target.value)}
+            disabled={isLoading}
+            autoComplete="new-password"
+          />
+
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="error-message auto-hide">
+            <i className="fas fa-exclamation-circle"></i>
+            {error}
+          </div>
+        )}
+
+        {/* Success */}
+        {success && (
+          <div className="success-message">
+            {success}
+          </div>
+        )}
+
+        {/* Submit */}
+        <div className="action-btns">
+
+          <button
             type="submit"
-            onClick={handleVerify}
             className="verify"
-            disabled={isLoading}
+            disabled={
+              isLoading ||
+              !password ||
+              !password2
+            }
           >
-            Verify
+            {isLoading ? 'Resetting...' : 'Reset Password'}
           </button>
-          
-          <button 
-            type="button"
-            onClick={handleClear}
-            className="clear"
-            disabled={isLoading}
-          >
-            Clear
-          </button>
+
+        </div>
+
+      </form>
 
     </div>
-  </form>
-</div>
-  )
+  );
 }
