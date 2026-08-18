@@ -34,16 +34,6 @@ export default function Basket() {
   const [hasSavedAddress, setHasSavedAddress] = useState(false);
 
 
-  const [discountCode, setDiscountCode] = useState("");
-
-  const [appliedDiscount, setAppliedDiscount] = useState(null);
-
-  const [discountStatus, setDiscountStatus] = useState(null);
-
-
-
-
-
   // ==============================
   // Load Basket
   // ==============================
@@ -99,24 +89,7 @@ export default function Basket() {
   // ==============================
 
   useEffect(() => {
-
-
-    const addresses =
-      JSON.parse(
-        localStorage.getItem(
-          "user-addresses"
-        )
-      );
-
-
-    setHasSavedAddress(
-      Boolean(
-        addresses &&
-        addresses.length
-      )
-    );
-
-
+    setHasSavedAddress(false);
   }, []);
 
 
@@ -143,32 +116,13 @@ export default function Basket() {
 
 
 
-  const subtotal =
-    cartItems.reduce(
-      (sum, item) =>
-        sum + Number(item.subtotal),
-      0
-    );
+  const subtotal = cartItems.reduce(
+    (sum, item) =>
+      sum + Number(item.subtotal),
+    0
+  );
 
-
-
-  const discountAmount =
-    appliedDiscount?.amount || 0;
-
-
-  const tax =
-    (subtotal - discountAmount) * 0.1;
-
-
-  const total =
-    subtotal -
-    discountAmount +
-    tax;
-
-
-
-
-
+  const total = subtotal;
 
   // ==============================
   // Remove Item
@@ -207,7 +161,7 @@ export default function Basket() {
   // Quantity
   // ==============================
 
-  const updateQuantity = async (
+  const setQuantity = async (
     item,
     quantity
   ) => {
@@ -221,7 +175,7 @@ export default function Basket() {
     try {
 
 
-      await BasketService.addItem({
+      await BasketService.setQuantity({
 
         book_id: item.book_id,
 
@@ -290,17 +244,11 @@ export default function Basket() {
       {
         state: {
 
-          appliedDiscount,
-
           cartItems,
-
-          tax,
 
           total,
 
           subtotal,
-
-          discountAmount,
 
           hassavedaddress:
             hasSavedAddress,
@@ -461,7 +409,7 @@ export default function Basket() {
                             <button
                               className="qty-btn"
                               onClick={() =>
-                                updateQuantity(
+                                setQuantity(
                                   item,
                                   item.quantity - 1
                                 )
@@ -481,7 +429,7 @@ export default function Basket() {
                             <button
                               className="qty-btn"
                               onClick={() =>
-                                updateQuantity(
+                                setQuantity(
                                   item,
                                   item.quantity + 1
                                 )
@@ -538,22 +486,6 @@ export default function Basket() {
                     ${subtotal.toFixed(2)}
                   </span>
 
-
-                </div>
-
-
-
-
-                <div className="discount-summary-row">
-
-                  <span>
-                    Tax (10%):
-                  </span>
-
-
-                  <span>
-                    ${tax.toFixed(2)}
-                  </span>
 
                 </div>
 
