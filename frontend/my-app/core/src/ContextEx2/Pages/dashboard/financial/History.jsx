@@ -1,83 +1,222 @@
-// ✅
-import React,{ useMemo } from 'react'
-import {
-  Box,
-  Grid,
-  Card,
-  CardContent
-} from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import UploadIcon from '@mui/icons-material/Upload';
+import { useEffect, useState } from "react";
 
-import '../../../Styles/components/History.css'
+import OrderService from "../../../Services/OrderService";
 
-// ============================================
-//    Constants
-// ============================================
-
-const HISTORY_DATA=[
-  {id:1,total:200,actiontype:'withdraw',createdAt:'2026-05-09',orderId:"123456"},
-  {id:2,total:100,actiontype:'deposite',createdAt:'2022-04-023'},
-  {id:3,total:15,actiontype:'deposit',createdAt:'2023-01-15'},
-  {id:4,total:30,actiontype:'withdraw',createdAt:'2025-08-17',orderId:"123458"},
-  {id:5,total:45,actiontype:'deposit',createdAt:'2020-10-11'},
-  {id:6,total:70,actiontype:'withdraw',createdAt:'2026-07-07',orderId:"123457"},
-  {id:7,total:85,actiontype:'deposit',createdAt:'2026-02-08'},
-  {id:8,total:12.5,actiontype:'withdraw',createdAt:'2024-01-05',orderId:"123439"},
-  {id:9,total:66,actiontype:'deposit',createdAt:'2024-02-10'},
-]
+import "../../../Styles/components/History.css";
 
 
-// ============================================
-//    Main 
-// ============================================
+
 export default function History() {
 
-  //---Memoized Values---
-  const historyData = useMemo(()=> HISTORY_DATA ,[])
+
+  const [orders, setOrders] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+
+
+  // ============================================
+  // Load Orders
+  // ============================================
+
+  useEffect(() => {
+
+
+    const loadOrders = async () => {
+
+      try {
+
+
+        const response =
+          await OrderService.getOrders();
+
+
+
+        setOrders(
+          response.data.results ||
+          response.data
+        );
+
+
+      }
+      catch (err) {
+
+
+        console.error(
+          "Failed loading orders:",
+          err
+        );
+
+
+        setError(
+          "Could not load order history."
+        );
+
+
+      }
+      finally {
+
+        setLoading(false);
+
+      }
+
+
+    };
+
+
+    loadOrders();
+
+
+  }, []);
+
+
+
+
+  // ============================================
+  // States
+  // ============================================
+
+  if (loading) {
+
+    return (
+      <p>
+        Loading orders...
+      </p>
+    );
+
+  }
+
+
+
+  if (error) {
+
+    return (
+      <p>
+        {error}
+      </p>
+    );
+
+  }
+
+
+
+  if (orders.length === 0) {
+
+    return (
+      <p>
+        No orders yet.
+      </p>
+    );
+
+  }
+
+
 
 
 
   return (
-    <Box component="form"  sx={{ mt: 1 }}>
-        <Grid container spacing={3}>
-          {historyData.map((item) => (
 
-            <Grid size={{xs:12}} key={item.id}>
-                    <Card className='history-cards'>
-                      <CardContent sx={{ p:2 }} className="history-cards-content">
-                        <div className='history-cards-main'>
-                          {/* Left Side */}
-                          <div>
-                            <div className='history-cards-total-amount'>
-                                ${item.total}
-                            </div>
-                            {item.actiontype === 'withdraw' && item.orderId &&(
-                                <div className='history-card-small-text'>
-                                  Order ID: {item.orderId}
-                                </div>
-                            )}
-                          </div>
+    <>
 
 
+      {orders.map(order => (
 
-                          {/* Right Side */}
-                          <div className='history-card-right-section'>
-                              {item.actiontype === 'deposit' ?(
-                                 <DownloadIcon className='icon-deposit' />
-                              ):(
-                                <UploadIcon className='icon-withdraw'  />
-                              )}
-                              <div className='history-card-small-text' >
-                                  {item.createdAt}
-                              </div>
-                          </div>
-                        </div>
-                     </CardContent>
-                  </Card>
-              </Grid>
-          ))}
-        </Grid>
-    </Box>
+        <div
+          key={order.id}
+          className="history-cards"
+        >
+
+          <div className="history-cards-content">
+
+            <div className="history-cards-main">
+
+              <div>
+                <h3>
+                  Order #{order.id}
+                </h3>
+
+                <p className="history-card-small-text">
+                  {new Date(order.created_at)
+                    .toLocaleDateString()}
+                </p>
+              </div>
+
+
+              <div className="history-cards-total-amount">
+                ${Number(order.total_amount).toFixed(2)}
+              </div>
+
+            </div>
+
+
+
+            <div className="history-card-right-section">
+
+              <p>
+                {order.status_display}
+              </p>
+
+            </div>
+
+
+
+            <hr />
+
+
+            <h4>
+              Items
+            </h4>
+
+
+            <div className="order-items">
+
+              {
+                order.items.map(item => (
+
+                  <div
+                    key={item.id}
+                    className="order-item"
+                  >
+
+                    <p>
+                      📘 {item.book_title}
+                    </p>
+
+                    <p>
+                      By {item.author_name}
+                    </p>
+
+                    <p>
+                      Quantity: {item.quantity}
+                    </p>
+
+                    <p>
+                      Price: $
+                      {Number(
+                        item.snapshot_price
+                      ).toFixed(2)}
+                    </p>
+
+                  </div>
+
+                ))
+              }
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+      ))}
+
+
+    </>
+
   );
+
+
 }
