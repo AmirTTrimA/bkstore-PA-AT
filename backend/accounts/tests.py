@@ -5,7 +5,6 @@ from decimal import Decimal
 
 from cart.models import Order, OrderItem
 from content.models import License
-
 # 🔑 FIX: Use apps.get_model for reliable access to token models in tests
 from django.apps import apps
 from django.contrib.auth import get_user_model
@@ -16,10 +15,8 @@ from django.utils import timezone
 from django.utils.encoding import force_str  # Import for localization fixes
 from django.utils.http import urlsafe_base64_decode
 from django.utils.translation import gettext_lazy as _
-from pricing.models import (
-    SubscriptionPlan,  # 🔑 New imports for setup
-    UserSubscription,
-)
+from pricing.models import SubscriptionPlan  # 🔑 New imports for setup
+from pricing.models import UserSubscription
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -184,19 +181,18 @@ class AuthAPITestCase(APITestCase):
         # Link pattern is usually: .../reset/confirm/<uidb64>/<token>/
         import re
 
-        match = re.search(r"reset/confirm/([^/]+)/([^/]+)/", email_content)
+        match = re.search(
+            r"reset-password/([^/]+)/([^/]+)/",
+            email_content,
+        )
 
-        if not match:
-            # Fallback if regex fails to find the link, though it should work if request success
-            uid = (
-                base64.urlsafe_b64encode(str(self.user.pk).encode("utf-8"))
-                .decode("utf-8")
-                .rstrip("\n=")
-            )
-            token = default_token_generator.make_token(self.user)
-        else:
-            uid = match.group(1)
-            token = match.group(2)
+        self.assertIsNotNone(
+            match,
+            "Password reset email did not contain a frontend reset URL.",
+        )
+
+        uid = match.group(1)
+        token = match.group(2)
 
         new_password = "NewSecurePassword456!"
         confirm_data = {

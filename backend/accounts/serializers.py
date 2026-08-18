@@ -1,11 +1,11 @@
 from cart.models import Order  # Import Order model for history
 from content.models import License  # Import License model for digital access
+from dj_rest_auth.serializers import PasswordResetSerializer
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
-from pricing.models import (
-    SubscriptionPlan,  # Import Subscription models
-    UserSubscription,
-)
+from pricing.models import SubscriptionPlan  # Import Subscription models
+from pricing.models import UserSubscription
 from rest_framework import serializers
 
 from .models import User
@@ -42,6 +42,31 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data["password"],
         )
         return user
+
+def frontend_password_reset_url(request, user, temp_key):
+        """
+        Generate the password-reset URL that the user receives by email.
+
+        Token generation and validation remain the backend's responsibility,
+        while the reset form itself is served by the frontend application.
+        """
+        from allauth.account.utils import user_pk_to_url_str
+
+        uid = user_pk_to_url_str(user)
+        frontend_url = settings.FRONTEND_URL.rstrip("/")
+
+        return f"{frontend_url}/reset-password/{uid}/{temp_key}/"
+
+
+class CustomPasswordResetSerializer(PasswordResetSerializer):
+    """
+    Password-reset serializer that directs users to the frontend reset page.
+    """
+
+    def get_email_options(self):
+        return {
+            "url_generator": frontend_password_reset_url,
+        }
 
 
 class OTPVerificationSerializer(serializers.Serializer):

@@ -221,6 +221,7 @@ REST_AUTH = {
     "JWT_AUTH_HTTPONLY": True,  # 🔑 SECURITY: Prevents JavaScript (XSS) from accessing the cookie.
     "JWT_AUTH_COOKIE": "access_token",  # Name of the Access Token cookie
     "JWT_AUTH_REFRESH_COOKIE": "refresh_token",  # Name of the Refresh Token cookie
+    "PASSWORD_RESET_SERIALIZER": "accounts.serializers.CustomPasswordResetSerializer",
 }
 
 HAYSTACK_CONNECTIONS = {
@@ -256,3 +257,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Frontend application URL
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
