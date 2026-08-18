@@ -1,15 +1,13 @@
-// ✅
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import BookService from '../../Services/BookService'
+import BookService from "../../Services/BookService";
 
-import Navbar from '../../Components/Navbar'
-import SimpleNav from '../../Components/SimpleNav'
+import Navbar from "../../Components/Navbar";
+import SimpleNav from "../../Components/SimpleNav";
 
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 
-import "../../Styles/components/Library.css"
-
+import "../../Styles/components/Library.css";
 
 
 // ============================================
@@ -35,8 +33,15 @@ export default function Library() {
 
 
 
-    // Infinite scroll target
+    // ============================================
+    //      Refs
+    // ============================================
+
     const observerRef = useRef(null);
+
+    const loadingRef = useRef(false);
+
+
 
 
 
@@ -47,19 +52,22 @@ export default function Library() {
     const loadBooks = useCallback(async () => {
 
 
-        if (loading || !hasMore) {
+        if (loadingRef.current || !hasMore) {
             return;
         }
 
 
+        loadingRef.current = true;
+
         setLoading(true);
+
 
 
         try {
 
 
             const response = await BookService.getBooks({
-                page: page
+                page
             });
 
 
@@ -68,22 +76,38 @@ export default function Library() {
 
 
 
-            setBooks((previousBooks) => [
-                ...previousBooks,
-                ...newBooks
-            ]);
+            setBooks(previousBooks => {
+
+
+                const mergedBooks = [
+                    ...previousBooks,
+                    ...newBooks
+                ];
+
+
+
+                // Prevent duplicate IDs
+                return mergedBooks.filter(
+                    (book, index, self) =>
+                        index === self.findIndex(
+                            item => item.id === book.id
+                        )
+                );
+
+
+            });
 
 
 
             setHasMore(Boolean(response.next));
 
 
-
-            setPage((previousPage) => previousPage + 1);
-
+            setPage(previousPage => previousPage + 1);
 
 
-        } catch (err) {
+
+        }
+        catch (err) {
 
 
             console.error(
@@ -97,8 +121,11 @@ export default function Library() {
             );
 
 
-        } finally {
+        }
+        finally {
 
+
+            loadingRef.current = false;
 
             setLoading(false);
 
@@ -106,37 +133,45 @@ export default function Library() {
         }
 
 
-    }, [page, loading, hasMore]);
+    }, [page, hasMore]);
+
+
 
 
 
 
 
     // ============================================
-    //      Initial Load + Infinite Scroll
+    //      Initial Load
     // ============================================
 
     useEffect(() => {
 
-
         loadBooks();
-
 
     }, []);
 
 
 
+
+
+
+
+    // ============================================
+    //      Infinite Scroll
+    // ============================================
+
     useEffect(() => {
 
 
         const observer = new IntersectionObserver(
-            (entries) => {
+            entries => {
 
 
                 if (
                     entries[0].isIntersecting &&
                     hasMore &&
-                    !loading
+                    !loadingRef.current
                 ) {
 
                     loadBooks();
@@ -175,7 +210,10 @@ export default function Library() {
         };
 
 
-    }, [loadBooks, hasMore, loading]);
+    }, [loadBooks, hasMore]);
+
+
+
 
 
 
@@ -210,9 +248,8 @@ export default function Library() {
 
 
 
-            {/* Content */}
-
             <div className="lib-container">
+
 
 
                 <div className="head">
@@ -230,7 +267,7 @@ export default function Library() {
                 <div className="explore">
 
 
-                    {books.map((book) => (
+                    {books.map(book => (
 
                         <Link
                             key={book.id}
@@ -257,7 +294,7 @@ export default function Library() {
 
 
 
-                {/* Infinite Scroll Sentinel */}
+                {/* Infinite scroll trigger */}
 
                 <div
                     ref={observerRef}
@@ -265,6 +302,7 @@ export default function Library() {
                         height: "40px"
                     }}
                 />
+
 
 
 
@@ -295,6 +333,7 @@ export default function Library() {
                     </p>
 
                 )}
+
 
 
 
