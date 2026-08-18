@@ -4,8 +4,7 @@ const BookService = {
   getBooks: async (params = {}) => {
     const response = await ApiClient.get("/books/", { params });
 
-    // Handle DRF pagination
-    return response.data.results || response.data;
+    return response.data;
   },
 
   getBookById: async (id) => {
