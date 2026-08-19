@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import BookService from "../../Services/BookService";
 import BasketService from "../../Services/BasketService";
+import BookService from "../../Services/BookService";
+import WishlistService from "../../Services/WishlistService";
 
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
@@ -38,8 +39,11 @@ export default function Book() {
 
   const [liked, setLiked] = useState(false);
 
+  const [wishlistItemId, setWishlistItemId] = useState(null);
+
   const [addingCart, setAddingCart] = useState(false);
 
+  const [updatingWishlist, setUpdatingWishlist] = useState(false);
 
 
   // ==========================
@@ -85,39 +89,82 @@ export default function Book() {
   }, [bookId]);
 
 
-
   // ==========================
-  // Favorite state
+  // Load wishlist state
   // ==========================
 
   useEffect(() => {
 
-    if (!book) return;
+    if (!book || !isLoggedIn) {
+
+      setLiked(false);
+      setWishlistItemId(null);
+
+      return;
+
+    }
 
 
-    const favorites =
-      JSON.parse(
-        localStorage.getItem("favorite")
-      ) || [];
+    const checkWishlist = async () => {
+
+      try {
+
+        const response =
+          await WishlistService.getWishlist();
 
 
-    setLiked(
-      favorites.some(
-        item => item.id === book.id
-      )
-    );
+        const wishlist =
+          response.data.results ||
+          response.data ||
+          [];
 
 
-  }, [book]);
+        const wishlistItem =
+          wishlist.find(
+            item =>
+              item.book_id === book.id
+          );
 
+
+        if (wishlistItem) {
+
+          setLiked(true);
+
+          setWishlistItemId(
+            wishlistItem.id
+          );
+
+        } else {
+
+          setLiked(false);
+
+          setWishlistItemId(null);
+
+        }
+
+
+      } catch (err) {
+
+        console.error(
+          "Failed loading wishlist:",
+          err
+        );
+
+      }
+
+    };
+
+
+    checkWishlist();
+
+  }, [book, isLoggedIn]);
 
 
   // ==========================
   // Favorite handler
   // ==========================
 
-  const toggleFavorite = () => {
-
+  const toggleFavorite = async () => {
 
     if (!isLoggedIn) {
 
@@ -131,57 +178,131 @@ export default function Book() {
       );
 
       return;
+
     }
 
 
-    let favorites =
-      JSON.parse(
-        localStorage.getItem("favorite")
-      ) || [];
+    if (updatingWishlist)
+      return;
 
 
+    try {
 
-    if (liked) {
+      setUpdatingWishlist(true);
 
-      favorites =
-        favorites.filter(
-          item => item.id !== book.id
+
+      // --------------------------
+      // Remove from wishlist
+      // --------------------------
+
+      if (liked) {
+
+        if (!wishlistItemId) {
+
+          throw new Error(
+            "Wishlist item ID is missing."
+          );
+
+        }
+
+
+        await WishlistService.removeBook(
+          wishlistItemId
         );
 
 
-      setLiked(false);
+        setLiked(false);
+
+        setWishlistItemId(null);
 
 
-    } else {
+        notificationRef.current?.showNotif(
+          "Removed from favorites",
+          "success"
+        );
 
 
-      favorites.push({
+      }
 
-        id: book.id,
+      // --------------------------
+      // Add to wishlist
+      // --------------------------
 
-        title: book.title,
+      else {
 
-        cover_image_url:
-          book.cover_image_url,
-
-        author:
-          book.author_name
-
-      });
+        await WishlistService.addBook(
+          book.id
+        );
 
 
-      setLiked(true);
+        /*
+         * The backend currently returns:
+         *
+         * {
+         *   detail: "...",
+         *   book_id: ...
+         * }
+         *
+         * It does not return the newly-created
+         * WishlistItem ID.
+         *
+         * Fetch the wishlist again so we can
+         * obtain that ID for future deletion.
+         */
+
+        const response =
+          await WishlistService.getWishlist();
+
+
+        const wishlist =
+          response.data.results ||
+          response.data ||
+          [];
+
+
+        const wishlistItem =
+          wishlist.find(
+            item =>
+              item.book_id === book.id
+          );
+
+
+        setLiked(true);
+
+        setWishlistItemId(
+          wishlistItem?.id || null
+        );
+
+
+        notificationRef.current?.showNotif(
+          "Added to favorites",
+          "success"
+        );
+
+      }
+
+
+    } catch (err) {
+
+      console.error(
+        "Wishlist error:",
+        err
+      );
+
+
+      notificationRef.current?.showNotif(
+        err.response?.data?.detail ||
+        "Failed to update favorites",
+        "error"
+      );
+
+    } finally {
+
+      setUpdatingWishlist(false);
 
     }
 
-
-    localStorage.setItem(
-      "favorite",
-      JSON.stringify(favorites)
-    );
-
   };
-
 
 
   // ==========================
@@ -189,7 +310,6 @@ export default function Book() {
   // ==========================
 
   const addToCart = async () => {
-
 
     if (!selectedFormat) {
 
@@ -217,7 +337,6 @@ export default function Book() {
         quantity: 1
 
       });
-
 
 
       notificationRef.current?.showNotif(
@@ -250,6 +369,9 @@ export default function Book() {
   };
 
 
+  // ==========================
+  // Author
+  // ==========================
 
   const goAuthor = () => {
 
@@ -262,7 +384,6 @@ export default function Book() {
     }
 
   };
-
 
 
   // ==========================
@@ -291,7 +412,6 @@ export default function Book() {
   }
 
 
-
   // ==========================
   // Render
   // ==========================
@@ -310,11 +430,9 @@ export default function Book() {
       </div>
 
 
-
       <Notification
         ref={notificationRef}
       />
-
 
 
       <main className="book-container">
@@ -330,29 +448,21 @@ export default function Book() {
 
 
               <img
-
                 className="bk-slide-image"
-
                 src={
                   book.cover_image_url ||
                   "/default-book.png"
                 }
-
                 alt={book.title}
-
               />
-
 
 
               <div className="info">
 
 
                 <h1 className="bk-slide-title">
-
                   {book.title}
-
                 </h1>
-
 
 
                 <div className="author-wrapper">
@@ -367,17 +477,13 @@ export default function Book() {
                 </div>
 
 
-
                 <div className="book-categories">
 
                   <span className="book-categories-link">
-
                     {book.genre}
-
                   </span>
 
                 </div>
-
 
 
                 <p className="extra-info">
@@ -389,15 +495,17 @@ export default function Book() {
                 </p>
 
 
-
                 <button
                   className="mobile-like"
                   onClick={toggleFavorite}
+                  disabled={updatingWishlist}
                 >
 
-                  {liked
-                    ? "Remove favorite"
-                    : "Add favorite"}
+                  {updatingWishlist
+                    ? "Updating..."
+                    : liked
+                      ? "Remove favorite"
+                      : "Add favorite"}
 
                 </button>
 
@@ -411,8 +519,6 @@ export default function Book() {
           </div>
 
 
-
-
           <aside className="side-card">
 
 
@@ -421,15 +527,12 @@ export default function Book() {
             </label>
 
 
-
             <div className="chooser">
 
               <select
-
                 value={
                   selectedFormat?.id || ""
                 }
-
                 onChange={(e) => {
 
                   const format =
@@ -443,7 +546,6 @@ export default function Book() {
                   setSelectedFormat(format);
 
                 }}
-
               >
 
                 {book.formats?.map(format => (
@@ -461,12 +563,9 @@ export default function Book() {
 
                 ))}
 
-
               </select>
 
             </div>
-
-
 
 
             <div className="show-price">
@@ -476,16 +575,10 @@ export default function Book() {
             </div>
 
 
-
-
             <button
-
               className="book-buy-btn"
-
               onClick={addToCart}
-
               disabled={addingCart}
-
             >
 
               {
@@ -494,17 +587,13 @@ export default function Book() {
                   : "Add to cart"
               }
 
-
             </button>
 
 
           </aside>
 
 
-
         </section>
-
-
 
 
         <section className="book-rest">
@@ -525,7 +614,6 @@ export default function Book() {
 
             </div>
 
-
           </div>
 
 
@@ -533,7 +621,6 @@ export default function Book() {
 
 
       </main>
-
 
 
       <Footer />

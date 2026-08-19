@@ -1,153 +1,273 @@
-// ✅
-import React,{useState,useCallback} from 'react'
+import {
+  useCallback,
+  useState
+} from "react";
+
 import {
   Box,
   Button,
   Grid,
   TextField,
   Typography
-} from '@mui/material';
-// style in Profile.css
+} from "@mui/material";
 
-
+import UserService from "../../../Services/UserService";
 
 
 // ============================================
-//    Main 
+// Main
 // ============================================
-export default function Passwordpart({updateProfile,notificationRef}) {
-  
-  // ---State---
-    const [passwordData, setPasswordData] = useState({
-      // currentPassword: '',
-      newPassword: '',
-      repeatPassword: '',
+
+export default function Passwordpart({
+  notificationRef
+}) {
+
+
+  const [passwordData, setPasswordData] =
+    useState({
+      current_password: "",
+      new_password: "",
+      repeat_password: ""
     });
 
 
-  // ---Memoized Values---
-    const isFormValid = passwordData.newPassword.length >= 6 && 
-    passwordData.repeatPassword.length >= 6;
+  const [saving, setSaving] =
+    useState(false);
+
+
+  const [error, setError] =
+    useState("");
 
 
 
+  const handleChange = useCallback((e) => {
+
+    const {
+      name,
+      value
+    } = e.target;
+
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    setError("");
+
+  }, []);
 
 
 
+  const handleSubmit = useCallback(
+    async (e) => {
 
-
-// ---Handlers---
-
-    const handleChange = useCallback((e) => {
-      const { name, value } = e.target;
-      setPasswordData((prev) => ({ ...prev, [name]: value }));
-    },[])
-
-
-  
-    const handleSubmit = useCallback((e) => {
       e.preventDefault();
-      if (passwordData.newPassword !== passwordData.repeatPassword) {
-        notificationRef.current.showNotif('Passwords dont match','error')
+
+
+      if (
+        passwordData.new_password !==
+        passwordData.repeat_password
+      ) {
+
+        setError(
+          "New passwords do not match."
+        );
+
+        notificationRef.current?.showNotif(
+          "Passwords do not match.",
+          "error"
+        );
+
         return;
+
       }
 
-      // do check and strength test ⚠️
-      if (passwordData.newPassword.length < 8) {
-        notificationRef.current?.showNotif('Password must be at least 8 characters', 'error');
-        return;
+
+      try {
+
+        setSaving(true);
+
+
+        await UserService.changePassword({
+          current_password:
+            passwordData.current_password,
+
+          new_password:
+            passwordData.new_password
+        });
+
+
+        notificationRef.current?.showNotif(
+          "Password changed successfully.",
+          "success"
+        );
+
+
+        setPasswordData({
+          current_password: "",
+          new_password: "",
+          repeat_password: ""
+        });
+
+      }
+      catch (err) {
+
+        console.error(
+          "Failed to change password:",
+          err
+        );
+
+
+        const data =
+          err.response?.data;
+
+
+        const message =
+          data?.current_password?.[0] ||
+          data?.new_password?.[0] ||
+          data?.detail ||
+          "Failed to change password.";
+
+
+        setError(message);
+
+
+        notificationRef.current?.showNotif(
+          message,
+          "error"
+        );
+
+      }
+      finally {
+
+        setSaving(false);
+
       }
 
-      
-      const NewPass ={
-        password:passwordData.newPassword.trim()
-      }
-
-      // Update profile
-      updateProfile(NewPass);
-      console.log('Submitting Password Change:', passwordData);
-      notificationRef.current.showNotif('New pass confirmed','success')
-
-      // Clear fields 
-      setPasswordData({
-        // currentPassword: '',
-        newPassword: '',
-        repeatPassword: '',
-      });
-    },[notificationRef,updateProfile,passwordData])
-  
+    },
+    [
+      passwordData,
+      notificationRef
+    ]
+  );
 
 
 
-return (
-      <Box 
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{ mt: 1 }}
+  const isFormValid =
+    passwordData.current_password.length > 0 &&
+    passwordData.new_password.length >= 8 &&
+    passwordData.repeat_password.length >= 8;
+
+
+
+  return (
+
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ mt: 1 }}
+    >
+
+      <Typography
+        variant="h6"
+        gutterBottom
+        sx={{ mb: 2 }}
+      >
+        Change Password
+      </Typography>
+
+
+
+      <Grid
+        container
+        spacing={2}
+      >
+
+        <Grid
+          size={12}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
+          }}
         >
 
-        <Typography 
-          variant="h6"
-          gutterBottom
-          sx={{ mb: 1 }}
-        >
-            Change Password
-        </Typography>
+          <TextField
+            fullWidth
+            label="Current Password"
+            name="current_password"
+            type="password"
+            className="customTextField"
+            value={
+              passwordData.current_password
+            }
+            onChange={handleChange}
+            sx={{ mb: 2 }}
+            required
+          />
 
-        <Grid container spacing={2} >
-          <Grid 
-            size={12}
-            sx={{
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center'
-              }}
-            >
-          
-          {/* New Password */}
-            <TextField
-              fullWidth
-              label="New Password"
-              name="newPassword"
-              type="password"
-              className="customTextField"
-              value={passwordData.newPassword}
-              onChange={handleChange}
-              sx={{ mb: 2 }}
-              required
-            />
 
-            {/* Repeat Password */}
-            <TextField
-              fullWidth
-              label="Repeat New Password"
-              name="repeatPassword"
-              type="password"
-              className="customTextField"
-              value={passwordData.repeatPassword}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
+          <TextField
+            fullWidth
+            label="New Password"
+            name="new_password"
+            type="password"
+            className="customTextField"
+            value={
+              passwordData.new_password
+            }
+            onChange={handleChange}
+            sx={{ mb: 2 }}
+            error={!!error}
+            helperText={error}
+            required
+          />
 
-          {/* Submit Button */}
-          <div className="pass-btn">
-            <Button 
-                type="submit"
-                variant="contained"  
-                disabled={!isFormValid}
-                sx={{
-                  p:1.5,
-                  mt:2,
-                  backgroundColor:'red'
-                }}
-            >
-              Update Password
-            </Button>
-    
-          </div>
+
+          <TextField
+            fullWidth
+            label="Repeat New Password"
+            name="repeat_password"
+            type="password"
+            className="customTextField"
+            value={
+              passwordData.repeat_password
+            }
+            onChange={handleChange}
+            required
+          />
+
         </Grid>
-      </Box>
-    );
-  }
 
+
+
+        <div className="pass-btn">
+
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={
+              !isFormValid || saving
+            }
+            sx={{
+              p: 1.5,
+              mt: 2,
+              backgroundColor: "red"
+            }}
+          >
+
+            {saving
+              ? "Updating..."
+              : "Update Password"}
+
+          </Button>
+
+        </div>
+
+      </Grid>
+
+    </Box>
+
+  );
+
+}
