@@ -443,3 +443,314 @@ class AuthAPITestCase(APITestCase):
             first_license = licenses_data[0]
             self.assertTrue(first_license["is_valid"])
             self.assertIn("book_title", first_license)
+
+class ProfileUpdateTest(APITestCase):
+    """
+    Tests authenticated profile retrieval and updates.
+
+    Profile updates must only affect explicitly exposed editable fields.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="profileuser",
+            email="profile@example.com",
+            password="OldPassword123!",
+            job_or_major="Software Engineering",
+            hobbies_or_likings="Football, cars",
+        )
+
+        self.client.force_authenticate(user=self.user)
+
+        self.profile_url = reverse("profile")
+
+    def test_authenticated_user_can_update_profile(self):
+        response = self.client.patch(
+            self.profile_url,
+            {
+                "username": "updateduser",
+                "job_or_major": "Backend Engineering",
+                "hobbies_or_likings": "Linux, football, cars",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertEqual(
+            self.user.username,
+            "updateduser",
+        )
+
+        self.assertEqual(
+            self.user.job_or_major,
+            "Backend Engineering",
+        )
+
+        self.assertEqual(
+            self.user.hobbies_or_likings,
+            "Linux, football, cars",
+        )
+
+    def test_profile_patch_returns_updated_profile(self):
+        response = self.client.patch(
+            self.profile_url,
+            {
+                "job_or_major": "Systems Engineering",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["job_or_major"],
+            "Systems Engineering",
+        )
+
+        # Make sure the normal profile representation is returned.
+        self.assertIn(
+            "username",
+            response.data,
+        )
+
+        self.assertIn(
+            "hobbies_or_likings",
+            response.data,
+        )
+
+    def test_profile_patch_is_partial(self):
+        response = self.client.patch(
+            self.profile_url,
+            {
+                "job_or_major": "Computer Science",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertEqual(
+            self.user.job_or_major,
+            "Computer Science",
+        )
+
+        self.assertEqual(
+            self.user.hobbies_or_likings,
+            "Football, cars",
+        )
+
+    def test_email_cannot_be_updated(self):
+        response = self.client.patch(
+            self.profile_url,
+            {
+                "email": "attacker@example.com",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertEqual(
+            self.user.email,
+            "profile@example.com",
+        )
+
+        self.assertNotEqual(
+            response.data.get("email"),
+            "attacker@example.com",
+        )
+
+    def test_authentication_fields_cannot_be_updated(self):
+        response = self.client.patch(
+            self.profile_url,
+            {
+                "is_staff": True,
+                "is_superuser": True,
+                "password": "NewPassword123!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+
+        self.assertTrue(
+            self.user.check_password("OldPassword123!")
+        )
+
+    def test_anonymous_user_cannot_update_profile(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.patch(
+            self.profile_url,
+            {
+                "job_or_major": "Something",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+class PasswordChangeTest(APITestCase):
+    """
+    Tests authenticated password changes.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="passworduser",
+            email="password@example.com",
+            password="OldPassword123!",
+        )
+
+        self.client.force_authenticate(user=self.user)
+
+        self.password_url = reverse("password-change")
+
+    def test_user_can_change_password(self):
+        response = self.client.post(
+            self.password_url,
+            {
+                "current_password": "OldPassword123!",
+                "new_password": "NewPassword456!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertTrue(
+            self.user.check_password("NewPassword456!")
+        )
+
+        self.assertFalse(
+            self.user.check_password("OldPassword123!")
+        )
+
+    def test_password_change_returns_success_message(self):
+        response = self.client.post(
+            self.password_url,
+            {
+                "current_password": "OldPassword123!",
+                "new_password": "NewPassword456!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertIn(
+            "detail",
+            response.data,
+        )
+
+    def test_wrong_current_password_is_rejected(self):
+        response = self.client.post(
+            self.password_url,
+            {
+                "current_password": "WrongPassword123!",
+                "new_password": "NewPassword456!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertTrue(
+            self.user.check_password("OldPassword123!")
+        )
+
+    def test_new_password_must_pass_django_validation(self):
+        response = self.client.post(
+            self.password_url,
+            {
+                "current_password": "OldPassword123!",
+                "new_password": "123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertTrue(
+            self.user.check_password("OldPassword123!")
+        )
+
+    def test_new_password_cannot_equal_current_password(self):
+        response = self.client.post(
+            self.password_url,
+            {
+                "current_password": "OldPassword123!",
+                "new_password": "OldPassword123!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_anonymous_user_cannot_change_password(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(
+            self.password_url,
+            {
+                "current_password": "OldPassword123!",
+                "new_password": "NewPassword456!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )

@@ -6,18 +6,43 @@ from rest_framework_simplejwt.views import (TokenBlacklistView,
                                             TokenRefreshView)
 
 from .views import (OTPLoginView, OTPRequestView, OTPVerifyView,
-                    UserProfileView, UserRegistrationView)
+                    PasswordChangeView, UserProfileUpdateView, UserProfileView,
+                    UserRegistrationView)
 
 urlpatterns = [
     # --- JWT Token Management ---
-    path("register/", UserRegistrationView.as_view(), name="register"),
-    path("login/", TokenObtainPairView.as_view(), name="login"),
+    path(
+        "register/",
+        UserRegistrationView.as_view(),
+        name="register"
+    ),
+    path(
+        "login/",
+        TokenObtainPairView.as_view(),
+        name="login"
+    ),
     # NEW LOGIN ROUTE: OTP Login (for unauthenticated users)
-    path("login/otp/", OTPLoginView.as_view(), name="login-otp"),
-    path("refresh/", TokenRefreshView.as_view(), name="refresh"),
-    path("logout/", TokenBlacklistView.as_view(), name="logout"),
+    path(
+        "login/otp/",
+        OTPLoginView.as_view(),
+        name="login-otp"
+    ),
+    path(
+        "refresh/",
+        TokenRefreshView.as_view(),
+        name="refresh"
+    ),
+    path(
+        "logout/",
+        TokenBlacklistView.as_view(),
+        name="logout"
+    ),
     # --- Password Reset Flow ---
-    path("password/reset/", PasswordResetView.as_view(), name="password_reset"),
+    path(
+        "password/reset/",
+        PasswordResetView.as_view(),
+        name="password_reset"
+    ),
     # 1. The Complex URL (REQUIRED for link generation, must have arguments)
     re_path(
         r"^password/reset/confirm/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,32}-[0-9A-Za-z]{1,64})/$",
@@ -32,8 +57,30 @@ urlpatterns = [
         name="password_reset_confirm_post",
     ),
     # --- OTP/2FA Logic (Custom Views) ---
-    path("otp/request/", OTPRequestView.as_view(), name="otp-request"),
-    path("otp/verify/", OTPVerifyView.as_view(), name="otp-verify"),
+    path(
+        "otp/request/",
+        OTPRequestView.as_view(),
+        name="otp-request"
+    ),
+    path(
+        "otp/verify/",
+        OTPVerifyView.as_view(),
+        name="otp-verify"
+    ),
     # --- User Profile Hub (NEW) ---
-    path("profile/", UserProfileView.as_view(), name="user-profile"),
+    path(
+        "profile/",
+        UserProfileView.as_view(),
+        name="profile",
+    ),
+    path(
+        "profile/update/",
+        UserProfileUpdateView.as_view(),
+        name="profile-update",
+    ),
+    path(
+        "password/change/",
+        PasswordChangeView.as_view(),
+        name="password-change",
+    ),
 ]

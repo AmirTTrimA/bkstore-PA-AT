@@ -68,6 +68,63 @@ class CustomPasswordResetSerializer(PasswordResetSerializer):
             "url_generator": frontend_password_reset_url,
         }
 
+class PasswordChangeSerializer(serializers.Serializer):
+    """
+    Validates a password change for the authenticated user.
+    """
+
+    current_password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+    )
+
+    new_password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+    )
+
+    def validate_current_password(self, value):
+        user = self.context["request"].user
+
+        if not user.check_password(value):
+            raise serializers.ValidationError(
+                _("Current password is incorrect.")
+            )
+
+        return value
+
+    def validate_new_password(self, value):
+        user = self.context["request"].user
+
+        validate_password(
+            value,
+            user=user,
+        )
+
+        return value
+
+    def validate(self, attrs):
+        if attrs["current_password"] == attrs["new_password"]:
+            raise serializers.ValidationError({
+                "new_password": _(
+                    "New password must be different from the current password."
+                )
+            })
+
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context["request"].user
+
+        user.set_password(
+            self.validated_data["new_password"]
+        )
+        user.save(
+            update_fields=["password"]
+        )
+
+        return user
+
 
 class OTPVerificationSerializer(serializers.Serializer):
     """Input serializer for OTP verification."""
@@ -251,3 +308,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "orders",
         ]
         read_only_fields = fields  # Profile is read-only for this endpoint
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer used exclusively for updating the authenticated user's
+    editable profile information.
+
+    Email and authentication-related fields are intentionally excluded.
+    """
+
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "job_or_major",
+            "hobbies_or_likings",
+        )
+
+    def validate_username(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                _("Username cannot be empty.")
+            )
+
+        return value
