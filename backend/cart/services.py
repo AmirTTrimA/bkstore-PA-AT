@@ -3,10 +3,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Optional, Union
 
-from requests import Response  # For type hinting
-
 from accounts.models import User  # For type hinting
-from wallet.models.transaction import WalletTransaction
 from catalog.models import Book, BookFormat
 from content.models import License
 from django.db import transaction
@@ -17,9 +14,11 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from pricing.models import DiscountCode, Price, UserSubscription
 from pricing.services import PricingEngine
+from requests import Response  # For type hinting
 from rest_framework import \
     serializers  # Must be imported for serializers.ValidationError
 from wallet.exceptions import InsufficientBalanceError
+from wallet.models.transaction import WalletTransaction
 from wallet.services import WalletService
 
 from .models import Cart, Order, OrderItem
@@ -198,18 +197,23 @@ class CheckoutService:
         snapshot: OrderSnapshot,
     ):
         """
-        Grants licenses for all digital and audio books in the order.
+        Grants licenses for digital and audio formats purchased in the order.
         """
 
         for item in snapshot.items:
             book = item.book
+            book_format = item.book_format
 
-            if not (book.is_digital or book.is_audio):
+            if book_format.format_type not in (
+                BookFormat.FormatType.DIGITAL,
+                BookFormat.FormatType.AUDIO,
+            ):
                 continue
 
             License.objects.update_or_create(
                 user=self.user,
                 book=book,
+                book_format=book_format,
                 defaults={
                     "order": order,
                     "is_active": True,
