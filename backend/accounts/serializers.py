@@ -150,18 +150,56 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
 
 
 class LicenseSerializer(serializers.ModelSerializer):
-    """Serializer to display a user's digital licenses."""
+    """Serializer for displaying a user's content licenses."""
 
-    # Assumes License model has a foreign key to Book
-    book_title = serializers.CharField(source="book.title", read_only=True)
+    book_id = serializers.IntegerField(
+        source="book.id",
+        read_only=True,
+    )
+
+    book_title = serializers.CharField(
+        source="book.title",
+        read_only=True,
+    )
+
+    book_slug = serializers.CharField(
+        source="book.slug",
+        read_only=True,
+    )
+
+    book_format_id = serializers.IntegerField(
+        source="book_format.id",
+        read_only=True,
+    )
+
+    format_type = serializers.CharField(
+        source="book_format.format_type",
+        read_only=True,
+    )
+
+    format_name = serializers.SerializerMethodField()
     is_valid = serializers.SerializerMethodField()
 
     class Meta:
         model = License
-        fields = ["id", "book_title", "valid_until", "is_valid"]
+        fields = [
+            "id",
+            "book_id",
+            "book_title",
+            "book_slug",
+            "book_format_id",
+            "format_type",
+            "format_name",
+            "is_active",
+            "valid_from",
+            "valid_until",
+            "is_valid",
+        ]
+
+    def get_format_name(self, obj):
+        return obj.book_format.get_format_type_display()
 
     def get_is_valid(self, obj):
-        # Calls the is_valid method defined on the License model
         return obj.is_valid()
 
 
