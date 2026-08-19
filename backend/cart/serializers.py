@@ -71,6 +71,7 @@ class CartItemOutputSerializer(serializers.Serializer):
     quantity = serializers.IntegerField()
 
     subtotal = serializers.SerializerMethodField()
+    unit_price = serializers.SerializerMethodField()
 
     cover_image_url = serializers.URLField(
         allow_null=True,
@@ -85,6 +86,12 @@ class CartItemOutputSerializer(serializers.Serializer):
         return round(
             item["quantity"] * unit_price,
             2,
+        )
+
+    def get_unit_price(self, item):
+        return item.get(
+            "unit_price",
+            Decimal("0.00"),
         )
 
 
