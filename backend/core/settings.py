@@ -248,7 +248,10 @@ CELERY_BEAT_SCHEDULE = {
         # Executes daily
         "schedule": timedelta(days=1),
     },
-    # Note: send_order_confirmation_email is triggered immediately by the CheckoutView, not scheduled.
+    "process-subscription-expiry-daily": {
+        "task": "pricing.tasks.process_subscription_expiry",
+        "schedule": timedelta(days=1),
+    },  
 }
 
 CORS_ALLOWED_ORIGINS = [

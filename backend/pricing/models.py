@@ -261,6 +261,11 @@ class SubscriptionPlan(models.Model):
     name = models.CharField(_("Plan Name"), max_length=100, unique=True)
     slug = models.SlugField(_("Slug"), max_length=100, unique=True)
 
+    tier = models.PositiveIntegerField(
+        _("Tier"),
+        unique=True,
+    )
+
     # --- Pricing and Benefits ---
     monthly_price = models.DecimalField(
         _("Monthly Price"), max_digits=10, decimal_places=2
@@ -274,44 +279,74 @@ class SubscriptionPlan(models.Model):
     class Meta:
         verbose_name = _("Subscription Plan")
         verbose_name_plural = _("Subscription Plans")
+        ordering = ["tier"]
 
     def __str__(self):
         return self.name
 
 
 class UserSubscription(models.Model):
-    """Tracks a user's active/historical subscription status."""
 
-    # --- Relationships ---
-    user = models.OneToOneField(
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", _("Active")
+        RESERVED = "RESERVED", _("Reserved")
+        EXPIRED = "EXPIRED", _("Expired")
+        CANCELLED = "CANCELLED", _("Cancelled")
+
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="subscription",
+        related_name="subscriptions",
         verbose_name=_("User"),
     )
+
     plan = models.ForeignKey(
         SubscriptionPlan,
-        on_delete=models.PROTECT,  # Protects the subscription history if a plan is retired
+        on_delete=models.PROTECT,
         verbose_name=_("Plan"),
     )
 
-    # --- Status ---
-    is_active = models.BooleanField(_("Is Active"), default=False)
-    start_date = models.DateTimeField(_("Start Date"), default=timezone.now)
-    # The time-based digital access model is enforced here
-    end_date = models.DateTimeField(_("End Date"), blank=True, null=True)
+    status = models.CharField(
+        _("Status"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+
+    start_date = models.DateTimeField(
+        _("Start Date"),
+        default=timezone.now,
+    )
+
+    end_date = models.DateTimeField(
+        _("End Date"),
+    )
+
+    auto_renew = models.BooleanField(
+        _("Auto Renew"),
+        default=False,
+    )
+
+    created_at = models.DateTimeField(
+        _("Created At"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("Updated At"),
+        auto_now=True,
+    )
 
     class Meta:
         verbose_name = _("User Subscription")
         verbose_name_plural = _("User Subscriptions")
+        ordering = ["-start_date"]
 
     def __str__(self):
-        return f"{self.user.username}'s {self.plan.name} Subscription"
+        return f"{self.user.username} - {self.plan.name}"
 
     def is_current(self):
-        """Checks if the subscription is currently valid based on end_date."""
-        if not self.is_active:
-            return False
-        if self.end_date and self.end_date < timezone.now():
-            return False
-        return True
+        return (
+            self.status == self.Status.ACTIVE
+            and self.end_date > timezone.now()
+        )

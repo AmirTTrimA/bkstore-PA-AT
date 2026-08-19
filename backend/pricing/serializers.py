@@ -149,3 +149,48 @@ class PriceChangeSerializer(serializers.Serializer):
             )
 
         return attrs
+
+from rest_framework import serializers
+
+from .models import SubscriptionPlan, UserSubscription
+
+
+class SubscriptionPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPlan
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "tier",
+            "monthly_price",
+            "digital_discount_percent",
+        )
+
+
+class UserSubscriptionSerializer(serializers.ModelSerializer):
+    plan = SubscriptionPlanSerializer(read_only=True)
+
+    class Meta:
+        model = UserSubscription
+        fields = (
+            "id",
+            "plan",
+            "status",
+            "start_date",
+            "end_date",
+            "auto_renew",
+            "created_at",
+        )
+
+
+class SubscriptionPurchaseSerializer(serializers.Serializer):
+    plan_id = serializers.IntegerField()
+    auto_renew = serializers.BooleanField(
+        required=False,
+        default=False,
+    )
+
+
+class SubscriptionUpgradeSerializer(serializers.Serializer):
+    plan_id = serializers.IntegerField()

@@ -132,16 +132,19 @@ class Command(BaseCommand):
             "name": "Reader",
             "price": Decimal("4.99"),
             "discount": 10,
+            "tier": 1,
         },
         {
             "name": "Scholar",
             "price": Decimal("9.99"),
             "discount": 20,
+            "tier": 2,
         },
         {
             "name": "Professional",
             "price": Decimal("19.99"),
             "discount": 35,
+            "tier": 3,
         },
     ]
 
@@ -781,6 +784,7 @@ class Command(BaseCommand):
             plan = SubscriptionPlan.objects.create(
                 name=plan_data["name"],
                 slug=slugify(plan_data["name"]),
+                tier=plan_data["tier"],
                 monthly_price=plan_data["price"],
                 digital_discount_percent=plan_data["discount"],
                 is_active=True,
@@ -880,26 +884,26 @@ class Command(BaseCommand):
         # Reader subscriptions (6)
         # -----------------------------
         for user in users[:6]:
-
             UserSubscription.objects.create(
                 user=user,
                 plan=reader_plan,
-                is_active=True,
+                status=UserSubscription.Status.ACTIVE,
                 start_date=now,
-                end_date=now + timedelta(days=365),
+                end_date=now + timedelta(days=30),
+                auto_renew=False,
             )
 
         # -----------------------------
         # Scholar subscriptions (4)
         # -----------------------------
         for user in users[6:10]:
-
             UserSubscription.objects.create(
                 user=user,
                 plan=scholar_plan,
-                is_active=True,
+                status=UserSubscription.Status.ACTIVE,
                 start_date=now,
-                end_date=now + timedelta(days=365),
+                end_date=now + timedelta(days=30),
+                auto_renew=True,
             )
 
         # -----------------------------
@@ -908,9 +912,10 @@ class Command(BaseCommand):
         UserSubscription.objects.create(
             user=users[10],
             plan=professional_plan,
-            is_active=True,
+            status=UserSubscription.Status.ACTIVE,
             start_date=now,
-            end_date=now + timedelta(days=365),
+            end_date=now + timedelta(days=30),
+            auto_renew=False,
         )
 
         # -----------------------------
@@ -919,9 +924,10 @@ class Command(BaseCommand):
         UserSubscription.objects.create(
             user=users[11],
             plan=reader_plan,
-            is_active=True,
-            start_date=now - timedelta(days=730),
-            end_date=now - timedelta(days=365),
+            status=UserSubscription.Status.EXPIRED,
+            start_date=now - timedelta(days=60),
+            end_date=now - timedelta(days=30),
+            auto_renew=False,
         )
 
         self.stdout.write(

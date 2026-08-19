@@ -70,14 +70,16 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
     list_display = (
         "user",
         "plan",
-        "is_active",
+        "status",
         "start_date",
         "end_date",
+        "auto_renew",
         "currently_valid",
     )
 
     list_filter = (
-        "is_active",
+        "status",
+        "auto_renew",
         "plan",
     )
 
@@ -93,6 +95,8 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "currently_valid",
+        "created_at",
+        "updated_at",
     )
 
     list_select_related = (
@@ -107,10 +111,6 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
     def currently_valid(self, obj):
         return obj.is_current()
 
-    readonly_fields = (
-        "currently_valid",
-    )
-
     fieldsets = (
         (
             "Subscription",
@@ -118,7 +118,8 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
                 "fields": (
                     "user",
                     "plan",
-                    "is_active",
+                    "status",
+                    "auto_renew",
                 )
             },
         ),
@@ -129,6 +130,15 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
                     "start_date",
                     "end_date",
                     "currently_valid",
+                )
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
                 )
             },
         ),

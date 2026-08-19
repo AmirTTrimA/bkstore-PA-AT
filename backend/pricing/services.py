@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Discount, DiscountCode, Price
+from .models import Discount, DiscountCode, Price, SubscriptionPlan, UserSubscription
 
 
 @dataclass
@@ -17,8 +17,8 @@ class PricingResult:
     coupon_discount: Discount | None
     coupon_discount_amount: Decimal | None
 
-    subscription_discount: Discount | None
-    subscription_discount_amount: Decimal |None
+    subscription_discount: SubscriptionPlan | None
+    subscription_discount_amount: Decimal | None
 
     final_price: Decimal
 
@@ -187,6 +187,71 @@ class PricingEngine:
             coupon.discount,
         )
 
+    def get_active_subscription(self):
+        """
+        Returns the user's currently active subscription, if any.
+
+        Reserved, expired, and cancelled subscriptions do not qualify.
+        """
+
+        if self.user is None or not self.user.is_authenticated:
+            return None
+
+        subscription = (
+            UserSubscription.objects
+            .select_related("plan")
+            .filter(
+                user=self.user,
+                status=UserSubscription.Status.ACTIVE,
+            )
+            .first()
+        )
+
+        if subscription is None or not subscription.is_current():
+            return None
+
+        return subscription
+
+    def apply_subscription_discount(
+        self,
+        current_price,
+        price_record,
+        subscription,
+    ):
+        """
+        Applies the user's active subscription discount.
+
+        Subscription discounts currently apply only to digital formats.
+        """
+
+        if subscription is None:
+            return current_price
+
+        if (
+            self.book_format is None
+            or self.book_format.format_type
+            != self.book_format.FormatType.DIGITAL
+        ):
+            return current_price
+
+        discount_percent = subscription.plan.digital_discount_percent
+
+        if discount_percent <= 0:
+            return current_price
+
+        new_price = current_price * (
+            Decimal("1.00")
+            - Decimal(discount_percent) / Decimal("100")
+        )
+
+        if (
+            price_record.min_price is not None
+            and new_price < price_record.min_price
+        ):
+            return price_record.min_price
+
+        return new_price
+
 
     def calculate(
         self,
@@ -247,9 +312,26 @@ class PricingEngine:
                 before_coupon - current_price
             )
 
-        # Subscription discounts (not implemented yet)
+        # Subscription discount
+        subscription = self.get_active_subscription()
+
         subscription_discount = None
         subscription_discount_amount = None
+
+        if subscription:
+            before_subscription = current_price
+
+            current_price = self.apply_subscription_discount(
+                current_price,
+                price,
+                subscription,
+            )
+
+            if current_price < before_subscription:
+                subscription_discount = subscription.plan
+                subscription_discount_amount = (
+                    before_subscription - current_price
+                )
 
         return PricingResult(
             base_price=price.value,

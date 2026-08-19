@@ -169,3 +169,131 @@ class BookPriceListCreateView(generics.ListCreateAPIView):
             output_serializer.data,
             status=status.HTTP_201_CREATED,
         )
+
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
+
+from .models import SubscriptionPlan, UserSubscription
+from .serializers import (
+    SubscriptionPlanSerializer,
+    UserSubscriptionSerializer,
+    SubscriptionPurchaseSerializer,
+    SubscriptionUpgradeSerializer,
+)
+from .subscription_services import SubscriptionService
+
+
+class SubscriptionPlanListView(generics.ListAPIView):
+    """
+    Returns all active subscription plans available for purchase.
+    """
+
+    serializer_class = SubscriptionPlanSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return (
+            SubscriptionPlan.objects
+            .filter(is_active=True)
+            .order_by("tier")
+        )
+
+
+class MySubscriptionView(generics.ListAPIView):
+    """
+    Returns the authenticated user's subscriptions.
+
+    Includes both the currently active subscription and any reserved
+    subscription waiting for activation.
+    """
+
+    serializer_class = UserSubscriptionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            UserSubscription.objects
+            .filter(user=self.request.user)
+            .filter(
+                status__in=[
+                    UserSubscription.Status.ACTIVE,
+                    UserSubscription.Status.RESERVED,
+                ]
+            )
+            .select_related("plan")
+            .order_by("start_date")
+        )
+
+
+class SubscriptionPurchaseView(generics.GenericAPIView):
+    """
+    Purchases a subscription plan using the user's wallet.
+
+    If the user already has an active subscription, the purchased
+    subscription is reserved until the current one expires.
+    """
+
+    serializer_class = SubscriptionPurchaseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            plan = SubscriptionPlan.objects.get(
+                id=serializer.validated_data["plan_id"],
+                is_active=True,
+            )
+        except SubscriptionPlan.DoesNotExist:
+            raise ValidationError(
+                {"plan_id": "Subscription plan not found."}
+            )
+
+        subscription = SubscriptionService.purchase(
+            user=request.user,
+            plan=plan,
+            auto_renew=serializer.validated_data["auto_renew"],
+        )
+
+        return Response(
+            UserSubscriptionSerializer(subscription).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SubscriptionUpgradeView(generics.GenericAPIView):
+    """
+    Upgrades the user's current active subscription.
+
+    The service calculates the remaining value of the current
+    subscription and charges only the difference.
+    """
+
+    serializer_class = SubscriptionUpgradeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            plan = SubscriptionPlan.objects.get(
+                id=serializer.validated_data["plan_id"],
+                is_active=True,
+            )
+        except SubscriptionPlan.DoesNotExist:
+            raise ValidationError(
+                {"plan_id": "Subscription plan not found."}
+            )
+
+        subscription = SubscriptionService.upgrade(
+            user=request.user,
+            plan=plan,
+        )
+
+        return Response(
+            UserSubscriptionSerializer(subscription).data,
+            status=status.HTTP_200_OK,
+        )

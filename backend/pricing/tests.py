@@ -1313,3 +1313,733 @@ class PriceFormatBridgeTest(TestCase):
         )
 
         self.assertEqual(price.book_format, fmt)
+
+from decimal import Decimal
+
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
+from rest_framework.test import APITestCase
+from wallet.models import Wallet
+
+from .models import SubscriptionPlan, UserSubscription
+from .subscription_services import SubscriptionService
+
+User = get_user_model()
+
+
+class SubscriptionServiceTest(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="subscription-user",
+            password="testpass123",
+        )
+
+        self.wallet = self.user.wallet
+        self.wallet.balance = Decimal("100.00")
+        self.wallet.save(update_fields=["balance"])
+
+        self.reader = SubscriptionPlan.objects.create(
+            name="Reader",
+            slug="reader",
+            tier=1,
+            monthly_price=Decimal("5.00"),
+            digital_discount_percent=5,
+            is_active=True,
+        )
+
+        self.scholar = SubscriptionPlan.objects.create(
+            name="Scholar",
+            slug="scholar",
+            tier=2,
+            monthly_price=Decimal("10.00"),
+            digital_discount_percent=10,
+            is_active=True,
+        )
+
+        self.professional = SubscriptionPlan.objects.create(
+            name="Professional",
+            slug="professional",
+            tier=3,
+            monthly_price=Decimal("15.00"),
+            digital_discount_percent=15,
+            is_active=True,
+        )
+
+    def test_first_purchase_creates_active_subscription(self):
+        subscription = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            subscription.status,
+            UserSubscription.Status.ACTIVE,
+        )
+
+        self.assertEqual(
+            subscription.plan,
+            self.reader,
+        )
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            Decimal("95.00"),
+        )
+
+        self.assertGreater(
+            subscription.end_date,
+            subscription.start_date,
+        )
+
+    def test_purchase_fails_when_wallet_is_insufficient(self):
+        self.user.wallet.balance = Decimal("2.00")
+        self.user.wallet.save(update_fields=["balance"])
+
+        with self.assertRaises(ValidationError):
+            SubscriptionService.purchase(
+                user=self.user,
+                plan=self.reader,
+            )
+
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            Decimal("2.00"),
+        )
+
+        self.assertFalse(
+            UserSubscription.objects.filter(
+                user=self.user,
+            ).exists()
+        )
+
+    def test_purchase_with_active_subscription_creates_reserved_subscription(self):
+        current = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        reserved = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.scholar,
+        )
+
+        self.assertEqual(
+            current.status,
+            UserSubscription.Status.ACTIVE,
+        )
+
+        self.assertEqual(
+            reserved.status,
+            UserSubscription.Status.RESERVED,
+        )
+
+        self.assertEqual(
+            reserved.start_date,
+            current.end_date,
+        )
+
+        self.assertEqual(
+            reserved.end_date,
+            current.end_date + timezone.timedelta(days=30),
+        )
+
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            Decimal("85.00"),
+        )
+
+    def test_second_reserved_subscription_is_rejected(self):
+        SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        SubscriptionService.purchase(
+            user=self.user,
+            plan=self.scholar,
+        )
+
+        with self.assertRaises(ValidationError):
+            SubscriptionService.purchase(
+                user=self.user,
+                plan=self.professional,
+            )
+
+        self.assertEqual(
+            UserSubscription.objects.filter(
+                user=self.user,
+            ).count(),
+            2,
+        )
+
+    def test_inactive_plan_cannot_be_purchased(self):
+        self.professional.is_active = False
+        self.professional.save(update_fields=["is_active"])
+
+        with self.assertRaises(ValidationError):
+            SubscriptionService.purchase(
+                user=self.user,
+                plan=self.professional,
+            )
+
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            Decimal("100.00"),
+        )
+
+    def test_upgrade_requires_active_subscription(self):
+        with self.assertRaises(ValidationError):
+            SubscriptionService.upgrade(
+                user=self.user,
+                plan=self.scholar,
+            )
+
+    def test_upgrade_requires_higher_tier(self):
+        SubscriptionService.purchase(
+            user=self.user,
+            plan=self.scholar,
+        )
+
+        with self.assertRaises(ValidationError):
+            SubscriptionService.upgrade(
+                user=self.user,
+                plan=self.reader,
+            )
+
+    def test_upgrade_replaces_active_subscription(self):
+        current = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        before_upgrade = timezone.now()
+
+        upgraded = SubscriptionService.upgrade(
+            user=self.user,
+            plan=self.scholar,
+        )
+
+        after_upgrade = timezone.now()
+
+        current.refresh_from_db()
+
+        self.assertEqual(
+            current.status,
+            UserSubscription.Status.EXPIRED,
+        )
+
+        self.assertEqual(
+            upgraded.status,
+            UserSubscription.Status.ACTIVE,
+        )
+
+        self.assertEqual(
+            upgraded.plan,
+            self.scholar,
+        )
+
+        self.assertGreaterEqual(
+            upgraded.start_date,
+            before_upgrade,
+        )
+
+        self.assertLessEqual(
+            upgraded.start_date,
+            after_upgrade,
+        )
+
+        self.assertEqual(
+            UserSubscription.objects.filter(
+                user=self.user,
+                status=UserSubscription.Status.ACTIVE,
+            ).count(),
+            1,
+        )
+
+    def test_upgrade_charges_only_remaining_value(self):
+        current = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        now = timezone.now()
+
+        current.start_date = now - timedelta(days=20)
+        current.end_date = now + timedelta(days=10)
+        current.save(
+            update_fields=[
+                "start_date",
+                "end_date",
+                "updated_at",
+            ],
+        )
+
+        self.user.wallet.refresh_from_db()
+        initial_balance = self.user.wallet.balance
+
+        SubscriptionService.upgrade(
+            user=self.user,
+            plan=self.scholar,
+        )
+
+        self.user.wallet.refresh_from_db()
+
+        remaining_value = (
+            Decimal("5.00")
+            * Decimal("10")
+            / Decimal("30")
+        ).quantize(Decimal("0.01"))
+
+        expected_charge = (
+            Decimal("10.00") - remaining_value
+        )
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            initial_balance - expected_charge,
+        )
+
+    def test_expired_subscription_without_auto_renew_becomes_expired(self):
+        subscription = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        subscription.end_date = timezone.now() - timedelta(days=1)
+        subscription.auto_renew = False
+        subscription.save(
+            update_fields=[
+                "end_date",
+                "auto_renew",
+                "updated_at",
+            ],
+        )
+
+        self.user.wallet.refresh_from_db()
+        initial_balance = self.user.wallet.balance
+
+        result = SubscriptionService.process_expired_subscriptions()
+
+        subscription.refresh_from_db()
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            subscription.status,
+            UserSubscription.Status.EXPIRED,
+        )
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            initial_balance,
+        )
+
+        self.assertEqual(
+            UserSubscription.objects.filter(
+                user=self.user,
+            ).count(),
+            1,
+        )
+
+        self.assertEqual(
+            result["expired"],
+            1,
+        )
+
+    def test_expired_subscription_activates_reserved_subscription(self):
+        current = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        reserved = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.scholar,
+        )
+
+        current.end_date = timezone.now() - timedelta(days=1)
+        current.save(
+            update_fields=[
+                "end_date",
+                "updated_at",
+            ],
+        )
+
+        # The reservation must begin exactly when the original
+        # subscription expires.
+        reserved.start_date = current.end_date
+        reserved.end_date = SubscriptionService._calculate_end_date(
+            reserved.start_date,
+        )
+        reserved.save(
+            update_fields=[
+                "start_date",
+                "end_date",
+                "updated_at",
+            ],
+        )
+
+        self.user.wallet.refresh_from_db()
+        initial_balance = self.user.wallet.balance
+
+        result = SubscriptionService.process_expired_subscriptions()
+
+        current.refresh_from_db()
+        reserved.refresh_from_db()
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            current.status,
+            UserSubscription.Status.EXPIRED,
+        )
+
+        self.assertEqual(
+            reserved.status,
+            UserSubscription.Status.ACTIVE,
+        )
+
+        self.assertEqual(
+            reserved.start_date,
+            current.end_date,
+        )
+
+        # The reserved subscription was already paid for.
+        self.assertEqual(
+            self.user.wallet.balance,
+            initial_balance,
+        )
+
+        self.assertEqual(
+            result["reserved_activated"],
+            1,
+        )
+
+        self.assertEqual(
+            UserSubscription.objects.filter(
+                user=self.user,
+                status=UserSubscription.Status.ACTIVE,
+            ).count(),
+            1,
+        )
+
+    def test_auto_renew_fails_with_insufficient_wallet_balance(self):
+        subscription = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        subscription.end_date = timezone.now() - timedelta(days=1)
+        subscription.auto_renew = True
+        subscription.save(
+            update_fields=[
+                "end_date",
+                "auto_renew",
+                "updated_at",
+            ],
+        )
+
+        self.user.wallet.balance = Decimal("2.00")
+        self.user.wallet.save(
+            update_fields=["balance"],
+        )
+
+        result = SubscriptionService.process_expired_subscriptions()
+
+        subscription.refresh_from_db()
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            subscription.status,
+            UserSubscription.Status.EXPIRED,
+        )
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            Decimal("2.00"),
+        )
+
+        self.assertEqual(
+            UserSubscription.objects.filter(
+                user=self.user,
+                status=UserSubscription.Status.ACTIVE,
+            ).count(),
+            0,
+        )
+
+        self.assertEqual(
+            result["renewal_failed"],
+            1,
+        )
+
+    def test_expiration_processing_is_idempotent(self):
+        subscription = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        subscription.end_date = timezone.now() - timedelta(days=1)
+        subscription.auto_renew = True
+        subscription.save(
+            update_fields=[
+                "end_date",
+                "auto_renew",
+                "updated_at",
+            ],
+        )
+
+        self.user.wallet.refresh_from_db()
+        initial_balance = self.user.wallet.balance
+
+        first_result = SubscriptionService.process_expired_subscriptions()
+
+        self.user.wallet.refresh_from_db()
+
+        balance_after_first_run = self.user.wallet.balance
+
+        second_result = SubscriptionService.process_expired_subscriptions()
+
+        self.user.wallet.refresh_from_db()
+
+        self.assertEqual(
+            first_result["renewed"],
+            1,
+        )
+
+        self.assertEqual(
+            second_result["renewed"],
+            0,
+        )
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            balance_after_first_run,
+        )
+
+        self.assertEqual(
+            self.user.wallet.balance,
+            initial_balance - self.reader.monthly_price,
+        )
+
+        self.assertEqual(
+            UserSubscription.objects.filter(
+                user=self.user,
+                status=UserSubscription.Status.ACTIVE,
+            ).count(),
+            1,
+        )
+
+    def test_non_expired_subscription_is_untouched(self):
+        subscription = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+        )
+
+        original_end_date = subscription.end_date
+
+        result = SubscriptionService.process_expired_subscriptions()
+
+        subscription.refresh_from_db()
+
+        self.assertEqual(
+            subscription.status,
+            UserSubscription.Status.ACTIVE,
+        )
+
+        self.assertEqual(
+            subscription.end_date,
+            original_end_date,
+        )
+
+        self.assertEqual(
+            result["expired"],
+            0,
+        )
+
+class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
+
+    def setUp(self):
+        super().setUp()
+
+        self.user = User.objects.create_user(
+            username="subscription-user",
+            password="testpass123",
+        )
+
+        self.reader = SubscriptionPlan.objects.create(
+            name="Reader",
+            slug="reader",
+            tier=1,
+            monthly_price=Decimal("5.00"),
+            digital_discount_percent=5,
+            is_active=True,
+        )
+
+        self.scholar = SubscriptionPlan.objects.create(
+            name="Scholar",
+            slug="scholar",
+            tier=2,
+            monthly_price=Decimal("10.00"),
+            digital_discount_percent=10,
+            is_active=True,
+        )
+
+        self.professional = SubscriptionPlan.objects.create(
+            name="Professional",
+            slug="professional",
+            tier=3,
+            monthly_price=Decimal("15.00"),
+            digital_discount_percent=15,
+            is_active=True,
+        )
+
+        self.digital_format = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.DIGITAL,
+            is_available=True,
+        )
+
+        self.physical_format = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.PHYSICAL,
+            is_available=True,
+        )
+
+        self.digital_price = Price.objects.create(
+            book=self.book,
+            book_format=self.digital_format,
+            value=Decimal("100.00"),
+            currency="USD",
+            min_price=Decimal("70.00"),
+        )
+
+        self.physical_price = Price.objects.create(
+            book=self.book,
+            book_format=self.physical_format,
+            value=Decimal("100.00"),
+            currency="USD",
+            min_price=Decimal("70.00"),
+        )
+
+    def test_active_subscription_applies_digital_discount(self):
+        UserSubscription.objects.create(
+            user=self.user,
+            plan=self.reader,
+            status=UserSubscription.Status.ACTIVE,
+            start_date=timezone.now(),
+            end_date=timezone.now() + timedelta(days=30),
+        )
+
+        result = PricingEngine(
+            book=self.book,
+            book_format=self.digital_format,
+            user=self.user,
+        ).calculate()
+
+        self.assertEqual(
+            result.subscription_discount,
+            self.reader,
+        )
+
+        self.assertEqual(
+            result.subscription_discount_amount,
+            Decimal("5.00"),
+        )
+
+        self.assertEqual(
+            result.final_price,
+            Decimal("95.00"),
+        )
+
+    def test_reserved_subscription_does_not_apply_discount(self):
+        UserSubscription.objects.create(
+            user=self.user,
+            plan=self.reader,
+            status=UserSubscription.Status.RESERVED,
+            start_date=timezone.now() + timedelta(days=30),
+            end_date=timezone.now() + timedelta(days=60),
+        )
+
+        result = PricingEngine(
+            book=self.book,
+            book_format=self.digital_format,
+            user=self.user,
+        ).calculate()
+
+        self.assertIsNone(result.subscription_discount)
+        self.assertIsNone(result.subscription_discount_amount)
+        self.assertEqual(result.final_price, Decimal("100.00"))
+
+    def test_expired_subscription_does_not_apply_discount(self):
+        UserSubscription.objects.create(
+            user=self.user,
+            plan=self.reader,
+            status=UserSubscription.Status.EXPIRED,
+            start_date=timezone.now() - timedelta(days=60),
+            end_date=timezone.now() - timedelta(days=30),
+        )
+
+        result = PricingEngine(
+            book=self.book,
+            book_format=self.digital_format,
+            user=self.user,
+        ).calculate()
+
+        self.assertIsNone(result.subscription_discount)
+        self.assertIsNone(result.subscription_discount_amount)
+        self.assertEqual(result.final_price, Decimal("100.00"))
+
+    def test_subscription_discount_does_not_apply_to_physical_format(self):
+        UserSubscription.objects.create(
+            user=self.user,
+            plan=self.reader,
+            status=UserSubscription.Status.ACTIVE,
+            start_date=timezone.now(),
+            end_date=timezone.now() + timedelta(days=30),
+        )
+
+        result = PricingEngine(
+            book=self.book,
+            book_format=self.physical_format,
+            user=self.user,
+        ).calculate()
+
+        self.assertIsNone(result.subscription_discount)
+        self.assertIsNone(result.subscription_discount_amount)
+        self.assertEqual(result.final_price, Decimal("100.00"))
+
+    def test_subscription_discount_respects_minimum_price(self):
+        self.digital_price.min_price = Decimal("98.00")
+        self.digital_price.save(update_fields=["min_price"])
+
+        UserSubscription.objects.create(
+            user=self.user,
+            plan=self.professional,
+            status=UserSubscription.Status.ACTIVE,
+            start_date=timezone.now(),
+            end_date=timezone.now() + timedelta(days=30),
+        )
+
+        result = PricingEngine(
+            book=self.book,
+            book_format=self.digital_format,
+            user=self.user,
+        ).calculate()
+
+        self.assertEqual(
+            result.final_price,
+            Decimal("98.00"),
+        )
+
+        self.assertEqual(
+            result.subscription_discount_amount,
+            Decimal("2.00"),
+        )
