@@ -23,12 +23,12 @@ class WalletAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         wallet = Wallet.objects.get(user=self.user)
-        wallet.balance = Decimal("150.00")
+        wallet.balance = Decimal("150")
         wallet.save(update_fields=["balance"])
 
         WalletService.deposit(
             self.user,
-            Decimal("25.00"),
+            Decimal("25"),
             description="Initial top-up",
         )
 
@@ -40,7 +40,7 @@ class WalletAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["user"], "walletapi")
-        self.assertEqual(response.data["balance"], "175.00")
+        self.assertEqual(response.data["balance"], "175")
 
     def test_get_my_wallet_transactions(self):
         response = self.client.get(
@@ -53,7 +53,7 @@ class WalletAPITest(APITestCase):
         transaction = response.data["results"][0]
 
         self.assertEqual(transaction["transaction_type"], WalletTransaction.TransactionType.DEPOSIT)
-        self.assertEqual(transaction["amount"], "25.00")
+        self.assertEqual(transaction["amount"], "25")
 
     def test_wallet_requires_authentication(self):
         self.client.force_authenticate(user=None)

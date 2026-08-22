@@ -107,7 +107,6 @@ class PriceChangeProposalDetailSerializer(serializers.ModelSerializer):
             "book",
             "book_title",
             "value",
-            "currency",
             "min_price",
             "reason",
         ]
@@ -564,18 +563,13 @@ class PriceChangeProposalSubmissionSerializer(serializers.Serializer):
     )
 
     value = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-    )
-
-    currency = serializers.CharField(
-        max_length=3,
-        default="USD",
+        max_digits=15,
+        decimal_places=0,
     )
 
     min_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+        max_digits=15,
+        decimal_places=0,
         required=False,
         allow_null=True,
     )
@@ -683,7 +677,6 @@ class PriceChangeProposalResponseSerializer(serializers.ModelSerializer):
 
         return {
             "value": obj.value,
-            "currency": obj.currency,
             "min_price": obj.min_price,
         }
 

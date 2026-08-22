@@ -112,7 +112,7 @@ class Book(models.Model):
         """
         return self.get_current_price()
     
-    def change_price(self, value, currency="USD", min_price=None):
+    def change_price(self, value, min_price=None):
         """Creates a new active price while preserving price history."""
 
         now = timezone.now()
@@ -127,7 +127,6 @@ class Book(models.Model):
 
             return self.prices.create(
                 value=value,
-                currency=currency,
                 min_price=min_price,
                 effective_from=now,
             )

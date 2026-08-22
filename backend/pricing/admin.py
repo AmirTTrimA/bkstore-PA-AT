@@ -155,7 +155,6 @@ class PriceAdmin(admin.ModelAdmin):
     list_display = (
         "book",
         "value",
-        "currency",
         "min_price",
         "effective_from",
         "effective_until",
@@ -163,7 +162,7 @@ class PriceAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
-        "currency",
+
     )
 
     search_fields = (
@@ -198,7 +197,6 @@ class PriceAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "value",
-                    "currency",
                     "min_price",
                 )
             },
@@ -246,7 +244,6 @@ class PriceAdmin(admin.ModelAdmin):
         return (
             "book",
             "value",
-            "currency",
             "min_price",
             "effective_from",
             "effective_until",

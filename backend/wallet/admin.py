@@ -9,7 +9,6 @@ class WalletAdmin(admin.ModelAdmin):
     list_display = (
         "user",
         "balance",
-        "currency",
         "created_at",
         "updated_at",
     )
@@ -18,7 +17,7 @@ class WalletAdmin(admin.ModelAdmin):
         "user__email",
     )
     list_filter = (
-        "currency",
+
     )
     readonly_fields = (
         "created_at",

@@ -216,7 +216,7 @@ class SubscriptionService:
 
     @classmethod
     @transaction.atomic
-    def purchase(cls, user, plan):
+    def purchase(cls, user, plan, auto_renew=False):
         """
         Purchases a subscription.
 
@@ -262,7 +262,7 @@ class SubscriptionService:
             status=status,
             start_date=start_date,
             end_date=cls._calculate_end_date(start_date),
-            auto_renew=False,
+            auto_renew=auto_renew,
         )
 
     @staticmethod

@@ -239,7 +239,7 @@ CART_SESSION_KEY = "cart"
 # 🔑 CELERY BEAT SCHEDULE (Periodic Tasks) - Schedule the high-priority tasks
 CELERY_BEAT_SCHEDULE = {
     "expire-otp-hourly": {
-        "task": "accounts.tasks.expire_old_otp_codes",
+        "task": "accounts.tasks.expire_otp_codes",
         # Executes every hour (crontab is the most precise for hourly/daily tasks)
         "schedule": timedelta(hours=1),
     },

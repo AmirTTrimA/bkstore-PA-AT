@@ -43,14 +43,14 @@ class PricingTestCase(PricingBaseTestCase):
 
         Price.objects.create(
             book=self.book,
-            value=Decimal("19.99"),
+            value=Decimal("19"),
             effective_from=timezone.now() - timedelta(days=1),
         )
 
         self.assertIsNotNone(self.book.current_price)
         self.assertEqual(
             self.book.current_price.value,
-            Decimal("19.99"),
+            Decimal("19"),
         )
 
     def test_current_price_returns_none_when_no_prices_exist(self):
@@ -63,7 +63,7 @@ class PricingTestCase(PricingBaseTestCase):
 
         Price.objects.create(
             book=self.book,
-            value=Decimal("29.99"),
+            value=Decimal("29"),
             effective_from=timezone.now() + timedelta(days=1),
         )
 
@@ -74,7 +74,7 @@ class PricingTestCase(PricingBaseTestCase):
 
         Price.objects.create(
             book=self.book,
-            value=Decimal("14.99"),
+            value=Decimal("14"),
             effective_from=timezone.now() - timedelta(days=10),
             effective_until=timezone.now() - timedelta(days=1),
         )
@@ -86,19 +86,19 @@ class PricingTestCase(PricingBaseTestCase):
 
         Price.objects.create(
             book=self.book,
-            value=Decimal("19.99"),
+            value=Decimal("19"),
             effective_from=timezone.now() - timedelta(days=10),
         )
 
         Price.objects.create(
             book=self.book,
-            value=Decimal("24.99"),
+            value=Decimal("24"),
             effective_from=timezone.now() - timedelta(days=2),
         )
 
         self.assertEqual(
             self.book.current_price.value,
-            Decimal("24.99"),
+            Decimal("24"),
         )
 
     def test_book_list_serializer_returns_current_price(self):
@@ -106,7 +106,7 @@ class PricingTestCase(PricingBaseTestCase):
 
         Price.objects.create(
             book=self.book,
-            value=Decimal("19.99"),
+            value=Decimal("19"),
             effective_from=timezone.now() - timedelta(days=1),
         )
 
@@ -114,7 +114,7 @@ class PricingTestCase(PricingBaseTestCase):
 
         self.assertEqual(
             serializer.data["price"],
-            "19.99",
+            "19",
         )
 
     def test_book_list_serializer_returns_none_when_no_price_exists(self):
@@ -128,7 +128,7 @@ class BookPriceChangeTestCase(PricingBaseTestCase):
 
     def test_change_price_creates_first_price(self):
         self.book.change_price(
-            value=Decimal("19.99"),
+            value=Decimal("19"),
         )
 
         self.assertEqual(
@@ -142,7 +142,7 @@ class BookPriceChangeTestCase(PricingBaseTestCase):
 
         self.assertEqual(
             price.value,
-            Decimal("19.99"),
+            Decimal("19"),
         )
 
         self.assertIsNone(price.effective_until)
@@ -150,11 +150,11 @@ class BookPriceChangeTestCase(PricingBaseTestCase):
     def test_change_price_closes_previous_price(self):
 
         first = self.book.change_price(
-            value=Decimal("19.99"),
+            value=Decimal("19"),
         )
 
         second = self.book.change_price(
-            value=Decimal("24.99"),
+            value=Decimal("24"),
         )
 
         first.refresh_from_db()
@@ -165,7 +165,7 @@ class BookPriceChangeTestCase(PricingBaseTestCase):
 
         self.assertEqual(
             self.book.current_price.value,
-            Decimal("24.99"),
+            Decimal("24"),
         )
 
         self.assertEqual(
@@ -176,7 +176,7 @@ class BookPriceChangeTestCase(PricingBaseTestCase):
     def test_change_price_returns_created_price(self):
 
         price = self.book.change_price(
-            value=Decimal("29.99"),
+            value=Decimal("29"),
         )
 
         self.assertIsInstance(
@@ -186,7 +186,7 @@ class BookPriceChangeTestCase(PricingBaseTestCase):
 
         self.assertEqual(
             price.value,
-            Decimal("29.99"),
+            Decimal("29"),
         )
     
 class BookPriceApiTestCase(APITestCase):
@@ -234,13 +234,11 @@ class BookPriceApiTestCase(APITestCase):
         """GET returns all historical prices."""
 
         self.book.change_price(
-            value=Decimal("19.99"),
-            currency="USD",
+            value=Decimal("19"),
         )
 
         self.book.change_price(
-            value=Decimal("24.99"),
-            currency="USD",
+            value=Decimal("24"),
         )
 
         response = self.client.get(self.url)
@@ -250,20 +248,19 @@ class BookPriceApiTestCase(APITestCase):
 
         self.assertEqual(
             response.data["results"][0]["value"],
-            "24.99",
+            "24",
         )
 
         self.assertEqual(
             response.data["results"][1]["value"],
-            "19.99",
+            "19",
         )
 
     def test_post_creates_first_price(self):
         """POST creates the first active price."""
 
         payload = {
-            "value": "19.99",
-            "currency": "USD",
+            "value": "19",
         }
 
         response = self.client.post(self.url, payload, format="json")
@@ -279,19 +276,18 @@ class BookPriceApiTestCase(APITestCase):
 
         self.assertEqual(
             self.book.current_price.value,
-            Decimal("19.99"),
+            Decimal("19"),
         )
 
     def test_post_closes_previous_price(self):
         """POST creates a new active price and closes the previous one."""
 
         first = self.book.change_price(
-            value=Decimal("19.99"),
+            value=Decimal("19"),
         )
 
         payload = {
-            "value": "24.99",
-            "currency": "USD",
+            "value": "24",
         }
 
         response = self.client.post(self.url, payload, format="json")
@@ -306,7 +302,7 @@ class BookPriceApiTestCase(APITestCase):
 
         self.assertEqual(
             self.book.current_price.value,
-            Decimal("24.99"),
+            Decimal("24"),
         )
 
         self.assertEqual(
@@ -318,9 +314,8 @@ class BookPriceApiTestCase(APITestCase):
         """Minimum price cannot exceed selling price."""
 
         payload = {
-            "value": "20.00",
-            "min_price": "25.00",
-            "currency": "USD",
+            "value": "20",
+            "min_price": "25",
         }
 
         response = self.client.post(self.url, payload, format="json")
@@ -380,9 +375,8 @@ class PricingEngineTestBase(TestCase):
         genre="SCI_FI",
         is_digital=True,
         is_audio=False,
-        price=Decimal("100.00"),
-        min_price=Decimal("70.00"),
-        currency="USD",
+        price=Decimal("100"),
+        min_price=Decimal("70"),
     ):
         if author is None:
             author = self.author
@@ -402,7 +396,6 @@ class PricingEngineTestBase(TestCase):
 
         book.change_price(
             value=price,
-            currency=currency,
             min_price=min_price,
         )
 
@@ -412,7 +405,7 @@ class PricingEngineTestBase(TestCase):
         self,
         *,
         discount_type=Discount.DiscountType.PERCENT,
-        value=Decimal("10.00"),
+        value=Decimal("10"),
         scope=Discount.Scope.STORE,
         **kwargs,
     ):
@@ -452,7 +445,7 @@ class PricingEngineTestBase(TestCase):
         self,
         *,
         discount_type=Discount.DiscountType.PERCENT,
-        value=Decimal("10.00"),
+        value=Decimal("10"),
         **kwargs,
     ):
         defaults = {
@@ -477,9 +470,8 @@ class PricingEngineTestBase(TestCase):
         """
         price = self.engine.get_current_price()
 
-        self.assertEqual(price.value, Decimal("100.00"))
-        self.assertEqual(price.currency, "USD")
-        self.assertEqual(price.min_price, Decimal("70.00"))
+        self.assertEqual(price.value, Decimal("100"))
+        self.assertEqual(price.min_price, Decimal("70"))
 
     def test_returns_pricing_result_instance(self):
         """
@@ -495,8 +487,8 @@ class PricingEngineTestBase(TestCase):
         """
         result = self.engine.calculate()
 
-        self.assertEqual(result.base_price, Decimal("100.00"))
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.base_price, Decimal("100"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
         self.assertIsNone(result.automatic_discount)
         self.assertIsNone(result.automatic_discount_amount)
@@ -520,7 +512,7 @@ class PricingEngineAutomaticDiscountTestCase(PricingEngineTestBase):
         self,
         *,
         discount_type=Discount.DiscountType.PERCENT,
-        value=Decimal("10.00"),
+        value=Decimal("10"),
         scope=Discount.Scope.STORE,
         **kwargs,
     ):
@@ -544,16 +536,16 @@ class PricingEngineAutomaticDiscountTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("10.00"),
+            value=Decimal("10"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.base_price, Decimal("100.00"))
-        self.assertEqual(result.final_price, Decimal("90.00"))
+        self.assertEqual(result.base_price, Decimal("100"))
+        self.assertEqual(result.final_price, Decimal("90"))
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("10.00"),
+            Decimal("10"),
         )
 
     def test_applies_fixed_discount(self):
@@ -562,16 +554,16 @@ class PricingEngineAutomaticDiscountTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             discount_type=Discount.DiscountType.FIXED,
-            value=Decimal("15.00"),
+            value=Decimal("15"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.base_price, Decimal("100.00"))
-        self.assertEqual(result.final_price, Decimal("85.00"))
+        self.assertEqual(result.base_price, Decimal("100"))
+        self.assertEqual(result.final_price, Decimal("85"))
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("15.00"),
+            Decimal("15"),
         )
 
     def test_selects_best_percentage_discount(self):
@@ -579,16 +571,16 @@ class PricingEngineAutomaticDiscountTestCase(PricingEngineTestBase):
         The engine should choose the percentage discount producing
         the lowest selling price.
         """
-        self.create_discount(value=Decimal("10.00"))
-        self.create_discount(value=Decimal("20.00"))
-        self.create_discount(value=Decimal("15.00"))
+        self.create_discount(value=Decimal("10"))
+        self.create_discount(value=Decimal("20"))
+        self.create_discount(value=Decimal("15"))
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("80.00"))
+        self.assertEqual(result.final_price, Decimal("80"))
         self.assertEqual(
             result.automatic_discount.value,
-            Decimal("20.00"),
+            Decimal("20"),
         )
 
     def test_selects_discount_producing_lowest_price(self):
@@ -598,17 +590,17 @@ class PricingEngineAutomaticDiscountTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("10.00"),
+            value=Decimal("10"),
         )
 
         self.create_discount(
             discount_type=Discount.DiscountType.FIXED,
-            value=Decimal("15.00"),
+            value=Decimal("15"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("85.00"))
+        self.assertEqual(result.final_price, Decimal("85"))
         self.assertEqual(
             result.automatic_discount.discount_type,
             Discount.DiscountType.FIXED,
@@ -621,17 +613,17 @@ class PricingEngineAutomaticDiscountTestCase(PricingEngineTestBase):
         """
         first = self.create_discount(
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("10.00"),
+            value=Decimal("10"),
         )
 
         second = self.create_discount(
             discount_type=Discount.DiscountType.FIXED,
-            value=Decimal("10.00"),
+            value=Decimal("10"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("90.00"))
+        self.assertEqual(result.final_price, Decimal("90"))
         self.assertIn(
             result.automatic_discount,
             [first, second],
@@ -643,12 +635,12 @@ class PricingEngineScopeTestCase(PricingEngineTestBase):
     def test_store_discount_applies(self):
         self.create_discount(
             scope=Discount.Scope.STORE,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("80.00"))
+        self.assertEqual(result.final_price, Decimal("80"))
 
     def test_book_discount_applies_only_to_matching_book(self):
         other_book = self.create_book()
@@ -656,16 +648,16 @@ class PricingEngineScopeTestCase(PricingEngineTestBase):
         self.create_discount(
             scope=Discount.Scope.BOOK,
             book=other_book,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
         other_result = PricingEngine(other_book).calculate()
 
-        self.assertEqual(other_result.final_price, Decimal("80.00"))
+        self.assertEqual(other_result.final_price, Decimal("80"))
 
     def test_author_discount_applies_only_to_matching_author(self):
         other_author = self.create_author(
@@ -679,16 +671,16 @@ class PricingEngineScopeTestCase(PricingEngineTestBase):
         self.create_discount(
             scope=Discount.Scope.AUTHOR,
             author=other_author,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
         other_result = PricingEngine(other_book).calculate()
 
-        self.assertEqual(other_result.final_price, Decimal("80.00"))
+        self.assertEqual(other_result.final_price, Decimal("80"))
 
     def test_genre_discount_applies_only_to_matching_genre(self):
         fantasy = self.create_book(
@@ -698,16 +690,16 @@ class PricingEngineScopeTestCase(PricingEngineTestBase):
         self.create_discount(
             scope=Discount.Scope.GENRE,
             genre="FANTASY",
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
         fantasy_result = PricingEngine(fantasy).calculate()
 
-        self.assertEqual(fantasy_result.final_price, Decimal("80.00"))
+        self.assertEqual(fantasy_result.final_price, Decimal("80"))
 
     def test_digital_discount_applies_to_digital_books(self):
         physical = self.create_book(
@@ -718,17 +710,17 @@ class PricingEngineScopeTestCase(PricingEngineTestBase):
         self.create_discount(
             scope=Discount.Scope.FORMAT,
             format=Discount.Format.DIGITAL,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         self.assertEqual(
             self.engine.calculate().final_price,
-            Decimal("80.00"),
+            Decimal("80"),
         )
 
         self.assertEqual(
             PricingEngine(physical).calculate().final_price,
-            Decimal("100.00"),
+            Decimal("100"),
         )
 
     def test_audio_discount_applies_to_audio_books(self):
@@ -740,17 +732,17 @@ class PricingEngineScopeTestCase(PricingEngineTestBase):
         self.create_discount(
             scope=Discount.Scope.FORMAT,
             format=Discount.Format.AUDIO,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         self.assertEqual(
             self.engine.calculate().final_price,
-            Decimal("100.00"),
+            Decimal("100"),
         )
 
         self.assertEqual(
             PricingEngine(audio).calculate().final_price,
-            Decimal("80.00"),
+            Decimal("80"),
         )
 
     def test_physical_discount_applies_only_to_physical_books(self):
@@ -762,17 +754,17 @@ class PricingEngineScopeTestCase(PricingEngineTestBase):
         self.create_discount(
             scope=Discount.Scope.FORMAT,
             format=Discount.Format.PHYSICAL,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         self.assertEqual(
             self.engine.calculate().final_price,
-            Decimal("100.00"),
+            Decimal("100"),
         )
 
         self.assertEqual(
             PricingEngine(physical).calculate().final_price,
-            Decimal("80.00"),
+            Decimal("80"),
         )
 
 from datetime import timedelta
@@ -790,13 +782,13 @@ class PricingEngineValidityTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             is_active=False,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
         self.assertIsNone(result.automatic_discount)
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
     def test_expired_discount_is_ignored(self):
         """
@@ -807,13 +799,13 @@ class PricingEngineValidityTestCase(PricingEngineTestBase):
         self.create_discount(
             valid_from=now - timedelta(days=10),
             valid_until=now - timedelta(days=1),
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
         self.assertIsNone(result.automatic_discount)
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
     def test_future_discount_is_ignored(self):
         """
@@ -824,13 +816,13 @@ class PricingEngineValidityTestCase(PricingEngineTestBase):
         self.create_discount(
             valid_from=now + timedelta(days=1),
             valid_until=now + timedelta(days=10),
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
         self.assertIsNone(result.automatic_discount)
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
     def test_discount_is_valid_at_valid_from(self):
         """
@@ -841,13 +833,13 @@ class PricingEngineValidityTestCase(PricingEngineTestBase):
         self.create_discount(
             valid_from=now,
             valid_until=now + timedelta(days=1),
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
         self.assertIsNotNone(result.automatic_discount)
-        self.assertEqual(result.final_price, Decimal("80.00"))
+        self.assertEqual(result.final_price, Decimal("80"))
 
     def test_discount_is_valid_before_valid_until(self):
         """
@@ -858,13 +850,13 @@ class PricingEngineValidityTestCase(PricingEngineTestBase):
         self.create_discount(
             valid_from=now - timedelta(days=1),
             valid_until=now + timedelta(seconds=1),
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
         self.assertIsNotNone(result.automatic_discount)
-        self.assertEqual(result.final_price, Decimal("80.00"))
+        self.assertEqual(result.final_price, Decimal("80"))
 
 class PricingEngineMinimumPriceTestCase(PricingEngineTestBase):
     """Tests enforcement of a book's minimum selling price."""
@@ -876,16 +868,16 @@ class PricingEngineMinimumPriceTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("50.00"),
+            value=Decimal("50"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.base_price, Decimal("100.00"))
-        self.assertEqual(result.final_price, Decimal("70.00"))
+        self.assertEqual(result.base_price, Decimal("100"))
+        self.assertEqual(result.final_price, Decimal("70"))
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("30.00"),
+            Decimal("30"),
         )
 
     def test_fixed_discount_respects_minimum_price(self):
@@ -895,15 +887,15 @@ class PricingEngineMinimumPriceTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             discount_type=Discount.DiscountType.FIXED,
-            value=Decimal("50.00"),
+            value=Decimal("50"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("70.00"))
+        self.assertEqual(result.final_price, Decimal("70"))
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("30.00"),
+            Decimal("30"),
         )
 
     def test_discount_is_not_clamped_when_above_minimum_price(self):
@@ -913,15 +905,15 @@ class PricingEngineMinimumPriceTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             discount_type=Discount.DiscountType.FIXED,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("80.00"))
+        self.assertEqual(result.final_price, Decimal("80"))
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("20.00"),
+            Decimal("20"),
         )
 
     def test_discount_without_minimum_price(self):
@@ -930,22 +922,21 @@ class PricingEngineMinimumPriceTestCase(PricingEngineTestBase):
         selling price is configured.
         """
         self.book.change_price(
-            value=Decimal("100.00"),
-            currency="USD",
+            value=Decimal("100"),
             min_price=None,
         )
 
         self.create_discount(
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("50.00"),
+            value=Decimal("50"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("50.00"))
+        self.assertEqual(result.final_price, Decimal("50"))
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("50.00"),
+            Decimal("50"),
         )
 
     def test_discount_can_reduce_price_exactly_to_minimum_price(self):
@@ -955,15 +946,15 @@ class PricingEngineMinimumPriceTestCase(PricingEngineTestBase):
         """
         self.create_discount(
             discount_type=Discount.DiscountType.FIXED,
-            value=Decimal("30.00"),
+            value=Decimal("30"),
         )
 
         result = self.engine.calculate()
 
-        self.assertEqual(result.final_price, Decimal("70.00"))
+        self.assertEqual(result.final_price, Decimal("70"))
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("30.00"),
+            Decimal("30"),
         )
 
 class PricingEngineCouponTestCase(PricingEngineTestBase):
@@ -976,7 +967,7 @@ class PricingEngineCouponTestCase(PricingEngineTestBase):
 
         self.assertEqual(
             result.final_price,
-            Decimal("100.00"),
+            Decimal("100"),
         )
 
         self.assertIsNone(result.coupon_discount)
@@ -1137,7 +1128,7 @@ class PricingEngineCouponApplicationTestCase(
         discount = self.create_discount(
             activation=Discount.Activation.COUPON,
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         self.create_coupon(
@@ -1149,22 +1140,22 @@ class PricingEngineCouponApplicationTestCase(
             coupon_code="WELCOME20",
         )
 
-        self.assertEqual(result.base_price, Decimal("100.00"))
-        self.assertEqual(result.final_price, Decimal("80.00"))
+        self.assertEqual(result.base_price, Decimal("100"))
+        self.assertEqual(result.final_price, Decimal("80"))
         self.assertEqual(
             result.coupon_discount,
             discount,
         )
         self.assertEqual(
             result.coupon_discount_amount,
-            Decimal("20.00"),
+            Decimal("20"),
         )
 
     def test_fixed_coupon_is_applied(self):
         discount = self.create_discount(
             activation=Discount.Activation.COUPON,
             discount_type=Discount.DiscountType.FIXED,
-            value=Decimal("15.00"),
+            value=Decimal("15"),
         )
 
         self.create_coupon(
@@ -1176,14 +1167,14 @@ class PricingEngineCouponApplicationTestCase(
             coupon_code="WELCOME15",
         )
 
-        self.assertEqual(result.final_price, Decimal("85.00"))
+        self.assertEqual(result.final_price, Decimal("85"))
         self.assertEqual(
             result.coupon_discount,
             discount,
         )
         self.assertEqual(
             result.coupon_discount_amount,
-            Decimal("15.00"),
+            Decimal("15"),
         )
 
     def test_invalid_coupon_is_ignored(self):
@@ -1203,7 +1194,7 @@ class PricingEngineCouponApplicationTestCase(
 
         self.assertEqual(
             result.final_price,
-            Decimal("100.00"),
+            Decimal("100"),
         )
 
         self.assertIsNone(result.coupon_discount)
@@ -1213,12 +1204,12 @@ class PricingEngineCouponApplicationTestCase(
         self.create_discount(
             activation=Discount.Activation.AUTOMATIC,
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         coupon_discount = self.create_discount(
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("10.00"),
+            value=Decimal("10"),
         )
 
         self.create_coupon(
@@ -1232,35 +1223,35 @@ class PricingEngineCouponApplicationTestCase(
 
         self.assertEqual(
             result.base_price,
-            Decimal("100.00"),
+            Decimal("100"),
         )
 
         self.assertEqual(
             result.final_price,
-            Decimal("72.00"),
+            Decimal("72"),
         )
 
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("20.00"),
+            Decimal("20"),
         )
 
         self.assertEqual(
             result.coupon_discount_amount,
-            Decimal("8.00"),
+            Decimal("8"),
         )
 
     def test_coupon_respects_minimum_price(self):
         self.create_discount(
             activation=Discount.Activation.AUTOMATIC,
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("20.00"),
+            value=Decimal("20"),
         )
 
         coupon_discount = self.create_discount(
             activation=Discount.Activation.COUPON,
             discount_type=Discount.DiscountType.PERCENT,
-            value=Decimal("50.00"),
+            value=Decimal("50"),
         )
 
         self.create_coupon(
@@ -1274,17 +1265,17 @@ class PricingEngineCouponApplicationTestCase(
 
         self.assertEqual(
             result.final_price,
-            Decimal("70.00"),
+            Decimal("70"),
         )
 
         self.assertEqual(
             result.automatic_discount_amount,
-            Decimal("20.00"),
+            Decimal("20"),
         )
 
         self.assertEqual(
             result.coupon_discount_amount,
-            Decimal("10.00"),
+            Decimal("10"),
         )
 
 class PriceFormatBridgeTest(TestCase):
@@ -1308,8 +1299,7 @@ class PriceFormatBridgeTest(TestCase):
         price = Price.objects.create(
             book=book,
             book_format=fmt,
-            value=Decimal("19.99"),
-            currency="USD",
+            value=Decimal("19"),
         )
 
         self.assertEqual(price.book_format, fmt)
@@ -1337,14 +1327,14 @@ class SubscriptionServiceTest(APITestCase):
         )
 
         self.wallet = self.user.wallet
-        self.wallet.balance = Decimal("100.00")
+        self.wallet.balance = Decimal("100")
         self.wallet.save(update_fields=["balance"])
 
         self.reader = SubscriptionPlan.objects.create(
             name="Reader",
             slug="reader",
             tier=1,
-            monthly_price=Decimal("5.00"),
+            monthly_price=Decimal("5"),
             digital_discount_percent=5,
             is_active=True,
         )
@@ -1353,7 +1343,7 @@ class SubscriptionServiceTest(APITestCase):
             name="Scholar",
             slug="scholar",
             tier=2,
-            monthly_price=Decimal("10.00"),
+            monthly_price=Decimal("10"),
             digital_discount_percent=10,
             is_active=True,
         )
@@ -1362,7 +1352,7 @@ class SubscriptionServiceTest(APITestCase):
             name="Professional",
             slug="professional",
             tier=3,
-            monthly_price=Decimal("15.00"),
+            monthly_price=Decimal("15"),
             digital_discount_percent=15,
             is_active=True,
         )
@@ -1387,7 +1377,7 @@ class SubscriptionServiceTest(APITestCase):
 
         self.assertEqual(
             self.user.wallet.balance,
-            Decimal("95.00"),
+            Decimal("95"),
         )
 
         self.assertGreater(
@@ -1396,7 +1386,7 @@ class SubscriptionServiceTest(APITestCase):
         )
 
     def test_purchase_fails_when_wallet_is_insufficient(self):
-        self.user.wallet.balance = Decimal("2.00")
+        self.user.wallet.balance = Decimal("2")
         self.user.wallet.save(update_fields=["balance"])
 
         with self.assertRaises(ValidationError):
@@ -1409,7 +1399,7 @@ class SubscriptionServiceTest(APITestCase):
 
         self.assertEqual(
             self.user.wallet.balance,
-            Decimal("2.00"),
+            Decimal("2"),
         )
 
         self.assertFalse(
@@ -1453,7 +1443,7 @@ class SubscriptionServiceTest(APITestCase):
 
         self.assertEqual(
             self.user.wallet.balance,
-            Decimal("85.00"),
+            Decimal("85"),
         )
 
     def test_second_reserved_subscription_is_rejected(self):
@@ -1494,7 +1484,7 @@ class SubscriptionServiceTest(APITestCase):
 
         self.assertEqual(
             self.user.wallet.balance,
-            Decimal("100.00"),
+            Decimal("100"),
         )
 
     def test_upgrade_requires_active_subscription(self):
@@ -1595,13 +1585,13 @@ class SubscriptionServiceTest(APITestCase):
         self.user.wallet.refresh_from_db()
 
         remaining_value = (
-            Decimal("5.00")
+            Decimal("5")
             * Decimal("10")
             / Decimal("30")
-        ).quantize(Decimal("0.01"))
+        ).quantize(Decimal("0"))
 
         expected_charge = (
-            Decimal("10.00") - remaining_value
+            Decimal("10") - remaining_value
         )
 
         self.assertEqual(
@@ -1747,7 +1737,7 @@ class SubscriptionServiceTest(APITestCase):
             ],
         )
 
-        self.user.wallet.balance = Decimal("2.00")
+        self.user.wallet.balance = Decimal("2")
         self.user.wallet.save(
             update_fields=["balance"],
         )
@@ -1764,7 +1754,7 @@ class SubscriptionServiceTest(APITestCase):
 
         self.assertEqual(
             self.user.wallet.balance,
-            Decimal("2.00"),
+            Decimal("2"),
         )
 
         self.assertEqual(
@@ -1864,6 +1854,15 @@ class SubscriptionServiceTest(APITestCase):
             0,
         )
 
+    def test_purchase_respects_auto_renew(self):
+        subscription = SubscriptionService.purchase(
+            user=self.user,
+            plan=self.reader,
+            auto_renew=True,
+        )
+
+        self.assertTrue(subscription.auto_renew)
+
 class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
 
     def setUp(self):
@@ -1878,7 +1877,7 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
             name="Reader",
             slug="reader",
             tier=1,
-            monthly_price=Decimal("5.00"),
+            monthly_price=Decimal("5"),
             digital_discount_percent=5,
             is_active=True,
         )
@@ -1887,7 +1886,7 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
             name="Scholar",
             slug="scholar",
             tier=2,
-            monthly_price=Decimal("10.00"),
+            monthly_price=Decimal("10"),
             digital_discount_percent=10,
             is_active=True,
         )
@@ -1896,7 +1895,7 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
             name="Professional",
             slug="professional",
             tier=3,
-            monthly_price=Decimal("15.00"),
+            monthly_price=Decimal("15"),
             digital_discount_percent=15,
             is_active=True,
         )
@@ -1916,17 +1915,15 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
         self.digital_price = Price.objects.create(
             book=self.book,
             book_format=self.digital_format,
-            value=Decimal("100.00"),
-            currency="USD",
-            min_price=Decimal("70.00"),
+            value=Decimal("100"),
+            min_price=Decimal("70"),
         )
 
         self.physical_price = Price.objects.create(
             book=self.book,
             book_format=self.physical_format,
-            value=Decimal("100.00"),
-            currency="USD",
-            min_price=Decimal("70.00"),
+            value=Decimal("100"),
+            min_price=Decimal("70"),
         )
 
     def test_active_subscription_applies_digital_discount(self):
@@ -1951,12 +1948,12 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
 
         self.assertEqual(
             result.subscription_discount_amount,
-            Decimal("5.00"),
+            Decimal("5"),
         )
 
         self.assertEqual(
             result.final_price,
-            Decimal("95.00"),
+            Decimal("95"),
         )
 
     def test_reserved_subscription_does_not_apply_discount(self):
@@ -1976,7 +1973,7 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
 
         self.assertIsNone(result.subscription_discount)
         self.assertIsNone(result.subscription_discount_amount)
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
     def test_expired_subscription_does_not_apply_discount(self):
         UserSubscription.objects.create(
@@ -1995,7 +1992,7 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
 
         self.assertIsNone(result.subscription_discount)
         self.assertIsNone(result.subscription_discount_amount)
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
     def test_subscription_discount_does_not_apply_to_physical_format(self):
         UserSubscription.objects.create(
@@ -2014,10 +2011,10 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
 
         self.assertIsNone(result.subscription_discount)
         self.assertIsNone(result.subscription_discount_amount)
-        self.assertEqual(result.final_price, Decimal("100.00"))
+        self.assertEqual(result.final_price, Decimal("100"))
 
     def test_subscription_discount_respects_minimum_price(self):
-        self.digital_price.min_price = Decimal("98.00")
+        self.digital_price.min_price = Decimal("98")
         self.digital_price.save(update_fields=["min_price"])
 
         UserSubscription.objects.create(
@@ -2036,10 +2033,10 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
 
         self.assertEqual(
             result.final_price,
-            Decimal("98.00"),
+            Decimal("98"),
         )
 
         self.assertEqual(
             result.subscription_discount_amount,
-            Decimal("2.00"),
+            Decimal("2"),
         )

@@ -17,56 +17,43 @@ from .serializers import (DiscountCodeSerializer, PriceChangeSerializer,
 # -------------------------------------------------------------
 
 
-class SubscriptionPlanListView(generics.ListAPIView):
-    """
-    API endpoint to list all active subscription plans.
-    Maps to GET /api/v1/pricing/plans/
-    """
+# class UserSubscriptionDetailView(generics.RetrieveAPIView):
+#     """
+#     API endpoint to retrieve the current subscription status and benefits of the logged-in user.
+#     Maps to GET /api/v1/pricing/subscription/
+#     """
 
-    serializer_class = SubscriptionPlanSerializer
-    permission_classes = [AllowAny]
+#     serializer_class = UserSubscriptionSerializer
+#     permission_classes = [IsAuthenticated]
 
-    # Only show plans marked as active
-    queryset = SubscriptionPlan.objects.filter(is_active=True).order_by("monthly_price")
+#     def get_object(self):
+#         """
+#         Retrieves the UserSubscription object for the current authenticated user.
+#         If no subscription exists, creates a new, inactive record to avoid crashing.
+#         """
+#         user = self.request.user
 
+#         # We use get_or_create to ensure every authenticated user has a UserSubscription row,
+#         # even if it's inactive (is_active=False), making lookups safer.
+#         user_sub, created = UserSubscription.objects.get_or_create(
+#             user=user,
+#             defaults={"is_active": False, "plan": SubscriptionPlan.objects.first()},
+#         )
 
-class UserSubscriptionDetailView(generics.RetrieveAPIView):
-    """
-    API endpoint to retrieve the current subscription status and benefits of the logged-in user.
-    Maps to GET /api/v1/pricing/subscription/
-    """
+#         # Edge Case Handling: If a user somehow has a subscription but the plan was deleted,
+#         # we try to ensure a valid plan exists for the FK. For simplicity, we ensure
+#         # the user gets the first available plan if their current one is gone (or the default was NULL).
+#         if user_sub.plan is None:
+#             default_plan = SubscriptionPlan.objects.first()
+#             if default_plan:
+#                 user_sub.plan = default_plan
+#                 user_sub.save()
+#             else:
+#                 # If no plans exist at all, we can't determine discount, so we return inactive.
+#                 user_sub.is_active = False
+#                 user_sub.save()
 
-    serializer_class = UserSubscriptionSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        """
-        Retrieves the UserSubscription object for the current authenticated user.
-        If no subscription exists, creates a new, inactive record to avoid crashing.
-        """
-        user = self.request.user
-
-        # We use get_or_create to ensure every authenticated user has a UserSubscription row,
-        # even if it's inactive (is_active=False), making lookups safer.
-        user_sub, created = UserSubscription.objects.get_or_create(
-            user=user,
-            defaults={"is_active": False, "plan": SubscriptionPlan.objects.first()},
-        )
-
-        # Edge Case Handling: If a user somehow has a subscription but the plan was deleted,
-        # we try to ensure a valid plan exists for the FK. For simplicity, we ensure
-        # the user gets the first available plan if their current one is gone (or the default was NULL).
-        if user_sub.plan is None:
-            default_plan = SubscriptionPlan.objects.first()
-            if default_plan:
-                user_sub.plan = default_plan
-                user_sub.save()
-            else:
-                # If no plans exist at all, we can't determine discount, so we return inactive.
-                user_sub.is_active = False
-                user_sub.save()
-
-        return user_sub
+#         return user_sub
 
 
 # -------------------------------------------------------------
@@ -149,7 +136,6 @@ class BookPriceListCreateView(generics.ListCreateAPIView):
         """Delegates price changes to the Book model."""
         self.created_price = self.get_book().change_price(
             value=serializer.validated_data["value"],
-            currency=serializer.validated_data["currency"],
             min_price=serializer.validated_data.get("min_price"),
         )
 

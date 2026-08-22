@@ -252,7 +252,7 @@ class CartItemHandlerView(generics.GenericAPIView):
 
         cart_data = get_storage_manager(request)
 
-        cart_data[cart_key] = quantity
+        cart_data[cart_key] = cart_data.get(cart_key, 0) + quantity
 
         save_storage_manager(request, cart_data)
 

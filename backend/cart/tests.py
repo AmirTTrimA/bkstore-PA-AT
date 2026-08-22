@@ -83,16 +83,14 @@ class CartCRUDTest(APITestCase):
         Price.objects.create(
             book=cls.book_1,
             book_format=cls.book_1_format,
-            value=Decimal("20.00"),
-            currency="USD",
+            value=Decimal("20"),
             effective_from=timezone.now(),
         )
 
         Price.objects.create(
             book=cls.book_2,
             book_format=cls.book_2_format,
-            value=Decimal("30.00"),
-            currency="USD",
+            value=Decimal("30"),
             effective_from=timezone.now(),
         )
 
@@ -726,7 +724,7 @@ class CheckoutServiceTestCase(TestCase):
         )
 
         wallet = cls.user.wallet
-        wallet.balance = Decimal("1000.00")
+        wallet.balance = Decimal("1000")
         wallet.save(update_fields=["balance"])
 
         cls.author = Author.objects.create(
@@ -766,16 +764,14 @@ class CheckoutServiceTestCase(TestCase):
         Price.objects.create(
             book=cls.book_digital,
             book_format=cls.digital_format,
-            value=Decimal("40.00"),
-            currency="USD",
+            value=Decimal("40"),
             effective_from=timezone.now(),
         )
 
         Price.objects.create(
             book=cls.book_physical,
             book_format=cls.physical_format,
-            value=Decimal("20.00"),
-            currency="USD",
+            value=Decimal("20"),
             effective_from=timezone.now(),
         )
 
@@ -914,7 +910,7 @@ class CheckoutServiceTestCase(TestCase):
 
         self.assertEqual(
             order_item.snapshot_price,
-            Decimal("40.00"),
+            Decimal("40"),
         )
 
     def test_clears_cart(self):
@@ -1115,7 +1111,7 @@ class CheckoutServiceTestCase(TestCase):
             user=self.user,
         )
 
-        wallet.balance = Decimal("200.00")
+        wallet.balance = Decimal("200")
         wallet.save(
             update_fields=["balance"],
         )
@@ -1142,7 +1138,7 @@ class CheckoutServiceTestCase(TestCase):
 
         self.assertEqual(
             wallet.balance,
-            Decimal("160.00"),
+            Decimal("160"),
         )
 
         license_obj = License.objects.get(
@@ -1167,7 +1163,7 @@ class CheckoutServiceTestCase(TestCase):
 
         self.assertEqual(
             wallet.balance,
-            Decimal("200.00"),
+            Decimal("200"),
         )
 
         self.assertFalse(
@@ -1360,9 +1356,9 @@ class OrderApiTest(APITestCase):
 
         cls.order = Order.objects.create(
             user=cls.user,
-            subtotal=Decimal("100.00"),
-            discount_amount=Decimal("20.00"),
-            total_amount=Decimal("80.00"),
+            subtotal=Decimal("100"),
+            discount_amount=Decimal("20"),
+            total_amount=Decimal("80"),
             status="PROCESSING",
             shipping_name="Arthur Dent",
             shipping_address_line1="42 Galaxy Way",
@@ -1375,16 +1371,16 @@ class OrderApiTest(APITestCase):
             book=cls.book,
             book_format=cls.book_format,
             quantity=2,
-            snapshot_price=Decimal("40.00"),
+            snapshot_price=Decimal("40"),
             snapshot_title=cls.book.title,
             snapshot_author_name=cls.author.name,
         )
 
         cls.other_order = Order.objects.create(
             user=cls.other_user,
-            subtotal=Decimal("50.00"),
-            discount_amount=Decimal("0.00"),
-            total_amount=Decimal("50.00"),
+            subtotal=Decimal("50"),
+            discount_amount=Decimal("0"),
+            total_amount=Decimal("50"),
             status="PROCESSING",
         )
 
@@ -1405,8 +1401,7 @@ class OrderApiTest(APITestCase):
         )
 
         self.book.change_price(
-            value=Decimal("40.00"),
-            currency="USD",
+            value=Decimal("40"),
         )
 
         self.client.credentials(
@@ -1515,9 +1510,9 @@ class OrderApiTest(APITestCase):
     def test_orders_are_returned_newest_first(self):
         newer_order = Order.objects.create(
             user=self.user,
-            subtotal=Decimal("10.00"),
-            discount_amount=Decimal("0.00"),
-            total_amount=Decimal("10.00"),
+            subtotal=Decimal("10"),
+            discount_amount=Decimal("0"),
+            total_amount=Decimal("10"),
             status="PROCESSING",
         )
 
@@ -1536,7 +1531,7 @@ class OrderApiTest(APITestCase):
     def test_user_can_cancel_own_order_via_api(self):
         wallet = Wallet.objects.get(user=self.user)
 
-        wallet.balance = Decimal("200.00")
+        wallet.balance = Decimal("200")
         wallet.save(update_fields=["balance"])
 
         self.cart.items.create(
@@ -1583,7 +1578,7 @@ class OrderApiTest(APITestCase):
 
         self.assertEqual(
             wallet.balance,
-            Decimal("200.00"),
+            Decimal("200"),
         )
 
     def test_user_cannot_cancel_other_users_order_via_api(self):
@@ -1596,7 +1591,7 @@ class OrderApiTest(APITestCase):
             user=other_user,
         )
 
-        other_wallet.balance = Decimal("200.00")
+        other_wallet.balance = Decimal("200")
         other_wallet.save(update_fields=["balance"])
 
         other_cart, _ = Cart.objects.get_or_create(
@@ -1652,7 +1647,7 @@ class CheckoutWalletIntegrationTest(APITestCase):
         )
 
         wallet = self.user.wallet
-        wallet.balance = Decimal("100.00")
+        wallet.balance = Decimal("100")
         wallet.save(update_fields=["balance"])
 
         self.author = Author.objects.create(
@@ -1678,8 +1673,7 @@ class CheckoutWalletIntegrationTest(APITestCase):
         Price.objects.create(
             book=self.book,
             book_format=self.book_format,
-            value=Decimal("25.00"),
-            currency="USD",
+            value=Decimal("25"),
         )
 
         self.cart = Cart.objects.create(
@@ -1722,7 +1716,7 @@ class CheckoutWalletIntegrationTest(APITestCase):
 
         self.assertEqual(
             self.user.wallet.balance,
-            Decimal("75.00"),
+            Decimal("75"),
         )
 
         order = Order.objects.get()
@@ -1734,12 +1728,12 @@ class CheckoutWalletIntegrationTest(APITestCase):
 
         self.assertEqual(
             order.total_amount,
-            Decimal("25.00"),
+            Decimal("25"),
         )
 
     def test_checkout_fails_when_wallet_balance_is_insufficient(self):
         wallet = self.user.wallet
-        wallet.balance = Decimal("5.00")
+        wallet.balance = Decimal("5")
         wallet.save(update_fields=["balance"])
 
         response = self.client.post(
@@ -1767,7 +1761,7 @@ class CheckoutWalletIntegrationTest(APITestCase):
 
         self.assertEqual(
             wallet.balance,
-            Decimal("5.00"),
+            Decimal("5"),
         )
 
 from decimal import Decimal
@@ -1817,15 +1811,13 @@ class CartFormatTest(APITestCase):
         Price.objects.create(
             book=self.book,
             book_format=self.physical,
-            value=Decimal("30.00"),
-            currency="USD",
+            value=Decimal("30"),
         )
 
         Price.objects.create(
             book=self.book,
             book_format=self.digital,
-            value=Decimal("20.00"),
-            currency="USD",
+            value=Decimal("20"),
         )
 
         self.cart_url = "/api/v1/cart/items/"
@@ -1975,7 +1967,7 @@ class CartFormatTest(APITestCase):
 
         self.assertEqual(
             item["subtotal"],
-            Decimal("20.00"),
+            Decimal("20"),
         )
 
     def test_cannot_add_format_from_another_book(self):

@@ -31,13 +31,13 @@ class WalletTransaction(models.Model):
     amount = models.DecimalField(
         _("Amount"),
         max_digits=12,
-        decimal_places=2,
+        decimal_places=0,
     )
 
     balance_after = models.DecimalField(
         _("Balance After Transaction"),
         max_digits=12,
-        decimal_places=2,
+        decimal_places=0,
     )
 
     description = models.CharField(
