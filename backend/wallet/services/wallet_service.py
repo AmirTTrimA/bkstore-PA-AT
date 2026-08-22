@@ -17,12 +17,10 @@ class WalletService:
 
     @staticmethod
     @transaction.atomic
-    @staticmethod
     def deposit(
         user,
         amount,
         description="",
-        transaction_type="DEPOSIT",
     ):
         amount = Decimal(str(amount))
 
