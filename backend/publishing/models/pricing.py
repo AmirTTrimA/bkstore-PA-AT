@@ -24,20 +24,14 @@ class PriceChangeProposal(models.Model):
 
     value = models.DecimalField(
         _("Price"),
-        max_digits=10,
-        decimal_places=2,
-    )
-
-    currency = models.CharField(
-        _("Currency"),
-        max_length=3,
-        default="USD",
+        max_digits=15,
+        decimal_places=0,
     )
 
     min_price = models.DecimalField(
         _("Minimum Price"),
-        max_digits=10,
-        decimal_places=2,
+        max_digits=15,
+        decimal_places=0,
         null=True,
         blank=True,
     )
@@ -53,4 +47,4 @@ class PriceChangeProposal(models.Model):
         ordering = ["-proposal__created_at"]
 
     def __str__(self):
-        return f"{self.book.title} → {self.value} {self.currency}"
+        return f"{self.book.title} → {self.value} IRR"

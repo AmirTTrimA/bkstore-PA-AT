@@ -402,15 +402,13 @@ class Command(BaseCommand):
             wallet, _ = Wallet.objects.get_or_create(
                 user=user,
                 defaults={
-                    "currency": "USD",
                     "balance": initial_balance,
                 },
             )
 
             # If the wallet already existed, reset it to the demo balance.
-            wallet.currency = "USD"
             wallet.balance = initial_balance
-            wallet.save(update_fields=["currency", "balance"])
+            wallet.save(update_fields=["balance"])
 
             deposit = WalletTransaction.objects.create(
                 wallet=wallet,
@@ -689,7 +687,6 @@ class Command(BaseCommand):
                         book=book,
                         book_format=book_format,
                         value=current_price,
-                        currency="USD",
                         min_price=min_price,
                         effective_from=now,
                     )
@@ -745,7 +742,6 @@ class Command(BaseCommand):
                         book=book,
                         book_format=book_format,
                         value=value,
-                        currency="USD",
                         min_price=min_price,
                         effective_from=now - timedelta(days=days_ago),
                     )
@@ -1278,7 +1274,6 @@ class Command(BaseCommand):
                 proposal=proposal,
                 book=book,
                 value=new_price,
-                currency="USD",
                 min_price=current_price.min_price,
                 reason="Annual price adjustment.",
             )

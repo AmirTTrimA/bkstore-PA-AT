@@ -109,23 +109,23 @@ class CatalogAPITestCase(APITestCase):
         )
 
         self.book_hitchhiker.change_price(
-            value=Decimal("19.99"),
+            value=Decimal("19"),
         )
 
         self.book_restaurant.change_price(
-            value=Decimal("24.99"),
+            value=Decimal("24"),
         )
 
         self.book_dirk.change_price(
-            value=Decimal("14.99"),
+            value=Decimal("14"),
         )
 
         self.book_pride.change_price(
-            value=Decimal("17.99"),
+            value=Decimal("17"),
         )
 
         self.book_emma.change_price(
-            value=Decimal("15.99"),
+            value=Decimal("15"),
         )
 
         # 3. Define URL names (Using reverse ensures correct URL mapping)
@@ -161,7 +161,7 @@ class CatalogAPITestCase(APITestCase):
         self.assertEqual(response.data["author_id"], self.author_adams.pk)
         self.assertIn("isbn", response.data)
         self.assertIn("description", response.data)
-        self.assertEqual(response.data["price"], "19.99")  # MOCK PRICE verification
+        self.assertEqual(response.data["price"], "19")  # MOCK PRICE verification
 
     def test_book_search_by_title(self):
         """Test PostgreSQL full-text search by title."""
@@ -407,16 +407,16 @@ class CatalogAPITestCase(APITestCase):
         """Only the current active price is returned."""
 
         self.book_hitchhiker.change_price(
-            value=Decimal("29.99"),
+            value=Decimal("29"),
         )
 
         self.book_hitchhiker.change_price(
-            value=Decimal("34.99"),
+            value=Decimal("34"),
         )
 
         response = self.client.get(self.book_detail_url)
 
-        self.assertEqual(response.data["price"], "34.99")
+        self.assertEqual(response.data["price"], "34")
     
     def test_book_without_price_returns_null(self):
         """Books without any price history should expose a null price."""
@@ -493,16 +493,14 @@ class BookFormatApiTest(APITestCase):
         Price.objects.create(
             book=book,
             book_format=physical,
-            value=Decimal("30.00"),
-            currency="USD",
+            value=Decimal("30"),
             effective_from=timezone.now(),
         )
 
         Price.objects.create(
             book=book,
             book_format=digital,
-            value=Decimal("20.00"),
-            currency="USD",
+            value=Decimal("20"),
             effective_from=timezone.now(),
         )
 
@@ -519,5 +517,5 @@ class BookFormatApiTest(APITestCase):
             for item in response.data["formats"]
         }
 
-        self.assertEqual(formats["PHYSICAL"]["price"], "30.00")
-        self.assertEqual(formats["DIGITAL"]["price"], "20.00")
+        self.assertEqual(formats["PHYSICAL"]["price"], "30")
+        self.assertEqual(formats["DIGITAL"]["price"], "20")

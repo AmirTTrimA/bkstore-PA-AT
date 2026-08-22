@@ -31,9 +31,8 @@ class Price(models.Model):
     )
 
     # --- Price Details ---
-    value = models.DecimalField(_("Price Value"), max_digits=10, decimal_places=2)
-    currency = models.CharField(_("Currency"), max_length=3, default="USD")
-    min_price = models.DecimalField(_("Minimum Price"), max_digits=10, decimal_places=2, null=True, blank=True, default=None)
+    value = models.DecimalField(_("Price Value"), max_digits=15, decimal_places=0)
+    min_price = models.DecimalField(_("Minimum Price"), max_digits=15, decimal_places=0, null=True, blank=True, default=None)
 
     # --- Time Validity ---
     effective_from = models.DateTimeField(_("Effective From"), default=timezone.now)
@@ -46,7 +45,7 @@ class Price(models.Model):
         # Note: Application logic in serializers/views must enforce only one active price at any time.
 
     def __str__(self):
-        return f"{self.book.title} - {self.value} {self.currency} ({self.effective_from.strftime('%Y-%m-%d')})"
+        return f"{self.book.title} - {self.value} IRR ({self.effective_from.strftime('%Y-%m-%d')})"
 
 # -------------------------------------------------------------
 # 2. DISCOUNT INFRASTRUCTURE
@@ -88,8 +87,8 @@ class Discount(models.Model):
 
     value = models.DecimalField(
         _("Discount Value"),
-        max_digits=10,
-        decimal_places=2,
+        max_digits=15,
+        decimal_places=0,
     )
 
     # ---- Scope ----
@@ -268,7 +267,7 @@ class SubscriptionPlan(models.Model):
 
     # --- Pricing and Benefits ---
     monthly_price = models.DecimalField(
-        _("Monthly Price"), max_digits=10, decimal_places=2
+        _("Monthly Price"), max_digits=15, decimal_places=0
     )
     # This discount is applied to specific *digital* books
     digital_discount_percent = models.IntegerField(_("Digital Discount %"), default=0)

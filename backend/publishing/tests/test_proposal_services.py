@@ -227,7 +227,6 @@ class ProposalServiceTests(TestCase):
 
         original_price = book.change_price(
             value=50,
-            currency="USD",
             min_price=20,
         )
 
@@ -243,7 +242,6 @@ class ProposalServiceTests(TestCase):
             proposal=proposal,
             book=book,
             value=60,
-            currency="USD",
             min_price=20,
             reason="Annual price adjustment.",
         )
@@ -277,11 +275,6 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(
             latest_price.value,
             60,
-        )
-
-        self.assertEqual(
-            latest_price.currency,
-            "USD",
         )
 
         self.assertEqual(

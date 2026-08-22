@@ -115,7 +115,7 @@ class BookAdmin(admin.ModelAdmin):
         if obj.current_price is None:
             return "-"
 
-        return f"{obj.current_price.value} {obj.current_price.currency}"
+        return f"{obj.current_price.value} IRR"
 
     fieldsets = (
         (

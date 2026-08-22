@@ -410,7 +410,6 @@ class PriceChangeProposalAdmin(admin.ModelAdmin):
     list_display = (
         "book",
         "value",
-        "currency",
         "proposal",
     )
 

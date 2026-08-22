@@ -483,7 +483,6 @@ class ProposalService:
 
         return book.change_price(
             value=price_proposal.value,
-            currency=price_proposal.currency,
             min_price=price_proposal.min_price,
         )
 

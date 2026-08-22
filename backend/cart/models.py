@@ -94,13 +94,13 @@ class Order(models.Model):
 
     # --- Financial Snapshot ---
     subtotal = models.DecimalField(
-        _("Subtotal"), max_digits=10, decimal_places=2, default=0.00
+        _("Subtotal"), max_digits=15, decimal_places=0, default=0
     )
     discount_amount = models.DecimalField(
-        _("Discount Amount"), max_digits=10, decimal_places=2, default=0.00
+        _("Discount Amount"), max_digits=15, decimal_places=0, default=0
     )
     total_amount = models.DecimalField(
-        _("Total Amount Paid"), max_digits=10, decimal_places=2, default=0.00
+        _("Total Amount Paid"), max_digits=15, decimal_places=0, default=0
     )
 
     # --- Address Snapshot (NEW: Crucial for auditing and shipping) ---
@@ -157,7 +157,7 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(_("Quantity"), default=1)
     # The price *at the moment of purchase* (includes subscription discount but not global code discount)
     snapshot_price = models.DecimalField(
-        _("Snapshot Price"), max_digits=10, decimal_places=2
+        _("Snapshot Price"), max_digits=15, decimal_places=0
     )
     snapshot_title = models.CharField(_("Snapshot Title"), max_length=255)
     snapshot_author_name = models.CharField(

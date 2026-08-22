@@ -403,9 +403,8 @@ class ProposalSubmissionAPITest(
             {
                 "publisher_id": self.publisher.id,
                 "book": self.book.id,
-                "value": "49.99",
-                "currency": "USD",
-                "min_price": "20.00",
+                "value": "49",
+                "min_price": "20",
                 "reason": "Price update",
             },
             format="json",
@@ -426,7 +425,7 @@ class ProposalSubmissionAPITest(
 
         self.assertEqual(
             price_change.value,
-            Decimal("49.99"),
+            Decimal("49"),
         )
 
     def test_cannot_submit_for_unowned_publisher(self):

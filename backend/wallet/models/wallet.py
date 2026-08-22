@@ -19,15 +19,9 @@ class Wallet(models.Model):
 
     balance = models.DecimalField(
         _("Balance"),
-        max_digits=12,
-        decimal_places=2,
-        default=Decimal("0.00"),
-    )
-
-    currency = models.CharField(
-        _("Currency"),
-        max_length=3,
-        default="USD",
+        max_digits=15,
+        decimal_places=0,
+        default=Decimal("0"),
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,4 +32,4 @@ class Wallet(models.Model):
         verbose_name_plural = _("Wallets")
 
     def __str__(self):
-        return f"{self.user.username} Wallet ({self.balance} {self.currency})"
+        return f"{self.user.username} Wallet ({self.balance} IRR)"
