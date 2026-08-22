@@ -1,74 +1,214 @@
-// ✅
-import React,{ useState,useRef,useCallback } from 'react'
+import { useEffect, useState } from "react";
+
 import {
   Box,
   Button,
   Grid,
   Typography
-} from '@mui/material';
-import Notification from '../../../Components/feature/Notification';
-// style in Profile.css
+} from "@mui/material";
 
-
-// ============================================
-//    Constants
-// ============================================
-const DEFAULT_BALANCE = 0;
+import WalletService from "../../../Services/WalletService";
 
 
 // ============================================
 //    Main
 // ============================================
+
 export default function Wallet() {
 
-  //---State---
-  const[walletBalance,setWalletBalance] = useState(DEFAULT_BALANCE);
 
-  //---Ref--- 
-  const notificationRef = useRef();
+  const [wallet, setWallet] = useState(null);
 
- 
-  //---Handler--- 
-  const handledeposit=useCallback((num)=>{  
-    // further use api 
-    setWalletBalance(prev=> prev+num);
-    notificationRef.current.showNotif('Add to credit','success')
-  },[])
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+
+
+  // ============================================
+  // Load Wallet
+  // ============================================
+
+  useEffect(() => {
+
+
+    const loadWallet = async () => {
+
+      try {
+
+        const response =
+          await WalletService.getWallet();
+
+
+        setWallet(
+          response.data
+        );
+
+
+      }
+      catch (err) {
+
+        console.error(
+          "Failed loading wallet:",
+          err
+        );
+
+
+        setError(
+          "Could not load wallet."
+        );
+
+      }
+      finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+
+    loadWallet();
+
+
+  }, []);
+
+
+
+
+  // ============================================
+  // States
+  // ============================================
+
+
+  if (loading) {
+
+    return (
+
+      <Box sx={{ mt: 5, textAlign: "center" }}>
+
+        <Typography>
+          Loading wallet...
+        </Typography>
+
+      </Box>
+
+    );
+
+  }
+
+
+
+  if (error) {
+
+    return (
+
+      <Box sx={{ mt: 5, textAlign: "center" }}>
+
+        <Typography>
+          {error}
+        </Typography>
+
+      </Box>
+
+    );
+
+  }
+
+
 
 
 
   return (
-    <Box component="form"  sx={{ mt: 2 }}>
-      {/* Balance Display */}
-    <Grid sx={{ textAlign:'center',mb:3,mt:6}}>
-        <Typography variant="h4" gutterBottom sx={{ mb: 1 }}>
-        wallet Balance
-      </Typography>
-      <Typography 
-        variant="h3"
-        gutterBottom
-        sx={{ mb: 2,mt:2, fontWeight:'bold' }}
-      >
-        ${walletBalance.toFixed(2)}
-        </Typography>
-    </Grid>
 
-      {/* Action Button */}
-      <Grid container spacing={2} >
-        <div className="pass-btn">
-          <Button 
-              type='button'
-              onClick={()=>handledeposit(20)}
-              variant="contained"  
-              sx={{pl:4,pr:4,mt:2,backgroundColor:'#00a859'}}
-            >
-              Charge
-          </Button>
-          
-        </div>
+    <Box
+      sx={{ mt: 2 }}
+    >
+
+
+      {/* Balance Display */}
+
+      <Grid
+        sx={{
+          textAlign: "center",
+          mb: 3,
+          mt: 6
+        }}
+      >
+
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ mb: 1 }}
+        >
+
+          Wallet Balance
+
+        </Typography>
+
+
+
+        <Typography
+
+          variant="h3"
+
+          gutterBottom
+
+          sx={{
+            mb: 2,
+            mt: 2,
+            fontWeight: "bold"
+          }}
+
+        >
+
+          ${Number(wallet.balance).toFixed(2)}
+
+        </Typography>
+
+
       </Grid>
-      
-        <Notification ref={notificationRef}/>
+
+
+
+
+
+      {/* Future wallet actions */}
+
+      <Grid
+        container
+        spacing={2}
+        justifyContent="center"
+      >
+
+        <Button
+
+          type="button"
+
+          variant="contained"
+
+          disabled
+
+          sx={{
+            pl: 4,
+            pr: 4,
+            mt: 2,
+            backgroundColor: "#00a859"
+          }}
+
+        >
+
+          Charge
+
+        </Button>
+
+
+      </Grid>
+
+
+
     </Box>
+
   );
+
 }
