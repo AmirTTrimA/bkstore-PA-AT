@@ -27,17 +27,16 @@ class PaymentServiceTest(TestCase):
         )[0]
 
     @patch(
-        "payments.services.payment_service.ZarinpalClient"
+        "payments.services.payment_service.SepGateway"
     )
     def test_create_wallet_payment(
         self,
-        mock_zarinpal,
+        mock_sep,
     ):
-        mock_zarinpal.return_value.request_payment.return_value = {
-            "authority": "A000000000000000000000000001",
-            "payment_url": (
-                "https://sandbox.zarinpal.com/pay"
-            ),
+        mock_sep.return_value.request_payment.return_value = {
+            "token": "TEST_TOKEN",
+            "res_num": "TEST_RES_NUM",
+            "payment_url": "https://sep.test/payment",
         }
 
         payment, payment_url = (
@@ -61,37 +60,46 @@ class PaymentServiceTest(TestCase):
         )
 
         self.assertEqual(
-            payment.authority,
-            "A000000000000000000000000001",
+            payment.gateway_token,
+            "TEST_TOKEN",
+        )
+
+        self.assertEqual(
+            payment.res_num,
+            "TEST_RES_NUM",
         )
 
         self.assertEqual(
             payment_url,
-            "https://sandbox.zarinpal.com/pay",
+            "https://sep.test/payment",
         )
 
 
     @patch(
-        "payments.services.payment_service.ZarinpalClient"
+        "payments.services.payment_service.SepGateway"
     )
     def test_successful_wallet_payment_verification(
         self,
-        mock_zarinpal,
+        mock_sep,
     ):
         payment = Payment.objects.create(
             user=self.user,
             amount=500000,
-            authority=(
-                "A000000000000000000000000002"
-            ),
+            gateway_token="TEST_TOKEN",
+            res_num="TEST_RES_NUM",
         )
 
-        mock_zarinpal.return_value.verify_payment.return_value = {
+        mock_sep.return_value.verify_payment.return_value = {
             "ref_id": "123456",
         }
 
         PaymentService.verify_wallet_payment(
-            payment.authority,
+            gateway_token=payment.gateway_token,
+            res_num=payment.res_num,
+            callback_data={
+                "RefNum": "999999",
+                "State": "OK",
+            },
         )
 
         payment.refresh_from_db()
@@ -119,7 +127,7 @@ class PaymentServiceTest(TestCase):
 
 
     @patch(
-        "payments.services.payment_service.ZarinpalClient"
+        "payments.services.payment_service.SepGateway"
     )
     def test_duplicate_verification_does_not_deposit_twice(
         self,
@@ -128,9 +136,8 @@ class PaymentServiceTest(TestCase):
         payment = Payment.objects.create(
             user=self.user,
             amount=500000,
-            authority=(
-                "A000000000000000000000000003"
-            ),
+            gateway_token="TEST_TOKEN",
+            res_num="TEST_RES_NUM",
         )
 
         mock_zarinpal.return_value.verify_payment.return_value = {
@@ -138,11 +145,12 @@ class PaymentServiceTest(TestCase):
         }
 
         PaymentService.verify_wallet_payment(
-            payment.authority,
-        )
-
-        PaymentService.verify_wallet_payment(
-            payment.authority,
+            gateway_token=payment.gateway_token,
+            res_num=payment.res_num,
+            callback_data={
+                "RefNum": "999999",
+                "State": "OK",
+            },
         )
 
         self.wallet.refresh_from_db()

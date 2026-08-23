@@ -2,6 +2,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from payments.models import Payment
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -10,6 +11,9 @@ from wallet.models import Wallet, WalletTransaction
 User = get_user_model()
 
 
+@override_settings(
+    PAYMENT_RESULT_URL="http://localhost:3000/payment/result"
+)
 class WalletPaymentAPITest(APITestCase):
 
     def setUp(self):
@@ -37,17 +41,16 @@ class WalletPaymentAPITest(APITestCase):
 
 
     @patch(
-        "payments.services.payment_service.ZarinpalClient"
+        "payments.services.payment_service.SepGateway"
     )
     def test_authenticated_user_can_create_wallet_charge(
         self,
-        mock_zarinpal,
+        mock_sep,
     ):
-        mock_zarinpal.return_value.request_payment.return_value = {
-            "authority": "A_TEST_AUTHORITY",
-            "payment_url": (
-                "https://sandbox.zarinpal.com/payment"
-            ),
+        mock_sep.return_value.request_payment.return_value = {
+            "token": "TEST_TOKEN",
+            "res_num": "TEST_RES_NUM",
+            "payment_url": "https://sep.test/payment",
         }
 
         response = self.client.post(
@@ -69,12 +72,12 @@ class WalletPaymentAPITest(APITestCase):
         )
 
         self.assertIn(
-            "authority",
+            "payment_url",
             response.data,
         )
 
         payment = Payment.objects.get(
-            authority="A_TEST_AUTHORITY"
+            gateway_token="TEST_TOKEN"
         )
 
         self.assertEqual(
@@ -115,28 +118,32 @@ class WalletPaymentAPITest(APITestCase):
 
 
     @patch(
-        "payments.services.payment_service.ZarinpalClient"
+        "payments.services.payment_service.SepGateway"
     )
     def test_successful_payment_callback_redirects_and_deposits_wallet(
         self,
-        mock_zarinpal,
+        mock_sep,
     ):
         payment = Payment.objects.create(
             user=self.user,
             amount=500000,
-            authority="A_CALLBACK_TEST",
+            gateway_token="TEST_TOKEN",
+            res_num="TEST_RES_NUM",
         )
 
-        mock_zarinpal.return_value.verify_payment.return_value = {
+        mock_sep.return_value.verify_payment.return_value = {
             "ref_id": "999999",
         }
 
-        response = self.client.get(
+        response = self.client.post(
             self.callback_url,
             {
-                "Authority": payment.authority,
-                "Status": "OK",
+                "Token": payment.gateway_token,
+                "ResNum": payment.res_num,
+                "State": "OK",
+                "RefNum": "999999",
             },
+            format="json",
         )
 
         payment.refresh_from_db()
@@ -179,15 +186,17 @@ class WalletPaymentAPITest(APITestCase):
         payment = Payment.objects.create(
             user=self.user,
             amount=500000,
-            authority="A_FAILED_TEST",
+            gateway_token="A_FAILED_TEST",
         )
 
-        response = self.client.get(
+        response = self.client.post(
             self.callback_url,
             {
-                "Authority": payment.authority,
-                "Status": "NOK",
+                "Token": payment.gateway_token,
+                "ResNum": payment.res_num,
+                "State": "FAILED",
             },
+            format="json",
         )
 
         payment.refresh_from_db()

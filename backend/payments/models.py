@@ -25,15 +25,22 @@ class Payment(models.Model):
         decimal_places=0,
     )
 
-    authority = models.CharField(
-        max_length=36,
+    gateway_token = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
+    res_num = models.CharField(
+        max_length=100,
         unique=True,
         null=True,
         blank=True,
     )
 
     ref_id = models.CharField(
-        max_length=50,
+        max_length=100,
         null=True,
         blank=True,
     )

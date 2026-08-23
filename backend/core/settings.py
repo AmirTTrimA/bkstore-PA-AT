@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "content",
     "publishing",
     "wallet.apps.WalletConfig",
+    "payments",
 ]
 
 MIDDLEWARE = [
@@ -263,3 +264,40 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Frontend application URL
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+SEP_TERMINAL_ID = os.getenv(
+    "SEP_TERMINAL_ID"
+)
+
+SEP_TOKEN_URL = os.getenv(
+    "SEP_TOKEN_URL",
+    "https://sep.shaparak.ir/onlinepg/onlinepg",
+)
+
+SEP_PAYMENT_URL = os.getenv(
+    "SEP_PAYMENT_URL",
+    "https://sep.shaparak.ir/OnlinePG/OnlinePG",
+)
+
+SEP_VERIFY_URL = os.getenv(
+    "SEP_VERIFY_URL",
+    "https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/VerifyTransaction",
+)
+
+PAYMENT_GATEWAY = os.getenv(
+    "PAYMENT_GATEWAY",
+    "SEP"
+)
+
+NGROK_URL = os.getenv("NGROK_URL")
+
+PAYMENT_RESULT_URL = os.getenv(
+    "PAYMENT_RESULT_URL",
+    "http://localhost:3000/payment/result",
+)
+
+SEP_VERIFY_URL = os.getenv(
+    "SEP_VERIFY_URL",
+    "https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/VerifyTransaction",
+)
+

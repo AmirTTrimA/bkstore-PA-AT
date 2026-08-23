@@ -17,6 +17,7 @@ urlpatterns = [
                 path("publishing/", include("publishing.api.urls")),
                 path("wallet/", include("wallet.api.urls")),
                 path("content/", include("content.urls")),
+                path("payments/", include("payments.api.urls")),
             ]
         ),
     ),

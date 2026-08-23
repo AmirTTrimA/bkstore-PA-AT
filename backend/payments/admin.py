@@ -8,7 +8,8 @@ class PaymentAdmin(admin.ModelAdmin):
         "user",
         "amount",
         "status",
-        "authority",
+        "gateway_token",
+        "res_num",
         "ref_id",
         "created_at",
     )
@@ -16,7 +17,7 @@ class PaymentAdmin(admin.ModelAdmin):
     search_fields = (
         "user__username",
         "user__email",
-        "authority",
+        "gateway_token",
         "ref_id",
     )
 
