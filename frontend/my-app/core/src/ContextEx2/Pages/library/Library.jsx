@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import BookService from "../../Services/BookService";
 
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
-
-import { Link } from "react-router-dom";
 
 import "../../Styles/components/Library.css";
 
@@ -16,129 +15,111 @@ import "../../Styles/components/Library.css";
 
 export default function Library() {
 
-
     // ============================================
     //      State
     // ============================================
 
     const [books, setBooks] = useState([]);
 
-    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(true);
+
+    const [loadingMore, setLoadingMore] = useState(false);
 
     const [hasMore, setHasMore] = useState(true);
 
-    const [loading, setLoading] = useState(false);
-
     const [error, setError] = useState("");
-
 
 
     // ============================================
     //      Refs
     // ============================================
 
-    const observerRef = useRef(null);
-
     const loadingRef = useRef(false);
 
+    const currentPageRef = useRef(1);
 
+    const hasMoreRef = useRef(true);
 
+    const requestedPagesRef = useRef(new Set());
 
 
     // ============================================
-    //      Fetch Books
+    //      Load Books
     // ============================================
 
-    const loadBooks = useCallback(async () => {
-
-
-        if (loadingRef.current || !hasMore) {
-            return;
+    const loadBooks = useCallback(async (pageNumber) => {
+        if (
+            loadingRef.current ||
+            !hasMoreRef.current ||
+            requestedPagesRef.current.has(pageNumber)
+        ) {
+            return false;
         }
 
-
+        requestedPagesRef.current.add(pageNumber);
         loadingRef.current = true;
 
-        setLoading(true);
+        setError("");
 
-
+        if (pageNumber === 1) {
+            setLoading(true);
+        } else {
+            setLoadingMore(true);
+        }
 
         try {
-
-
             const response = await BookService.getBooks({
-                page
+                page: pageNumber,
             });
 
-
-
-            const newBooks = response.results || [];
-
-
+            const results = response.results || [];
+            const nextExists = Boolean(response.next);
 
             setBooks(previousBooks => {
+                if (pageNumber === 1) {
+                    return results;
+                }
 
-
-                const mergedBooks = [
-                    ...previousBooks,
-                    ...newBooks
-                ];
-
-
-
-                // Prevent duplicate IDs
-                return mergedBooks.filter(
-                    (book, index, self) =>
-                        index === self.findIndex(
-                            item => item.id === book.id
-                        )
+                const existingIds = new Set(
+                    previousBooks.map(book => book.id)
                 );
 
+                const newBooks = results.filter(
+                    book => !existingIds.has(book.id)
+                );
 
+                return [
+                    ...previousBooks,
+                    ...newBooks,
+                ];
             });
 
+            currentPageRef.current = pageNumber;
 
+            hasMoreRef.current = nextExists;
+            setHasMore(nextExists);
 
-            setHasMore(Boolean(response.next));
+            return nextExists;
 
-
-            setPage(previousPage => previousPage + 1);
-
-
-
-        }
-        catch (err) {
-
-
+        } catch (err) {
             console.error(
-                "Library loading failed:",
+                `Failed loading library page ${pageNumber}:`,
                 err
             );
 
+            requestedPagesRef.current.delete(pageNumber);
 
-            setError(
-                "Could not load books."
-            );
+            setError("Could not load books.");
 
+            return false;
 
-        }
-        finally {
-
-
+        } finally {
             loadingRef.current = false;
 
             setLoading(false);
-
-
+            setLoadingMore(false);
         }
-
-
-    }, [page, hasMore]);
-
-
-
-
-
+    }, []);
 
 
     // ============================================
@@ -147,14 +128,9 @@ export default function Library() {
 
     useEffect(() => {
 
-        loadBooks();
+        loadBooks(1);
 
-    }, []);
-
-
-
-
-
+    }, [loadBooks]);
 
 
     // ============================================
@@ -162,61 +138,121 @@ export default function Library() {
     // ============================================
 
     useEffect(() => {
-
-
-        const observer = new IntersectionObserver(
-            entries => {
-
-
-                if (
-                    entries[0].isIntersecting &&
-                    hasMore &&
-                    !loadingRef.current
-                ) {
-
-                    loadBooks();
-
-                }
-
-
-            },
-            {
-                threshold: 1
-            }
-        );
-
-
-
-        const target = observerRef.current;
-
-
-
-        if (target) {
-
-            observer.observe(target);
-
-        }
-
-
-
-        return () => {
-
-            if (target) {
-
-                observer.unobserve(target);
-
+        const handleScroll = () => {
+            if (
+                loadingRef.current ||
+                !hasMoreRef.current
+            ) {
+                return;
             }
 
+            const scrollPosition =
+                window.innerHeight + window.scrollY;
+
+            const documentHeight =
+                document.documentElement.scrollHeight;
+
+            const distanceFromBottom =
+                documentHeight - scrollPosition;
+
+            if (distanceFromBottom <= 500) {
+                const nextPage =
+                    currentPageRef.current + 1;
+
+                loadBooks(nextPage);
+            }
         };
 
+        window.addEventListener(
+            "scroll",
+            handleScroll,
+            { passive: true }
+        );
 
-    }, [loadBooks, hasMore]);
+        return () => {
+            window.removeEventListener(
+                "scroll",
+                handleScroll
+            );
+        };
+    }, [loadBooks]);
+
+    useEffect(() => {
+        if (
+            loading ||
+            loadingMore ||
+            !hasMore
+        ) {
+            return;
+        }
+
+        const documentHeight =
+            document.documentElement.scrollHeight;
+
+        const viewportHeight =
+            window.innerHeight;
+
+        if (documentHeight <= viewportHeight + 500) {
+            const nextPage =
+                currentPageRef.current + 1;
+
+            loadBooks(nextPage);
+        }
+    }, [
+        books.length,
+        loading,
+        loadingMore,
+        hasMore,
+        loadBooks,
+    ]);
+
+    // ============================================
+    //      Loading State
+    // ============================================
+
+    if (loading) {
+
+        return (
+
+            <div className="all">
+
+                <div className="full-lib-nav">
+                    <Navbar />
+                </div>
+
+                <div className="lib-nav">
+                    <SimpleNav />
+                </div>
 
 
+                <div className="lib-container">
+
+                    <div className="head">
+
+                        <p className="head-txt">
+                            Explore in Ocean
+                        </p>
+
+                    </div>
 
 
+                    <div className="library-loading">
 
+                        <div className="library-spinner" />
 
+                        <p>
+                            Loading books...
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
 
 
     // ============================================
@@ -227,30 +263,23 @@ export default function Library() {
 
         <div className="all">
 
-
             {/* Navigation */}
 
             <div className="full-lib-nav">
-
                 <Navbar />
-
             </div>
-
-
 
             <div className="lib-nav">
-
                 <SimpleNav />
-
             </div>
 
 
-
-
+            {/* Main Container */}
 
             <div className="lib-container">
 
 
+                {/* Header */}
 
                 <div className="head">
 
@@ -261,84 +290,172 @@ export default function Library() {
                 </div>
 
 
-
-
-
-                <div className="explore">
-
-
-                    {books.map(book => (
-
-                        <Link
-                            key={book.id}
-                            to={`/book/${book.id}`}
-                            className="card-ha"
-                        >
-
-                            <img
-                                src={
-                                    book.cover_image_url ||
-                                    "/default-book.png"
-                                }
-                                alt={book.title}
-                            />
-
-                        </Link>
-
-                    ))}
-
-
-                </div>
-
-
-
-
-
-                {/* Infinite scroll trigger */}
-
-                <div
-                    ref={observerRef}
-                    style={{
-                        height: "40px"
-                    }}
-                />
-
-
-
-
-                {loading && (
-
-                    <p>
-                        Loading more books...
-                    </p>
-
-                )}
-
-
+                {/* Error */}
 
                 {error && (
 
-                    <p>
-                        {error}
-                    </p>
+                    <div className="library-message library-error">
+
+                        <p>
+                            {error}
+                        </p>
+
+                    </div>
 
                 )}
 
 
+                {/* Empty */}
+
+                {!error && books.length === 0 && (
+
+                    <div className="library-message">
+
+                        <h2>
+                            No books found
+                        </h2>
+
+                        <p>
+                            There are no books available yet.
+                        </p>
+
+                    </div>
+
+                )}
+
+
+                {/* Books */}
+
+                {books.length > 0 && (
+
+                    <div className="explore">
+
+                        {books.map(book => (
+
+                            <Link
+                                key={book.id}
+                                to={`/book/${book.id}`}
+                                className="card-ha"
+                            >
+
+                                {/* Cover */}
+
+                                <div className="library-card-cover">
+
+                                    <img
+                                        src={
+                                            book.cover_image_url ||
+                                            "/default-book.png"
+                                        }
+                                        alt={book.title}
+                                        loading="lazy"
+                                    />
+
+                                </div>
+
+
+                                {/* Information */}
+
+                                <div className="library-card-info">
+
+                                    <h3
+                                        className="library-card-title"
+                                        title={book.title}
+                                    >
+                                        {book.title}
+                                    </h3>
+
+
+                                    <p className="library-card-author">
+
+                                        {book.author_name ||
+                                            book.author?.name ||
+                                            "Unknown Author"}
+
+                                    </p>
+
+
+                                    {book.genre && (
+
+                                        <span className="library-card-genre">
+
+                                            {book.genre
+                                                .replaceAll("_", " ")
+                                                .toLowerCase()
+                                                .replace(
+                                                    /\b\w/g,
+                                                    char =>
+                                                        char.toUpperCase()
+                                                )}
+
+                                        </span>
+
+                                    )}
+
+
+                                    {book.price != null && (
+
+                                        <p className="library-card-price">
+
+                                            {Number(
+                                                book.price
+                                            ).toLocaleString()} ﷼
+
+                                        </p>
+
+                                    )}
+
+
+                                </div>
+
+                            </Link>
+
+                        ))}
+
+                    </div>
+
+                )}
+
+
+                {/* Infinite Scroll Trigger */}
+
+
+                {/* Loading More */}
+
+                {loadingMore && (
+
+                    <div className="library-loading-more">
+
+                        <div className="library-spinner small" />
+
+                        <p>
+                            Loading more books...
+                        </p>
+
+                    </div>
+
+                )}
+
+
+                {/* End */}
 
                 {!hasMore && books.length > 0 && (
 
-                    <p>
-                        You reached the end.
-                    </p>
+                    <div className="library-end">
+
+                        <span />
+
+                        <p>
+                            You reached the end.
+                        </p>
+
+                        <span />
+
+                    </div>
 
                 )}
 
-
-
-
             </div>
-
 
         </div>
 
