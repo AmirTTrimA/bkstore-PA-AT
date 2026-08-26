@@ -1,0 +1,168 @@
+/* .dark-buttons{
+    background-color: var(--res-btn);
+    align-items: center;
+    border-radius: 50%;
+    fill:#c2b200;
+}
+
+.dark-buttons:hover{
+    fill: yellow;
+} */
+
+
+/* fix23resdark */
+/* Styles/globals/DarkModeToggle.css */
+
+.dark-buttons {
+    background-color: var(--res-btn);
+    align-items: center;
+    border-radius: 50%;
+    fill: #c2b200;
+    
+    transition: all 0.3s ease;
+
+
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    z-index: 1000;
+    /* margin-bottom:30px ; */
+    bottom: 1rem;  
+
+
+
+  }
+  
+  .dark-buttons:hover {
+    fill: yellow;
+    
+  }
+  
+  /* ===== HOME PAGE BUTTON ===== */
+  .home-dark-btn {
+    
+    width: 45px;
+    height: 45px;
+    padding: 10px;
+  }
+  
+  /* Home - Desktop */
+  @media (min-width: 769px) {
+    .home-dark-btn {
+      bottom: 1rem;
+      right: 2.5rem;
+      background-color: var(--bg-nav) !important;
+    }
+
+    
+  }
+  
+  /* Home - Mobile */
+  @media (max-width: 768px) {
+    .home-dark-btn {
+      position: relative;
+      right: -3px;
+      width: 40px;
+      height: 40px;
+      padding: 8px 5px;
+      
+    }
+
+   
+    
+  }
+
+
+  
+  /* ===== DASH PAGE BUTTON ===== */
+  .dash-dark-btn {
+    width: 30px;
+    height: 30px;
+    /* [fix size moon in dashnav] one line */
+    padding: 0px;
+
+    /* background-color: transparent !important; */
+    
+    fill: #ffffff !important ;
+    
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin: 0;
+  }
+
+
+  /* [fix size moon in dashnav] */
+  .dash-dark-btn svg {
+    width: 30px;
+    height: 30px;
+  }
+
+
+  .dash-dark-btn:hover{
+    fill: white !important ;
+  }
+  
+  /* Dash - Desktop */
+  @media (min-width: 769px) {
+    .dash-dark-btn {
+      position: static;
+      background-color: transparent;
+    }
+  }
+  
+  /* Dash - Mobile */
+  @media (max-width: 768px) {
+    .dash-dark-btn {
+      /* [fix size moon in dashnav]  static sizes and padding*/
+      position: static;
+      
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      background-color: transparent;
+      border: none !important;
+    }
+    
+    /* [fix size moon in dashnav] */
+    .dash-dark-btn svg {
+      width: 30px;
+      height: 30px;
+    }
+
+  }
+  
+  
+  /* ===== PDF PAGE BUTTON ===== */
+  .pdf-dark-btn {
+    width: 50px;
+    height: 50px;
+    padding: 12px;
+  }
+  
+  /* pdf - Desktop */
+  @media (min-width: 769px) {
+    .pdf-dark-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--dash-bg, #333);
+    }
+  }
+  
+  /* pdf - Mobile */
+  @media (max-width: 768px) {
+    .pdf-dark-btn {
+      position: absolute;
+      bottom: 1rem;
+      right: 2rem;
+      width: 35px;
+      height: 35px;
+      padding: 6px;
+      background-color: var(--dash-mobile-bg, #444);
+    }
+  }
+  
+  

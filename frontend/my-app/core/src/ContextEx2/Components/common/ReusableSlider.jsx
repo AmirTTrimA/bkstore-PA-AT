@@ -1,0 +1,155 @@
+// ✅
+import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// ---Style---
+import '../../Styles/components/ReusableSlider.css';
+
+
+// ============================================
+//    Constants
+// ============================================
+const SCROLL_AMOUNT = 300;
+
+
+
+// ============================================
+//    Helper Functions
+// ============================================
+const scroll = (ref, direction) => {
+  if (ref.current) {
+    
+    const newScrollLeft = direction === 'left' 
+      ? ref.current.scrollLeft - SCROLL_AMOUNT 
+      : ref.current.scrollLeft + SCROLL_AMOUNT;
+    
+    ref.current.scrollTo({
+      left: newScrollLeft,
+      behavior: 'smooth'
+    });
+  }
+};
+
+
+// ============================================
+//    Main Component
+// ============================================
+export default function ReusableSlider({ 
+  items,           
+  title,           
+  viewAllLink,     
+  customClass = '',
+  cardWidth = '280px',
+
+}) {
+
+    const navigate = useNavigate();
+    const carouselRef = useRef(null);
+  
+
+
+
+    // ---Handlers---
+    const handleCardClick =(link)=>{
+      if(link){
+        navigate(`/book/${link}`)
+      }
+    }
+
+    const handleAuthor =(e,authorId)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      navigate(`/author/${authorId}`);
+    }
+
+
+
+
+
+return (
+  <section className={`slider-section ${customClass}`}>
+    {/* Header */}
+    <div className={`section-header ${customClass} `}>
+      <h3 className="header-text">{title}</h3>
+      <a href={viewAllLink} className='view-all'>
+        <small>more {'>'}</small>
+      </a>
+    </div>
+
+    {/* Carousel */}
+    <div className="carousel-container" id='small-slider'>
+        {/* Left Navigation */}
+        <button  
+          className="nav-btn left"
+          onClick={() => scroll(carouselRef, "left")}
+        >
+          ◀ 
+        </button>
+        {/* Cards Container */}
+        <div 
+          className="card-carousel" 
+          ref={carouselRef}
+          style={{ 
+            '--card-width': cardWidth 
+          }}
+        >
+          {items.map((item, i) => (
+            
+            // Card Slider  
+            <div 
+              key={i}
+              className={`card-slider ${customClass}`}
+              onClick={() => handleCardClick(item.link)}
+              role="button"
+              tabIndex={0}
+              >
+              {/* Image Container */}
+              <div className="card-image-wrapper">
+                  <img 
+                    src={item.img}
+                    alt={item.title}
+                    id="card-main" 
+                   />
+                  <img 
+                    src={item.author_profile}
+                    onClick={(e)=>handleAuthor(e,item.authorId)} 
+                    alt="profile pic" 
+                    id="card-profile"
+                  />
+                </div>
+                {/* Card Content */}
+                <h4>{item.title}</h4>
+                <p>{item.price}</p>
+              </div>
+            ))}
+        </div>
+      
+        {/* Left Navigation */}
+        <button  
+          className="nav-btn right"
+          onClick={() => scroll(carouselRef, "right")}
+        > 
+          ▶ 
+        </button>
+      
+    </div>
+  </section>
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

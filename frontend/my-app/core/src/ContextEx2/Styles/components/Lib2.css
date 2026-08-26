@@ -1,0 +1,53 @@
+
+/* way-1 */
+/* 
+.blink {
+    animation: tap-blink 0.15s ease-out;
+  }
+  
+  @keyframes tap-blink {
+    0%   { transform: scale(1); opacity: 1; }
+    50%  { transform: scale(0.9); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+  } */
+
+  .animated-button {
+    position: relative;
+    padding: 15px 30px;
+    border: none;
+    background-color: #4CAF50; /* Example button background */
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    overflow: hidden; /* Crucial for clipping the circle */
+    border-radius: 5px;
+    transition: color 0.3s ease; /* For text color change if desired */
+    min-width: 150px; /* Example: adjust as needed */
+    min-height: 50px; /* Example: adjust as needed */
+    display: inline-flex; /* Helps with centering content if needed */
+    align-items: center;
+    justify-content: center;
+
+}
+  
+  .animated-button .hover-circle {
+    position: absolute;
+    width: 150%; /* Make it large enough to cover the button */
+    height: 150%;
+    background-color: rgba(255, 255, 255, 0.15); /* Softer, more transparent color */
+    border-radius: 50%;
+    /* Faster transitions */
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 0;
+    pointer-events: none; /* So it doesn't interfere with button clicks */
+  }
+
+  .animated-button.hovered .hover-circle {
+    transform: translate(-50%, -50%) scale(1); /* Scale up */
+    opacity: 1;
+  }
+  
+  /* Optional: Change button background on hover */
+  .animated-button.hovered {
+    background-color: #45a049;
+  }

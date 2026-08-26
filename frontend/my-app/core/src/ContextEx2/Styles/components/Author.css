@@ -1,0 +1,278 @@
+
+/* ============================================
+        NAVIGATION
+   ============================================ */
+.auth-nav{
+    position: sticky;
+    z-index: 1000;
+    top: 0;
+}
+
+/* ============================================
+        MAIN CONTAINER
+   ============================================ */
+
+.author-container{
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    
+    border-radius: 0 0 10px 10px;
+    background-color: var(--bg-primary);
+    color: var(--text-primarys);
+    box-shadow: 0 0 15px rgba(113, 113, 113, 0.575);
+    width: 90%;
+}
+
+
+
+
+/* ============================================
+        AUTHOR PROFILE SECTION
+   ============================================ */
+
+.up-side{
+    margin: 0 auto;
+    padding: 30px;
+    border-bottom: 5px solid var(--text-primarys);
+    
+}
+
+.profile{
+    margin-bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.profile img{
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    
+}
+
+
+.auth-desc{
+    padding: 20px 200px;
+    margin: 0 auto;
+    text-align: center;
+    
+
+}
+.auth-des{
+    font-size: large;
+    font-weight: 700;
+}
+
+.auth-des h2{
+    display: flex;
+    justify-content: center;
+    margin-top: 0;
+    
+}
+
+/* ============================================
+   BOOKS SECTION
+   ============================================ */
+
+.down-side{
+    margin: 0 auto;
+    margin-top: 50px;
+}
+
+.product{
+    display: flex;
+    
+    flex-wrap: wrap;
+    gap: 25px;
+    padding: 20px 20px;
+    margin: 20px 0px 50px;
+    
+    justify-content: center;
+    
+}
+
+
+.auth-cards{
+    background-color:#ffffff ;
+    border-radius: 10px;  
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(247, 0, 0, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.01s ease-out;
+    cursor: pointer;
+
+    
+    flex: 0 0 calc(55% - 16px);
+    max-width:calc(55% - 16px);
+    max-width: 200px;
+
+    
+    text-align: center;
+
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+}
+
+
+.auth-cards:hover{
+    box-shadow: 0px 0px 15px var(--text-primarys);
+}
+
+
+.auth-pic{
+    width: 100%;
+    height: 200px !important; 
+    
+    display: flex;
+    justify-content: center;
+
+    overflow: hidden;
+}
+
+.auth-pic >img{
+    width: 100%;
+    display: block;
+    object-fit:cover;  
+    object-position: center;
+
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 992px) {
+     
+    .auth-cards {
+        flex: 0 0 calc(33.333% - 16px);
+        max-width: calc(33.333% - 16px);
+    }
+    .auth-pic{
+        height: 200px;
+    }
+
+
+}
+
+
+
+@media (max-width: 768px) {
+
+    .author-container{
+        width: 90%;
+        border-radius: 0;
+        box-shadow: 0 0 8px rgba(150, 150, 150, 0.4);
+        
+    }  
+
+    
+
+    .auth-cards {
+        flex: 0 0 calc(50% - 16px);
+        max-width:calc(50% - 16px);
+    }
+    .auth-pic{
+        height: 200px;
+    }
+
+    
+    .up-side{
+        width: 100%;
+        box-sizing: border-box;
+        padding: 20px;
+        
+    }
+
+    .profile{
+        margin-top: 50px;
+        margin-right: 0;
+        
+    }
+    
+    .profile >img{
+        width: 100px;
+        height: 100px;
+    }
+
+    .auth-desc {
+        margin-left: 20px;
+        padding: 10px 20px; 
+        text-align: center;
+    }
+    
+    .auth-des {
+        font-size: 1rem;  
+    }
+    
+    .auth-des h2 {
+        font-size: 1.5rem;  
+        word-break: break-word;
+    }
+    
+    .auth-des p {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+        
+    }
+
+
+}
+
+@media(max-width:600px){
+
+    .profile{
+        margin: 0 auto;
+        margin-top: 20px;
+        
+    }
+
+    .auth-desc{
+        margin:0 auto
+    }
+    
+
+    .author-container{
+        width: 90%;
+        padding: 0.1rem;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    
+
+    .auth-pic > img {
+        height: 100%;
+        object-fit: cover;
+    }
+
+    
+
+}
+
+/* Extra Small Mobile  */
+@media (max-width: 480px) {
+
+    .author-container{
+        width: 100%;
+        padding: 0.5rem;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+   
+
+    .auth-cards {
+        flex: 0 0 calc(50% - 12px);
+        max-width:calc(50% - 12px);
+        padding: 16px;
+    }
+}

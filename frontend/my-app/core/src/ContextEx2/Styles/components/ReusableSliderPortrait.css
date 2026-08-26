@@ -1,0 +1,318 @@
+/* ============================================
+      REUSABLE SLIDER
+   ============================================ */
+
+
+
+/* Main Slider Section */
+.slider-section2 {
+  background-color: var(--slider-bg);
+  display: flex;
+  flex-direction: column; 
+  align-items: center;
+  margin: 2rem auto;
+  padding: 0.5rem 0;
+  max-width: 960px;
+  border-radius: 15px;
+  width: 100%;
+}
+
+
+
+
+/* ============================================
+      SECTION HEADER
+   ============================================ */
+
+.section-header2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    width: 100%;
+    margin-bottom: -10px;
+  }
+
+/* Slider Variants */
+.section-header2.publisher-famous2{
+  color: rgb(191, 121, 0);
+}
+
+
+.section-header2.publisher-new2{
+  color: rgb(191, 121, 0);
+}
+
+
+
+
+
+.header-text2 {
+  font-weight: 800;
+  font-style:italic;
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  margin: 15px 0;
+  padding-left: 20px;
+}
+
+.view-all2 {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  margin-right: 20px;
+  cursor: pointer;
+}
+
+/* ============================================
+      CAROUSEL CONTAINER
+   ============================================ */
+.carousel-container2 {
+  width: 100%;
+  overflow-x: visible;
+}
+
+/* Flex container for portrait + cards */
+.card-carousel2 {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem 0.2rem 1rem 1rem;
+  width: 95%;
+  overflow-x: visible;
+}
+
+/* ============================================
+      PORTRAIT IMAGE
+   ============================================ */
+.portrait-image2 {
+  flex-shrink: 0;
+  width: 180px;
+  height: 200px;
+  margin: 15px auto;
+  object-fit: cover;
+  border-radius: 30px;
+  background-color: var(--slider-bg);
+  z-index: 2;
+  box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+  transition: opacity 0.3s ease, z-index 0s;
+}
+
+/* ============================================
+      CARDS CONTAINER
+   ============================================ */
+.scrollable-cards2 {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  overflow-x: visible;
+  width: 100%;
+  margin-top: 30px;
+}
+
+/* ============================================
+      CARDS
+   ============================================ */
+.card-slider2 {
+  border-radius: 12px;
+  scroll-snap-align: start;
+  text-align: center;
+  text-decoration: none;
+  padding: 0.5rem;
+  color: #333;
+  transition: transform 0.2s;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.card-slider2:hover {
+  cursor: pointer;
+  transform: translateY(-2px);
+}
+
+
+
+
+
+/* Card Variants */
+.card-slider2.publisher-famous2,
+.card-slider2.publisher-famous2 h4{
+  background-color: none !important;
+  color: var(--text-primarys);
+}
+
+.card-slider2.publisher-new2,
+.card-slider2.publisher-new2 h4{
+  background-color: none !important;
+  color: var(--text-primarys);
+}
+
+
+
+
+
+
+/* Image Wrapper */
+.card-image-wrapper2 {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  margin-bottom: 0.5rem;
+  display: block;
+  background-color: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Main Image */
+.card-slider2 img#card-main2 {
+  width: 100%;
+  height: 150px;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  object-fit: cover;
+  display: block;
+}
+
+/* Card Text */
+.card-slider2 h4 {
+  font-weight: 700;
+  color: rgb(0, 0, 0);
+  margin: 15px auto 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-slider2 p {
+  margin: 0 auto;
+  color: var(--slider-price);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+
+
+/* Mobile */
+@media (max-width: 768px) {
+  .slider-section2 {
+      padding-bottom: 0;
+      overflow: hidden;
+  }
+
+  /* Scrollable Horizontally */
+  .card-carousel2 {
+      flex-direction: row;
+      gap: 1rem;
+      overflow-x: auto;
+      overflow-y: visible;
+      padding-bottom: 12px;
+      width: 100%;
+      position: relative;
+      scroll-behavior: smooth;
+  }
+
+  /* Portrait - Fixed Position */
+  .portrait-image2 {
+      position: sticky !important;
+      left: 0;
+      width: 180px;
+      height: 200px;
+      margin: 15px 0 15px 0;
+      flex-shrink: 0;
+      transition: opacity 0.3s ease, z-index 0.2s;
+  }
+
+  /* Cards Container on Mobile */
+  .scrollable-cards2 {
+      overflow-x: visible;
+      overflow-y: visible;
+      width: auto;
+      padding-bottom: 0;
+      gap: 1rem;
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      flex-shrink: 0;
+  }
+
+  /* Cards with fixed width  */
+  .card-slider2 {
+      flex: 0 0 220px;
+      min-width: 220px;
+      position: relative;
+      z-index: 2;
+  }
+
+  /* Scrollbar Styling*/
+  .card-carousel2::-webkit-scrollbar {
+      height: 10px;
+      display: block;
+  }
+
+  .card-carousel2::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+      border-radius: 4px;
+  }
+
+  .card-carousel2::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.4);
+      border-radius: 4px;
+  }
+
+  .card-carousel2::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.6);
+  }
+
+  /* Hide scrollbar on inner container */
+  .scrollable-cards2::-webkit-scrollbar {
+      display: none;
+  }
+
+  /* Gradient fade effect on right side */
+  .card-carousel2::after {
+      content: '';
+      position: sticky;
+      right: 0;
+      top: 0;
+      width: 50px;
+      height: 100%;
+      background: linear-gradient(to right, transparent, var(--slider-bg));
+      pointer-events: none;
+      z-index: 3;
+  }
+
+
+  /* Section adjustments */
+  #small-slider2 {
+      position: relative;
+      margin-bottom: 5px !important;
+  }
+
+  .card-slider2 h4 {
+      white-space: normal;
+      word-break: break-word;
+  }
+
+
+
+
+
+
+
+
+
+/* JavaScript solution for better scroll detection */
+  .portrait-image2.faded {
+    opacity: 0.15 !important;
+    z-index: 0 !important;
+}
+
+.portrait-image2.normal {
+    opacity: 1 !important;
+    z-index: 1 !important;
+}
+
+}
