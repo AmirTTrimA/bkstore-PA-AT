@@ -24,6 +24,9 @@ import Subscription from '../Pages/library/Subscription';
 import Dashboard from "../Pages/dashboard/Dashboard";
 import PDashboard from '../Pages/publisher-panel/PDashboard';
 
+// ---Payment Pages---
+import PaymentResult from '../Pages/payment/PaymentResult';
+
 // ---Buy Pages---
 import Basket from '../Pages/buy/Basket';
 import Checkout from '../Pages/buy/Checkout';
@@ -123,9 +126,11 @@ export default function Router() {
             </ProtectedView>
           } />
 
-
-
-
+        {/* Payment Routes */}
+        <Route
+          path='/payment/result'
+          element={<PaymentResult />}
+        />
 
 
         {/* Buy Routes */}
