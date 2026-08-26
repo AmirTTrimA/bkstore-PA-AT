@@ -26,7 +26,25 @@ class AuthorSerializer(serializers.ModelSerializer):
     def get_books_count(self, obj):
         """Returns the total number of books by this author."""
         return obj.books.count()
-    
+
+class GenreSerializer(serializers.Serializer):
+    value = serializers.CharField(source="genre")
+    label = serializers.SerializerMethodField()
+    count = serializers.IntegerField()
+
+    GENRE_LABELS = {
+        "SCI_FI": "Science Fiction",
+    }
+
+    def get_label(self, obj):
+        genre = obj["genre"]
+
+        return self.GENRE_LABELS.get(
+            genre,
+            genre.replace("_", " ").title(),
+        )
+
+
 class CurrentPriceMixin(serializers.Serializer):
     """Provides the current active price for a book."""
 

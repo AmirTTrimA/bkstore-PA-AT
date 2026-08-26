@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from .models import Author, Book
 from .pagination import BookPagination
 from .serializers import (AuthorSerializer, BookDetailSerializer,
-                          BookListSerializer)
+                          BookListSerializer, GenreSerializer)
 
 TRUE_VALUES = {"true", "1", "yes"}
 
@@ -159,3 +159,21 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="genres")
+    def genres(self, request):
+        genres = (
+            Book.objects
+            .values("genre")
+            .annotate(count=Count("id"))
+            .order_by("-count", "genre")
+        )
+
+        serializer = GenreSerializer(
+            genres,
+            many=True,
+        )
+
+        return Response({
+            "results": serializer.data,
+        })

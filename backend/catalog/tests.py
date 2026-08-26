@@ -370,6 +370,92 @@ class CatalogAPITestCase(APITestCase):
                 "Dirk Gently's Holistic Detective Agency",
             },
         )
+
+    def test_genres_endpoint_is_public(self):
+        response = self.client.get(
+            "/api/v1/books/genres/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+
+    def test_genres_endpoint_returns_existing_genres_with_counts(self):
+        response = self.client.get(
+            "/api/v1/books/genres/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        results = response.data["results"]
+
+        self.assertEqual(
+            len(results),
+            3,
+        )
+
+        genres = {
+            item["value"]: item
+            for item in results
+        }
+
+        self.assertEqual(
+            genres["FICTION"],
+            {
+                "value": "FICTION",
+                "label": "Fiction",
+                "count": 2,
+            },
+        )
+
+        self.assertEqual(
+            genres["SCI_FI"],
+            {
+                "value": "SCI_FI",
+                "label": "Science Fiction",
+                "count": 2,
+            },
+        )
+
+        self.assertEqual(
+            genres["MYSTERY"],
+            {
+                "value": "MYSTERY",
+                "label": "Mystery",
+                "count": 1,
+            },
+        )
+
+
+    def test_genres_endpoint_orders_by_count_descending(self):
+        response = self.client.get(
+            "/api/v1/books/genres/"
+        )
+
+        values = [
+            genre["value"]
+            for genre in response.data["results"]
+        ]
+
+        counts = [
+            genre["count"]
+            for genre in response.data["results"]
+        ]
+
+        self.assertEqual(
+            counts,
+            sorted(counts, reverse=True),
+        )
+
+        self.assertSetEqual(
+            set(values),
+            {"FICTION", "SCI_FI", "MYSTERY"},
+        )
     
     def test_new_books_endpoint(self):
         """Test the new books collection endpoint."""
