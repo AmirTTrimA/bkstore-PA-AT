@@ -1,0 +1,465 @@
+# cart/views.py
+from decimal import Decimal
+
+from catalog.models import Book
+from content.models import License
+from django.conf import settings
+from django.contrib.admin import action
+from django.db import models, transaction
+from django.db.models import Prefetch
+from django.db.utils import IntegrityError
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from pricing.models import Price
+from pricing.services import PricingEngine
+from rest_framework import generics, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.mixins import DestroyModelMixin, ListModelMixin
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from wallet.api.serializers import OrderCancellationSerializer
+
+from .models import Cart, CartItem, Order, OrderItem, WishlistItem
+from .serializers import (CartItemInputSerializer, CartItemOutputSerializer,
+                          CheckoutInputSerializer, OrderOutputSerializer,
+                          WishlistCreateSerializer, WishlistItemSerializer)
+from .services import CheckoutService
+from .tasks import send_order_confirmation_email
+
+# Set session key (should be in settings.py, but defined here for context)
+CART_SESSION_KEY = getattr(settings, "CART_SESSION_KEY", "cart")
+
+# -------------------------------------------------------------
+# CORE LOGIC: Storage Helpers (DATABASE vs. SESSION)
+# -------------------------------------------------------------
+
+
+def get_storage_manager(request):
+    """
+    Returns the appropriate cart data manager (DB or Session) based on authentication.
+    Returns: A dictionary representing the cart state.
+    """
+    if request.user.is_authenticated:
+        # Authenticated: Use Database (persistent storage)
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        # Convert DB items to a dictionary {book_id: quantity} for easy processing
+        db_items = CartItem.objects.filter(cart=cart).values(
+            "book_id",
+            "book_format_id",
+            "quantity",
+        )
+
+        return {
+            f'{item["book_id"]}:{item["book_format_id"]}': item["quantity"]
+            for item in db_items
+        }
+    else:
+        # Anonymous: Use Session (temporary storage)
+        return request.session.get(CART_SESSION_KEY, {})
+
+
+def save_storage_manager(request, cart_data):
+    """
+    Saves the cart data back to the appropriate storage (DB or Session).
+    """
+    if request.user.is_authenticated:
+        # Authenticated: Save to Database
+        cart, created = Cart.objects.get_or_create(user=request.user)
+
+        # Atomically update DB: Delete old items and insert new ones
+        with transaction.atomic():
+            CartItem.objects.filter(cart=cart).delete()
+            for cart_key, quantity in cart_data.items():
+                if quantity <= 0:
+                    continue
+
+                book_id, format_id = map(
+                    int,
+                    cart_key.split(":"),
+                )
+
+                book = get_object_or_404(
+                    Book,
+                    pk=book_id,
+                )
+
+                book_format = get_object_or_404(
+                    book.formats,
+                    pk=format_id,
+                    is_available=True,
+                )
+
+                CartItem.objects.create(
+                    cart=cart,
+                    book=book,
+                    book_format=book_format,
+                    quantity=quantity,
+                )
+    else:
+        # Anonymous: Save to Session
+        request.session[CART_SESSION_KEY] = cart_data
+        request.session.modified = True
+
+
+# -------------------------------------------------------------
+# 1. CART ITEM ENDPOINTS (Unified Handler)
+# -------------------------------------------------------------
+
+
+# def get_current_prices(book_ids):
+#     """
+#     Retrieves the currently active price for each book ID from the database.
+#     Returns: A dictionary mapping {book_id: price_value}
+#     """
+#     now = timezone.now()
+
+#     # Complex query to find the most recent valid price for each book
+#     # This logic finds the Price record where effective_from is the highest (most recent)
+#     # but still valid (effective_until is null or future)
+
+#     # For simplicity, we filter by effective_until=NULL or > now()
+#     active_prices = (
+#         Price.objects.filter(
+#             models.Q(effective_until__isnull=True) | models.Q(effective_until__gt=now),
+#             book_id__in=book_ids,
+#             effective_from__lte=now,
+#         )
+#         .order_by("book_id", "-effective_from")
+#         .distinct("book_id")
+#     )
+
+#     # Create a lookup dictionary: {book_id: value}
+#     price_map = {price.book_id: price.value for price in active_prices}
+#     return price_map
+
+
+class CartItemHandlerView(generics.GenericAPIView):
+    """
+    Handles Add, Update, Delete, and Get actions for cart items, using DB or Session.
+    Maps to POST, DELETE, GET /api/v1/cart/items/
+    """
+
+    serializer_class = CartItemInputSerializer
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
+        """
+        Retrieves and displays the current cart contents.
+        """
+
+        cart_data = get_storage_manager(request)
+
+        if not cart_data:
+            return Response(
+                [],
+                status=status.HTTP_200_OK,
+            )
+
+        # Extract book IDs from composite cart keys.
+        book_ids = {
+            int(cart_key.split(":")[0])
+            for cart_key in cart_data
+        }
+
+        books = (
+            Book.objects
+            .filter(pk__in=book_ids)
+            .prefetch_related("formats")
+            .in_bulk()
+        )
+
+        cart_output = []
+
+        for cart_key, quantity in cart_data.items():
+
+            book_id, format_id = map(
+                int,
+                cart_key.split(":"),
+            )
+
+            book = books.get(book_id)
+
+            if not book:
+                continue
+
+            # Find the selected format from the prefetched formats.
+            book_format = next(
+                (
+                    fmt
+                    for fmt in book.formats.all()
+                    if fmt.pk == format_id
+                    and fmt.is_available
+                ),
+                None,
+            )
+
+            if not book_format:
+                continue
+
+            pricing = PricingEngine(
+                book_format=book_format,
+                user=(
+                    request.user
+                    if request.user.is_authenticated
+                    else None
+                ),
+            ).calculate()
+
+            unit_price = pricing.final_price
+
+            cart_output.append(
+                {
+                    "book_id": book.pk,
+                    "title": book.title,
+                    "format_id": book_format.pk,
+                    "format_type": book_format.get_format_type_display(),
+                    "quantity": quantity,
+                    "unit_price": unit_price,
+                    "cover_image_url": book.cover_image_url,
+                }
+            )
+
+        cart_output.sort(
+            key=lambda item: (
+                item["book_id"],
+                item["format_id"],
+            )
+        )
+
+        serializer = CartItemOutputSerializer(
+            cart_output,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, *args, **kwargs):
+        """Adds a new item or updates quantity of an existing item."""
+        # ... (post and delete methods remain the same, as they only touch storage/session)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        book_id = serializer.validated_data["book_id"]
+        book_format = serializer.validated_data["book_format"]
+        quantity = serializer.validated_data.get("quantity", 1)
+
+        cart_key = f"{book_id}:{book_format.pk}"
+
+        cart_data = get_storage_manager(request)
+
+        cart_data[cart_key] = cart_data.get(cart_key, 0) + quantity
+
+        save_storage_manager(request, cart_data)
+
+        return Response({"detail": _("Item added to cart.")}, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        """Deletes a specific item entirely from the cart."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        book_id = serializer.validated_data["book_id"]
+        book_format = serializer.validated_data["book_format"]
+
+        cart_key = f"{book_id}:{book_format.pk}"
+        cart_data = get_storage_manager(request)
+
+        if cart_key in cart_data:
+            del cart_data[cart_key]
+            save_storage_manager(request, cart_data)
+            return Response(
+                {"detail": _("Item removed from cart.")},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+
+        return Response(
+            {"detail": _("Item not found in cart.")}, status=status.HTTP_404_NOT_FOUND
+        )
+
+
+# -------------------------------------------------------------
+# 2. CART MERGE LOGIC (Upon Login)
+# -------------------------------------------------------------
+
+
+class CartMergeView(generics.GenericAPIView):
+    """
+    Handles merging the anonymous session cart into the persistent database cart upon login.
+    This view is designed to be called by the frontend immediately after a successful JWT login.
+    Maps to POST /api/v1/cart/merge/
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        session_cart = request.session.get(CART_SESSION_KEY, {})
+
+        if not session_cart:
+            return Response(
+                {"detail": _("No items to merge.")}, status=status.HTTP_200_OK
+            )
+
+        user = request.user
+
+        # 1. Get the target (database) cart data
+        database_cart_data = get_storage_manager(request)
+
+        for cart_key, quantity in session_cart.items():
+            database_cart_data[cart_key] = (
+                database_cart_data.get(cart_key, 0) + quantity
+            )
+
+        save_storage_manager(
+            request,
+            database_cart_data,
+        )
+
+        # 4. Clear the anonymous session cart (CRITICAL)
+        request.session[CART_SESSION_KEY] = {}
+        request.session.modified = True
+
+        return Response(
+            {"detail": _("Cart merged successfully.")}, status=status.HTTP_200_OK
+        )
+
+
+class WishlistViewSet(viewsets.GenericViewSet, ListModelMixin, DestroyModelMixin):
+    """
+    Handles listing the user's wishlist and removing items.
+    Maps to GET, DELETE /api/v1/cart/wishlist/<id>/
+    """
+
+    serializer_class = WishlistItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Returns the wishlist items for the currently authenticated user."""
+        return WishlistItem.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        """Adds a new item to the user's wishlist."""
+        input_serializer = WishlistCreateSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        book_id = input_serializer.validated_data["book_id"]
+
+        book = get_object_or_404(Book, pk=book_id)
+
+        # 🔑 DEFINITIVE FIX: Query the database first to PREVENT IntegrityError
+        if WishlistItem.objects.filter(user=request.user, book=book).exists():
+            return Response(
+                {"detail": _("Item is already in your wishlist.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # If the item doesn't exist, create it. This creation is now guaranteed to succeed.
+        WishlistItem.objects.create(user=request.user, book=book)
+
+        return Response(
+            {"detail": _("Item added to your wishlist."), "book_id": book_id},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# -------------------------------------------------------------
+# 3. ORDER SUBMISSION (CHECKOUT)
+# -------------------------------------------------------------
+
+
+class CheckoutView(generics.GenericAPIView):
+    """
+    Handles the final checkout process.
+    """
+
+    serializer_class = CheckoutInputSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        cart = get_object_or_404(
+            Cart.objects.prefetch_related(
+                "items",
+                "items__book",
+                "items__book__author",
+            ),
+            user=request.user,
+        )
+
+        if not cart.items.exists():
+            return Response(
+                {"detail": _("Your cart is empty.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        service = CheckoutService(request.user)
+
+        try:
+            order = service.checkout(
+                cart=cart,
+                shipping_data=serializer.validated_data,
+            )
+        except serializers.ValidationError as exc:
+            return Response(
+                exc.detail,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        transaction.on_commit(
+            lambda: send_order_confirmation_email.delay(order.id)
+        )
+
+        return Response(
+            OrderOutputSerializer(order).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+class OrderViewSet(ReadOnlyModelViewSet):
+    """
+    Allows authenticated users to view their order history.
+
+    Endpoints:
+        GET /cart/orders/
+        GET /cart/orders/<id>/
+    """
+
+    serializer_class = OrderOutputSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            Order.objects.filter(
+                user=self.request.user,
+            )
+            .prefetch_related(
+                Prefetch(
+                    "items",
+                    queryset=OrderItem.objects.select_related("book"),
+                )
+            )
+            .order_by("-created_at")
+        )
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        """
+        Cancels a refundable order and returns the refunded state.
+        """
+
+        order = self.get_object()
+
+        serializer = OrderCancellationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        CheckoutService(request.user).cancel_order(order)
+
+        return Response({
+            "message": "Order refunded successfully.",
+            "status": "REFUNDED",
+            "order_id": order.id,
+        })

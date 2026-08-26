@@ -1,0 +1,276 @@
+/* ============================================
+      IMPORTS
+   ============================================ */
+@import '../variables/variables.css';
+
+
+
+/* ============================================
+      BODY
+   ============================================ */
+body {
+    background-color: var(--bg-secondary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+
+
+/* [AboutUs] */
+body.about-us-page{
+  background: url(
+      'https://www.thisiscolossal.com/wp-content/uploads/2023/05/temple-of-books-6.jpg'
+  ) center/cover no-repeat;
+  min-height: 100vh;
+}
+
+
+
+/* ============================================
+       REPEATABLE CLASSES
+   ============================================ */
+
+
+/* [HOME-REUSLIDE] */
+.carousel-container{    
+  width: 90%;
+  margin: 2.5em auto;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 1em;
+  overflow: hidden;
+  object-fit: cover;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+
+  
+}
+
+
+.carousel-container::-webkit-scrollbar{
+  display: none;
+}
+
+
+
+/* [AUTHOR-FAVORITE-SUBSCRIPTION] */
+.big-back-btn{
+  border: none;
+  background-color: var(--bg-primary);
+  max-width: 75px;
+  display: inline;
+  text-decoration: none;
+  color: #999; 
+  fill: #999;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  font-size: 30px;
+  margin-top: 10px;
+  
+}
+
+.big-back-btn i{
+  padding: 10px;
+}
+
+
+
+.big-back-btn:hover{
+  color: black;
+  cursor: pointer;
+}
+
+
+
+/* [LOGIN-CONFIRM-FORGET] */
+.error-message{  
+  border-radius:10%;
+  box-shadow:0px 4px 12px red;
+  margin:0 auto;
+  margin: 20px auto -50px;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  max-width:150px;
+  font-size:15px;
+  color:red;
+  background-color:#0c0f14;
+}
+
+
+
+/*Error + progress bar timeline(auto hide) */
+.error-message.auto-hide {
+  animation: slideIn 0.3s ease-out, hideError 0.3s ease-in 2s forwards;
+}
+
+
+/*Progress bar animation */
+.error-message.auto-hide::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background-color: #ff0000;
+  animation: progressBar 2s linear forwards;
+}
+
+
+
+/* Make error message relative for the progress bar */
+.error-message {
+  position: relative;
+  overflow: hidden;
+}
+
+
+
+
+
+/* Remove Button [BASKET-AllAUTHORS] */
+.remove-btn {
+  background: none;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-btn:hover {
+  background-color: #e53e3e;
+  color: #fff5f5;
+}
+
+
+
+
+/* [PPROFILE,PROFILE,FINANCIAL,NOTIF,NEWADD,NAV,SIMNAV] */
+.mod-box{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 85%;  /* xs (default) */
+  background-color: white;
+  color: grey;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  padding: 16px;          
+  border-radius: 8px;      
+  box-sizing: border-box;
+
+}
+
+/* [NAV,SIMNAV,FINANCIAL,NEWADD] */
+.mod-special{
+      max-width: 900;
+      max-height: 80vh; 
+      display: flex;
+      flex-direction: column;
+}
+
+
+/* [NAV-SIMNAV] */
+.mod-search{
+  margin-top: 50px;
+  transition: all 2s ease-in-out;
+  max-height: 50vh; 
+}
+
+
+
+
+
+
+/* ============================================
+      KEYFRAMES
+   ============================================ */
+
+/* Slide in from top */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide error with animation */
+@keyframes hideError {
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+    height: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+  }
+}
+
+/* Progress bar shrinking */
+@keyframes progressBar {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (min-width: 1200px) {
+  .mod-box {
+    width: 500px;
+  }
+}
+
+@media (min-width: 900px) {
+  .mod-box {
+    width: 400px;
+    padding: 32px;
+  }
+}
+
+
+
+
+@media(max-width:768px){
+  .carousel-container{
+    padding-bottom: 50px;
+  }
+  .big-back-btn{
+    display: none;
+  }
+
+}
+
+
+
+@media (min-width: 600px) {
+  .mod-box {
+    width: 75%;
+    padding: 24px;
+  }
+}
+
+
+

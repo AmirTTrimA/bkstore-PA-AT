@@ -1,0 +1,236 @@
+/* ============================================
+        FAQ PAGE 
+   ============================================ */
+
+/* Container */
+.faq-container {
+    min-height: 100vh;
+    padding: 40px 20px;
+}
+
+.faq-content {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.faq-header {
+    margin-bottom: 40px;
+}
+
+.faq-header  h1 ,
+.faq-header  p{
+    text-align: center;
+}
+
+
+.faq-back-home {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.faq-back-home:hover {
+    color: #764ba2;
+}
+
+.faq-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin: 10px 0;
+}
+
+.faq-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+
+
+/* Categories */
+.faq-categories {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.faq-category-btn {
+    padding: 8px 16px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    color: #666;
+}
+
+.faq-category-btn:hover {
+    background: #e0e0e0;
+}
+
+.faq-category-btn.active {
+    background: #667eea;
+    color: white;
+}
+/* FAQ List */
+.faq-list {
+    margin-bottom: 40px;
+}
+
+.faq-item {
+    margin-bottom: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* FAQ Question */
+.faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px;
+    cursor: pointer;
+    background: white;
+    transition: background 0.3s ease;
+}
+
+.faq-question:hover {
+    background: #f9f9f9;
+}
+
+.faq-question h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+    flex: 1;
+}
+
+.faq-icon {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+    margin-left: 15px;
+    transition: transform 0.3s ease;
+}
+
+.faq-item.active .faq-question {
+    background: #f9f9f9;
+}
+/* FAQ Answer */
+.faq-answer {
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.faq-answer p {
+    margin: 0;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Footer */
+.faq-footer {
+    text-align: center;
+    border-top: 2px solid #f0f0f0;
+    
+}
+
+.faq-footer p {
+    color: #666;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    margin-top: 40px;
+}
+
+.faq-contact-btn {
+    display: inline-block;
+    padding: 12px 30px;
+    background: #53f11e;
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    margin-bottom: 30px ;
+}
+
+.faq-contact-btn:hover {
+    background: #6ad247;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 768px) {
+    .faq-content {
+        padding: 20px;
+    }
+
+    .faq-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .faq-question h3 {
+        font-size: 1rem;
+    }
+
+    .faq-question {
+        padding: 15px;
+    }
+
+    .faq-answer {
+        padding: 10px 15px 15px 15px;
+    }
+
+    .faq-category-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .faq-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .faq-header p {
+        font-size: 0.9rem;
+    }
+
+    .faq-question h3 {
+        font-size: 0.9rem;
+    }
+
+    .faq-icon {
+        font-size: 1.2rem;
+    }
+}

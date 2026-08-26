@@ -1,0 +1,390 @@
+
+/* ============================================
+      LOGIN CONTAINER
+   ============================================ */
+.login-container{
+
+  /* Variables */
+    --fields-button-default:#d17842;
+    
+    --checkbox-color: #f5762d;
+    --checkbox-size: 24px;
+    --checkbox-border-default: #e0e0e0;
+    --checkbox-border-hover: #ffffff;
+    --x-color-default: #b0b0b0;
+    --x-color-checked: #af0d1a;
+
+
+    max-width: 400px;
+    margin:0 auto;
+    background-color: #0c0f14 ;
+    border-radius:10px;
+    text-align:center;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    
+    /* Layout */
+    position: fixed;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    z-index: 1000;
+}
+
+
+  /* Collapsed State */
+  .login-container:not(.expanded) {
+    width: 200px;
+    height: 100px;
+    display: flex;
+    text-align: center;
+  }
+
+
+  /* Expanded State */
+  .login-container.expanded {
+    height: 400px;
+    width: 300px;
+    justify-content: space-between;
+    
+  }
+
+
+/* ============================================
+      TITLE
+   ============================================ */
+  .form-title-login {
+    text-align: center;
+    color: rgb(255, 255, 255);
+    font-size: 2rem;
+    margin-top: 30px;
+    margin-bottom: 0;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  /* Collapsed title */
+  .login-container:not(.expanded) .form-title-login {
+    text-shadow: 5px 4px 10px #ffffff;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+/* ============================================
+      FORM CONTENT
+   ============================================ */
+
+/* Collapsed - hidden */
+  .form-content {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease 0.1s;
+    height: 0;
+    overflow: hidden;
+    
+  }
+
+/* Expanded - visible */ 
+  .form-content.visible {
+    opacity: 1;
+    transform: translateY(0);
+    
+    height: auto; 
+    margin-top: 20px;
+      
+  }
+
+/* ============================================
+      FORM FIELDS
+   ============================================ */
+
+.form-fields{
+    border-radius:3px;
+    border-color: #0c0f14;
+    margin-top: 15px;
+    text-align: center;
+    box-shadow: 3px 4px var(--fields-button-default);
+    
+}
+.form-fields::placeholder{
+    color: rgb(128, 128, 128);
+    opacity: 0.8;
+}
+.form-fields:focus{
+    box-shadow: 5px -3px var(--fields-button-default);
+}
+
+.form-fields:active {
+    transform: translate(2px, 2px);
+    
+}
+
+
+
+
+/* ============================================
+      PASSWORD FIELD WITH TOGGLE
+   ============================================ */
+.field-password{
+  position: relative;
+  display: inline-block;
+  width: 100%;  
+}
+
+
+.toggle-btn {
+  position: absolute;
+  left: 14%;
+  top: 70%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  border-radius: 5px;
+  background-color: #0c0f14;
+  color:var(--checkbox-border-hover) ;
+  font-size: 16px;
+  width: 20px;
+  height: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  color: var(--fields-button-default);
+}
+
+
+/* ============================================
+      INPUT GROUP
+   ============================================ */
+
+.input-group{
+  margin-bottom: 30px;
+}
+
+
+
+
+
+/* ============================================
+      SUBMIT BUTTON
+   ============================================ */
+.form-button:disabled{
+  cursor: not-allowed; 
+  opacity: 0.5;
+}
+
+
+.form-button{
+    border-radius: 10px;
+    height: 35px;
+    width:35%;
+    
+    margin: 75px auto 15px;  
+    background-color:#0c0f14;
+    color:var(--fields-button-default);
+    box-shadow:4px 4px var(--fields-button-default);
+}
+
+.form-button:active:not(:disabled) {
+    box-shadow: 0px 0px;
+    transform: translate(3px, 3px);  
+}
+
+
+
+
+/* ============================================
+      REGISTER & FORGOT PASSWORD
+   ============================================ */
+.register-message{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin:50px 0px 0px ;
+    gap: 35px;
+}
+.forget-pass{
+  list-style: none;
+  color: var(--fields-button-default);
+  cursor: pointer;
+}
+
+/* link change (sign up) */
+.orange-link {
+  text-decoration: underline;
+  color: darkorange;
+  transition: color 0.2s ease;
+}
+
+.orange-link:hover {
+  color: orange;
+  text-decoration: none;
+}
+
+
+
+/* ============================================
+      CUSTOM CHECKBOX
+   ============================================ */
+.checkbox-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+    
+    font-family:Arial, sans-serif;
+  }
+
+
+  /* Hide default checkbox */
+  .checkbox-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+  }
+  
+  /* Custom checkbox title */
+  .checkbox-tile {
+    position: relative;
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
+    background: #ffffff;
+    border: 2px solid var(--checkbox-border-default);
+    border-radius: 4px;
+    margin-right: -5px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  
+  
+
+  /* Checked state */
+  .checkbox-input:checked ~ .checkbox-tile {
+    background: var(--checkbox-color);
+    border-color: var(--x-color-checked);
+    transition: all 0.5s ease-out;
+  }
+
+  
+  
+  /* Checkmark base (X shape) */
+  .checkmark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+  }
+  
+  /* X base */
+  .checkmark::before,
+  .checkmark::after {
+    content: "";
+    position: absolute;
+    background: var(--x-color-default);
+    border-radius: 2px;
+    width: 2px;
+    height: 16px;
+    left: 50%;
+    top: 0;
+    transform-origin: center;
+    transition: all 0.3s ease-out;
+  }
+  
+  /* X formation
+  (make center(-50%) + [/+\= X] )  */
+
+  /* clockwise (/) */
+  .checkmark::before {
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  /* counter-clockwise(\) */
+  .checkmark::after {
+    transform: translateX(-50%) rotate(-45deg);
+  }
+
+
+  
+  
+  /* Left line becomes shorter (\) */
+  .checkbox-input:checked ~ .checkbox-tile .checkmark::before {
+    width: 5px;
+    height: 9px;
+    left: 2px;
+    top: 6px;
+    transform: rotate(-45deg);
+  }
+  
+  /* Right line becomes longer (/) */
+  .checkbox-input:checked ~ .checkbox-tile .checkmark::after {
+    width: 2px;
+    height: 16px;
+    left: 10px;
+    top: 0px;
+    transform: rotate(45deg);
+  }
+  
+
+  /* Rotation animation */
+  .checkbox-input:checked ~ .checkbox-tile .checkmark {
+    animation: rotate-container 0.8s ease-out forwards;
+  }
+  
+  /* Checkmark color */
+  .checkbox-input:checked ~ .checkbox-tile .checkmark::before,
+  .checkbox-input:checked ~ .checkbox-tile .checkmark::after {
+    background: var(--x-color-checked);
+  }
+
+
+
+
+/* Scale animation on click*/
+.checkbox-wrapper:active .checkbox-tile {
+  transform: scale(0.5);
+}
+    
+/* Label text */
+.label-text {
+  color: var(--checkbox-border-hover);
+  font-size: 10px;
+  transition: color 0.2s ease-out;
+  user-select: none;
+}
+
+
+      
+
+/* Label color change on check */
+.checkbox-input:checked ~ .label-text {
+  color: var(--checkbox-color);
+}
+  
+
+  
+/* ============================================
+      ANIMATIONS
+   ============================================ */
+  @keyframes rotate-container {
+    0% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    70% {
+      transform: translate(-50%, -50%) rotate(720deg);
+    }
+    85% {
+      transform: translate(-50%, -50%) rotate(720deg) scale(1.2);
+    }
+    100% {
+      transform: translate(-50%, -50%) rotate(720deg) scale(1);
+    }
+  }
+  

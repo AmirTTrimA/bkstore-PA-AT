@@ -1,0 +1,245 @@
+/* ============================================
+        PAYMENT RESULT PAGE
+   ============================================ */
+
+.payment-result-page {
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    box-sizing: border-box;
+}
+
+
+/* ============================================
+        RESULT CARD
+   ============================================ */
+
+.payment-result-card {
+    width: min(90%, 500px);
+
+    padding: 50px 40px;
+
+    border-radius: 18px;
+
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.12);
+
+    border: 1px solid rgba(255, 255, 255, 0.25);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.25);
+
+    animation: payment-result-appear 0.35s ease-out;
+}
+
+
+/* ============================================
+        SUCCESS / FAILURE
+   ============================================ */
+
+.payment-result-success {
+    border-color: rgba(0, 168, 89, 0.55);
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.25),
+        0 0 25px rgba(0, 168, 89, 0.12);
+}
+
+
+.payment-result-failed {
+    border-color: rgba(220, 40, 40, 0.55);
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.25),
+        0 0 25px rgba(220, 40, 40, 0.12);
+}
+
+
+/* ============================================
+        ICON
+   ============================================ */
+
+.payment-result-icon {
+    width: 70px;
+    height: 70px;
+
+    margin: 0 auto 25px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 42px;
+    font-weight: 800;
+
+    line-height: 1;
+}
+
+
+.payment-result-success .payment-result-icon {
+    color: #00a859;
+
+    border: 2px solid #00a859;
+
+    background: rgba(0, 168, 89, 0.12);
+
+    box-shadow:
+        0 0 20px rgba(0, 168, 89, 0.18);
+}
+
+
+.payment-result-failed .payment-result-icon {
+    color: #dc2828;
+
+    border: 2px solid #dc2828;
+
+    background: rgba(220, 40, 40, 0.12);
+
+    box-shadow:
+        0 0 20px rgba(220, 40, 40, 0.18);
+}
+
+
+/* ============================================
+        TITLE
+   ============================================ */
+
+.payment-result-title {
+    margin: 0 0 15px;
+
+    font-size: 36px;
+
+    font-weight: 800;
+
+    background:
+        linear-gradient(to top,
+            var(--sub-text-second),
+            var(--sub-text-first));
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+
+/* ============================================
+        MESSAGE
+   ============================================ */
+
+.payment-result-message {
+    margin: 0 auto 30px;
+
+    max-width: 380px;
+
+    font-size: 16px;
+
+    line-height: 1.6;
+
+    color: var(--sub-text-second);
+}
+
+
+/* ============================================
+        BUTTON
+   ============================================ */
+
+.payment-result-button {
+    min-width: 200px;
+
+    padding: 12px 24px;
+
+    border: 2px solid var(--sub-text-first);
+
+    border-radius: 6px;
+
+    background: transparent;
+
+    color: var(--sub-text-first);
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.payment-result-button:hover {
+    background: var(--sub-text-first);
+
+    color: var(--bg-primary);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+
+.payment-result-button:active {
+    transform: translateY(0);
+}
+
+
+/* ============================================
+        ANIMATION
+   ============================================ */
+
+@keyframes payment-result-appear {
+
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+}
+
+
+/* ============================================
+        RESPONSIVE
+   ============================================ */
+
+@media (max-width: 600px) {
+
+    .payment-result-page {
+        padding: 20px;
+    }
+
+    .payment-result-card {
+        padding: 40px 25px;
+    }
+
+    .payment-result-title {
+        font-size: 29px;
+    }
+
+    .payment-result-message {
+        font-size: 15px;
+    }
+
+    .payment-result-button {
+        width: 100%;
+    }
+
+}

@@ -1,0 +1,118 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-08 17:50+0330\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: .\catalog\models.py:8
+msgid "Full Name"
+msgstr "نام و نام خانوادگی"
+
+#: .\catalog\models.py:9
+msgid "Biography"
+msgstr "بیوگرافی"
+
+#: .\catalog\models.py:15 .\catalog\models.py:39
+msgid "Author"
+msgstr "نویسنده"
+
+#: .\catalog\models.py:16
+msgid "Authors"
+msgstr "نویسندگان"
+
+#: .\catalog\models.py:28
+msgid "Fiction"
+msgstr "داستان تخیلی"
+
+#: .\catalog\models.py:29
+msgid "Science Fiction"
+msgstr "علمی تخیلی"
+
+#: .\catalog\models.py:30
+msgid "History"
+msgstr "تاریخی"
+
+#: .\catalog\models.py:31
+msgid "Science"
+msgstr "علمی"
+
+#: .\catalog\models.py:32
+msgid "Technology"
+msgstr "تکنولوژی"
+
+#: .\catalog\models.py:33
+msgid "Business"
+msgstr "کسب و کار"
+
+#: .\catalog\models.py:41
+msgid "Title"
+msgstr "عنوان"
+
+#: .\catalog\models.py:43
+msgid "Slug"
+msgstr "نام ساده"
+
+#: .\catalog\models.py:46
+msgid "URL-friendly title format."
+msgstr "عنوان مناسب آدرس اینترنتی"
+
+#: .\catalog\models.py:48
+msgid "ISBN"
+msgstr "شابک"
+
+#: .\catalog\models.py:51
+msgid "Description"
+msgstr "توضیحات"
+
+#: .\catalog\models.py:53
+msgid "Cover Image URL"
+msgstr "آدرس عکس روی جلد"
+
+#: .\catalog\models.py:55
+msgid "Genre"
+msgstr "ژانر"
+
+#: .\catalog\models.py:58
+msgid "Available as E-book"
+msgstr "کتاب مجازی"
+
+#: .\catalog\models.py:59
+msgid "Available as Audiobook"
+msgstr "کتاب صوتی"
+
+#: .\catalog\models.py:63
+msgid "Digital File Path"
+msgstr "آدرس فایل دیجیتال"
+
+#: .\catalog\models.py:66
+msgid "Path to EPUB/PDF file for licensed readers."
+msgstr "آدرس فایل برای کاربران مجاز"
+
+#: .\catalog\models.py:69
+msgid "Audio File Path"
+msgstr "آدرس فایل صوتی"
+
+#: .\catalog\models.py:72
+msgid "Path to MP3/M4A file for licensed audio player."
+msgstr "آدرس فایل برای کاربران مجاز"
+
+#: .\catalog\models.py:79
+msgid "Book"
+msgstr "کتاب"
+
+#: .\catalog\models.py:80
+msgid "Books"
+msgstr "کتاب ها"

@@ -1,0 +1,213 @@
+
+/* ============================================
+        ALL PUBLISHERS PAGE 
+   ============================================ */
+
+/* Navigation */
+.all-publisher-res{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.all-publisher-full{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+
+
+
+
+/* Container */
+.all-publisher-container{
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    border-radius: 0 0 10px 10px;
+
+    background-color: var(--bg-primary);
+    box-shadow: 0 0 15px rgba(113, 113, 113, 0.575);
+    width: 90%;
+    border-radius: 10px;
+
+    flex-direction: column;
+    
+}
+
+
+
+/* Main Content */
+.main-all-publisher-container{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 10px;
+    margin: 20px 10px;
+}
+
+
+/* Header */
+.publishers-title-container{
+    margin-left: 10px;
+    color: var(--text-primarys);
+}
+
+
+.publishers-title{
+    font-size: clamp(1rem,4vw,2rem);
+    font-weight: 800;
+}
+
+.publishers-title-info{
+    margin-top: 1.2rem;
+    line-height: 1.8rem;
+    display: block;   
+}
+
+
+
+/* Publisehr Grid */
+.all-publisher-cards-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 10px 20px;
+    max-width: 1100px;
+    margin: 15px 10px;
+    justify-content: space-evenly;
+}
+
+
+
+
+/* Publishers Card */
+.publishers-cards {
+    
+    background-color:var(--res-btn) ;
+    border-radius: 10px;  
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(247, 0, 0, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.01s ease-out;
+    text-align: center;
+
+    flex: 0 0 calc(33% - 5px);
+    max-width: 250px;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.publishers-cards:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+
+.publishers-cards:hover  .publishers-card-pic {
+    background-color: rgba(201, 202, 216, 0.002);
+
+}
+
+
+
+
+
+
+
+/* Card Image */
+.publishers-card-pic{
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 200px; 
+    
+    overflow: hidden;
+    
+}
+
+
+.publishers-card-pic >img{
+    height: 100%;
+    width: 100%;
+    display: block;
+    object-fit:cover;    
+}
+
+
+/* Card Info */
+.publishers-card-info {
+    width: 100%;
+    margin: 15px 0;
+    color: var(--text-primarys);  
+    display: flex;
+    flex-direction: column;  
+ }
+
+
+ .publishers-card-field-name{
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    
+}
+
+
+
+
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 992px) {
+    .publishers-cards {
+        flex: 0 0 calc(33.333% - 16px);
+        max-width: calc(33.333% - 16px);
+    }
+}
+
+
+@media (max-width: 768px) {
+    .main-all-publisher-container {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 20px;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    .all-publisher-cards-row {
+        padding: 10px;
+        gap: 20px;
+        margin-top: 5px;
+    }
+
+    .publishers-cards {
+        flex: 0 0 calc(50% - 16px);
+        max-width:calc(50% - 16px);
+    }
+
+    .publishers-title-container{
+        margin-left: 0;
+    }
+
+}
+
+
+
+
+@media(max-width:600px){
+    .publishers-card-pic >img{
+        object-fit:contain;    
+    }
+    .publishers-card-info {
+        margin: 10px 0;
+     }
+}
+

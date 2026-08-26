@@ -1,0 +1,152 @@
+/* ============================================
+        EDIT AUTHORS 
+   ============================================ */
+
+
+/* Container */
+.edit-authors-container{
+    width:500px;
+    margin:25px auto;
+    padding:20px;
+}
+
+
+
+/* Form */
+.edit-authors-form{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 20px;
+
+}
+
+
+.edit-authors-profile-label{
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold; 
+}
+
+
+/* Inputs */
+.edit-inputs{
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 16px;
+    resize: none;
+
+}
+
+
+
+
+/* Preview */
+.selected-authors-pic{
+    display:flex;
+    justify-content:center;
+    margin-top: 20px;
+}
+
+.selected-authors-pic img{
+    width: 100px; 
+    height: 100px; 
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.edit-authors-pic-input{
+    
+    width: 95%;
+    padding: 10px;
+    border: 1px solid white;
+    border-radius: 4px;
+    font-size: 16px;
+      
+}
+
+
+
+/* Submit Button */
+.edit-submit{
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    width: 50%;
+    
+}
+
+.edit-submit-btn{
+    width: 100%;
+    padding: 15px;
+    background-color: #00c711;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 30px 0px; 
+}
+
+
+
+
+
+
+
+.edit-inputs
+.MuiOutlinedInput-notchedOutline
+{
+    border-color: white;
+}
+
+
+
+
+
+.edit-inputs .MuiInputBase-input,
+.edit-inputs .MuiFormLabel-root{
+    color: white;
+}
+
+
+
+
+
+/* Cancel Button */
+.edit-cancel-btn{
+    width: 100%;
+    padding: 15px;
+    background-color: #ff0000;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 30px 0px 30px 10px; 
+
+
+
+}
+
+
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+@media(max-width:769px){
+    .edit-authors-container{
+        width: 400px;
+        margin: 15px 0;
+    }
+}
+@media(max-width:600px){
+    .edit-authors-container{
+        width: 320px;
+        margin: 10px 0;
+    }
+    
+}

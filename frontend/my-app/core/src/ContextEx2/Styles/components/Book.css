@@ -1,0 +1,894 @@
+
+/* ========================
+    NAVIGATION
+========================*/
+.book-nav-res{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.book-nav-full{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+
+/* ========================
+    BOOK CONTAINER
+========================*/
+
+
+.book-container{
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    
+    border-radius: 0 0 10px 10px;
+    background-color: var(--bg-primary);
+    box-shadow: 0 0 15px rgba(113, 113, 113, 0.575);
+    width: 90%;
+
+    flex-direction: column;
+    
+}
+
+/* ========================
+    MAIN LAYOUT
+========================*/
+
+.main{
+    display: grid;
+    grid-template-columns: 7fr 1fr;
+    gap: 20px;
+    padding: 30px;
+    margin-top: -50px;
+    
+}
+.main-book{
+    grid-column: 1;
+    min-width: 0;
+    position: relative;
+    
+}
+
+
+
+
+
+/* ========================
+    BOOK CARD (NAME & CATEGORY & AUTHOR)
+========================*/
+
+
+.book-card{
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    color: var(--text-primarys);
+
+    width: 100%;
+    gap: 15px;
+    align-items: flex-start;
+    
+}
+
+
+
+
+
+
+.bk-slide-image{
+    
+    padding: 10px;
+    border-radius: 10px;
+    width: 85%;
+
+    object-fit:cover;  
+    border-radius: 20px;
+    height: 500px; 
+    margin-right:100px ;
+    display: block; 
+    
+    margin-right: 20px;
+    
+    
+}
+
+
+.info{
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 30px;
+
+    min-width: 0;
+
+}
+
+
+.bk-slide-title{
+    
+    position: inline;
+    
+    font-weight: 800;
+    padding: 20px 0px;
+    margin-bottom: 50px;
+    
+    
+    font-size: clamp(1.5rem, 4vw, 2.8rem); 
+    padding: 0;
+    line-height: 1.1;
+
+    
+
+   
+}
+
+
+
+
+.book-categories{
+    margin:10px;
+    display:flex;
+    text-align: center;
+    justify-content:center;
+}
+
+
+.book-categories-link{
+    
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    border-radius: 20px;
+    outline:  2px solid var(--text-primarys);
+    padding: 10px;
+    font-weight: 900;
+    margin: 0 5px;
+    cursor: pointer;
+}
+
+
+
+
+.author-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+
+#ext{
+    
+    color: var(--text-primarys);
+    text-decoration: underline;
+    
+    display: inline-block;
+    width: fit-content;
+}
+#ext:hover{
+    color: rgb(255, 0, 0);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+
+
+
+.extra-info{
+
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: 900;
+    margin: 0;
+
+    
+}
+
+
+
+
+.main-book .like{
+    padding: 0;
+    margin-top: 0px;
+    display: inline-flex;
+
+    background-color: var(--bg-primary);
+    border: none;
+    cursor: pointer;
+
+    position: absolute;
+    bottom: 130px;
+    left: 15px;
+    z-index: 10;
+}
+
+
+
+.mobile-like {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+
+
+
+
+
+/* ========================
+    SIDE CARD (FORMAT & PRICE)
+========================*/
+
+.side-card{
+    grid-column: 2;
+    
+    align-items: center;
+    position: sticky;
+    margin-top: 450px;
+    padding: 20px;
+    border-radius: 20px;
+    align-self: center;
+
+    background-color: var(--res-btn);
+    outline: 1px solid rgb(145, 161, 146);
+    box-shadow: 5px 0px 8px grey;
+
+    height: 200px;
+    width: 200px;
+    
+    
+    display: grid;
+    grid-template-rows: repeat(3,1fr);
+    gap: 10px;
+
+}
+.side-card label{
+    grid-column: 1;
+    font-size:15px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    
+    color: var(--text-primarys);
+    
+}
+
+.chooser select{
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    border: 1px solid #ddd;
+    
+    color: var(--text-primarys);
+    background-color: var(--bg-primary);
+
+}
+
+ .chooser select option{
+    background-color: var(--bg-primary) !important;
+}
+
+
+
+.show-price {
+    text-align: center;
+    font-weight: bold;
+    color: rgb(103, 172, 0);
+    font-weight: 800;
+
+    grid-row: 2; 
+    
+}
+
+.book-buy-btn{
+    padding: 20px 10px;
+    background-color: rgb(255, 0, 0);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+
+    grid-row: 3; 
+
+}
+
+
+
+
+
+
+
+
+/* ========================
+    REST OF BOOK PAGE
+========================*/
+
+.book-rest{
+    margin-top: 0;
+    
+
+}
+
+
+
+
+
+
+/* ========================
+    CORNER CARD (POPUP)
+========================*/
+         
+.corner-cards-container{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    
+    position: relative;
+    width: fit-content;
+    
+    gap: 15px;
+    padding: 60px 20px;
+    max-width: 1200px;
+    margin: 75px auto;
+    
+    border-radius: 20px;
+
+}
+
+.corner-card-wrapper{
+    
+    cursor: pointer;
+    position: relative;
+    width: fit-content;
+}
+        
+        
+
+
+.corner-card {
+    clip-path: path("M32,0H129A14,14 0,0,1 143,14V14A14,14 0,0,0 157,28H186A14,14 0,0,1 200,42V198A32,32 0,0,1 168,230H32A32,32 0,0,1 0,198V32A32,32 0,0,1 32,0Z");
+    width: 225px;
+    height: 250px;
+    background-color:var(--corner-card-bg);
+   
+    position: relative;
+    overflow: visible;
+    
+}
+
+.corner-card >img{
+    padding: 0px 0 30px ;
+    width: 175px;
+    height: 250px;
+    object-fit:cover;
+    
+    display: block;
+    overflow: hidden;
+    
+}
+
+.corner-card-label-topright {
+    margin: 0;
+    
+    color: var(--text-primarys);
+    padding: 5px 10px;
+    font-size: 15px;
+    font-weight: bold;
+   
+    
+    pointer-events: none;
+    min-width: 35px;
+    text-align: center;
+    position:absolute;
+    top:-3px;
+    right:30px;
+    z-index:999;
+
+}
+
+
+
+
+
+/* ========================
+    ABOUT BOOK
+========================*/
+
+.about-book{
+   
+    padding: 20px 75px;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--text-primarys);
+    
+    
+}
+
+
+.about-book-content h2{
+    display: flex;
+    justify-content: center;
+    margin-top: 0;
+    font-weight: 800;
+    
+}
+.about-book-content p{
+    font-weight: 700;
+    line-height: 1.8rem;
+    font-size: large;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ========================
+    MOBILE NAV(FORMAT & PRICE)
+========================*/
+
+.mobile-bottom-nav {
+    display: none;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-nav);
+    box-shadow: 0px 0px 10px grey;
+    padding: 20px 16px;
+    z-index: 1000;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.mobile-bottom-nav-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    gap: 16px;
+}
+
+
+
+.mobile-format-picker {
+    flex: 1;
+    min-width: 125px;
+}
+
+.mobile-format-picker label {
+    display: none;
+}
+
+.mobile-format-picker select {
+    width: 85%;
+    padding: 10px 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: var(--bg-primary);
+    color: var(--text-primarys);
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+}
+
+
+.mobile-price-cart {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.mobile-price {
+    font-weight: bold;
+    color: rgb(103, 172, 0);
+    font-size: clamp(1.2rem, 2.5vw, 1.5em);
+
+    white-space: nowrap;
+}
+
+.mobile-add-to-cart {
+    padding: 10px 20px;
+    background-color: rgb(255, 0, 0);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.mobile-add-to-cart:active {
+    background-color: rgb(200, 0, 0);
+}
+
+
+
+
+
+
+/* ========================
+    COMMENTS SECTION
+========================*/
+
+.comment-section{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin: 100px 0px;
+    
+}
+
+.my-comment{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 60%;
+}
+.comment-content{
+    border-radius: 10px;
+    background-color: var(--bg-top-res);
+    color: var(--text-primarys);
+    height: 100px;
+    font-size: clamp(1rem, 2vw, 1.2rem);  
+
+    resize: none;  
+    padding: 15px;     
+    
+    
+
+}
+
+.comment-content::-webkit-scrollbar {
+    display: none;
+}
+
+.comment-btn{
+    padding: 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    color: #ffffff;
+    background-color: var(--text-secondary-nav);
+    cursor: pointer;
+    width: 40%;
+    font-size: 1rem;
+    font-weight: 700;
+    align-self: center;
+}
+
+.comment-btn:disabled{
+    cursor:not-allowed ;
+    opacity: 0.5;
+}
+
+
+.error-login-first {
+    color: red;
+    font-size: 0.9rem;
+    margin: 5px 0;
+    text-align: center;
+    animation: fadeOut 0.5s ease-in-out 1.5s forwards;
+}
+
+
+.users-comment{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 100px;
+    width: 100%;
+    text-align: center;
+}
+.user-comment{
+    color:var(--text-primarys) ;
+    background-color: var(--bg-top-res);
+    width: 75%;
+    align-self: center;
+    padding: 15px;
+    border-radius: 20px;
+    height: fit-content;
+    
+    display: flex;
+    flex-direction: column;
+    
+}
+
+.like-dislike-icons{
+    display: flex;
+    justify-content:flex-start;
+    
+}
+
+.like-dislike-icons-container{
+    display: flex;
+    flex-direction: column;
+    
+    
+
+}
+
+.like-dislike-icons-btn{
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    fill: none;
+}
+
+.like-dislike-icons-btn:active{
+    fill: rgb(180,180,180);
+}
+
+
+
+
+.like-dislike-count{
+    display: flex;
+    gap: 25px;
+    margin: 2px 0 5px 12px;
+    font-size: clamp(12px,2vw,10px);
+    
+}
+
+
+
+
+
+
+.comment-account{
+    font-size: clamp(1.4rem, 2vw, 1.8rem);
+    font-weight: bold;
+    margin: 0 0;
+}
+.user-comment-content{
+    font-size: clamp(1rem, 2vw, 1.1rem);
+    margin: 20px 0;
+}
+
+
+
+.show-btn{
+
+    padding: 10px;
+    font-weight: 700;
+    border: none;
+    border-radius: 20px;
+    color: white;
+    background-color: #00a859;
+    cursor: pointer;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+/* ========================
+    ANIMATIONS
+========================*/
+
+
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        display: none;
+    }
+}
+
+
+
+/* ========================
+    RESPONSIVE DESIGN
+========================*/
+
+@media(max-width:992px){
+    .corner-cards-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        padding: 20px 10px;
+    }
+    .book-categories{
+        margin-left:75px !important;
+    }
+}
+
+
+
+@media (min-width: 769px) {
+    .author-wrapper {
+        justify-content: flex-start;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .main {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 20px;
+        
+        position: relative;
+        min-height: 100vh;
+    }
+
+    .main-book{
+        grid-column: 1;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-bottom: 0;
+        
+        
+        position: relative;
+        padding-bottom: 10px; 
+    }
+    
+    
+    .side-card {
+        display: none;
+    }
+    
+    .book-card {
+        
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        
+    }
+    
+    .bk-slide-image {
+
+        
+        
+         
+        width: 100%; 
+        max-width: 400px;
+        min-width: unset;
+        height: auto;
+        aspect-ratio: 4 / 3; 
+        object-fit: cover;
+        border-radius: 20px;
+        margin: 0 ;
+        padding: 0;
+        
+    }
+    
+    .info {
+        width: 90%;
+        text-align: center;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .bk-slide-title {
+        text-align: center;
+        margin: 0 0 5px 0;
+        padding: 0;
+        font-size: clamp(1.8rem, 5vw, 2.2rem);
+        line-height: 1.4;
+    }
+    .extra-info{
+        margin: 0;
+        padding: 0;
+        
+        line-height: 1.4;
+    }
+
+    .book-categories{
+        margin:10px !important;
+      
+    }
+
+    .author-wrapper {
+        justify-content: center;
+        
+    }
+    
+
+   
+    .mobile-like {
+        display: inline-flex;
+        margin-top: 10px;
+    }
+    
+    
+    .mobile-bottom-nav {
+        display: block;
+    }
+
+
+
+    .book-rest{
+        position: relative;
+        
+    }
+    
+    .my-comment{
+        width: 80% ;
+    }
+
+
+    .corner-cards-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0px;
+        padding: 20px 5px;
+    }
+
+
+
+    .about-book {
+        margin-left: 20px;
+        padding: 10px 20px; 
+        text-align: center;
+    }
+
+
+    .about-book-content {
+        font-size: 1rem;  
+    }
+    
+    .about-book-content h2 {
+        font-size: 1.5rem;  
+        word-break: break-word;
+    }
+
+
+    .about-book-content p {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+        
+    }
+   
+
+}
+
+
+@media(max-width:600px){
+
+    .about-book{
+        margin:0 auto
+    }
+
+    .my-comment{
+        width: 70% ;
+    }
+    .like-dislike-icons{
+        margin-top: 5px;
+    }
+}

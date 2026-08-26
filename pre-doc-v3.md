@@ -19,8 +19,6 @@ The project was developed in three planned phases:
 
 In addition to the originally planned phases, the backend now includes an implemented **publisher management and proposal workflow**. This subsystem allows publisher organizations to submit controlled catalog and pricing changes for administrative moderation rather than modifying production catalog data directly.
 
-The backend has since been extended with an implemented **wallet and account-payment subsystem**. Wallet balances are used as the payment source for checkout, wallet transactions provide an auditable ledger for balance changes, and order cancellation can return the paid amount to the customer's wallet while revoking digital licenses.
-
 ---
 
 ## 2. System Architecture
@@ -48,7 +46,6 @@ The backend has since been extended with an implemented **wallet and account-pay
 | `cart` | Cart management (session + database dual storage), wishlist, order processing, checkout |
 | `content` | Digital license management, license expiry enforcement |
 | `publishing` | Publisher organizations, publisher memberships, proposal-based catalog and pricing changes, administrative moderation, and publisher-facing proposal APIs |
-| `wallet` | Customer wallet balances, wallet transactions, payment/refund operations, and wallet-facing APIs |
 | `recommendations` [PHASE 3 — PENDING] | Content-based similarity computation, offline processing, recommendation serving |
 | `social` [PHASE 3 — PENDING] | Topic-anchored discussion system, multi-level moderation pipeline, author/publisher promotion management |
 
@@ -416,8 +413,6 @@ Supported order states include:
 - Delivered
 - Cancelled
 
-The current payment workflow also uses a **`REFUNDED`** state for orders whose wallet payment has been returned after cancellation. Successful wallet payment moves a newly created order from its initial `PENDING` state to `PROCESSING`.
-
 ---
 
 #### 3.4.4 OrderItem
@@ -495,10 +490,6 @@ The service is intentionally divided into small private methods, each responsibl
 - `_clear_cart()`
 
 This separation improves maintainability, simplifies testing, and keeps pricing logic isolated from order management.
-
-The checkout workflow was later extended to use the customer's wallet as the payment source. Wallet withdrawal occurs before the order is finalized and before digital licenses are granted. If the wallet does not contain sufficient funds, checkout is rejected and the surrounding database transaction is rolled back.
-
-Order cancellation is coordinated by `CheckoutService.cancel_order()`. A cancellable paid order is refunded to the customer's wallet, any licenses granted from that order are deactivated, and the order is transitioned to `REFUNDED`. The cancellation and refund operation is atomic.
 
 ---
 
@@ -589,8 +580,6 @@ Proposal states:
 - `APPLIED`
 - `REJECTED`
 
-The current implementation additionally uses **`WITHDRAWN`** for a publisher-initiated withdrawal of a pending proposal. The current proposal lifecycle uses `PENDING` as the moderation-waiting state; earlier references to `SUBMITTED` describe the previous terminology. Withdrawn proposals remain stored rather than being deleted so that their lifecycle remains auditable.
-
 Relationships:
 
 - `publisher`: ForeignKey → Publisher
@@ -607,8 +596,6 @@ Workflow metadata:
 - `applied_at`
 
 A proposal is initially submitted in the `SUBMITTED` state through the publisher API. Approval applies the requested change and transitions the proposal to `APPLIED`. Rejection records the reviewer and rejection reason and transitions the proposal to `REJECTED`.
-
-In the current implementation, the moderation-waiting state is represented by `PENDING`; the `WITHDRAWN` state is used when an authorized publisher member withdraws a pending proposal before moderation.
 
 The proposal model contains only generic workflow information. Proposal-specific fields are stored in dedicated one-to-one detail models.
 
@@ -716,8 +703,6 @@ Important design rules:
 - Book price changes continue to use the existing pricing business method, preserving price history.
 - Submitted proposal data is treated as immutable during moderation.
 - The publisher API never exposes administrative approval functionality.
-- A pending proposal may be withdrawn by an authorized publisher member before moderation is completed.
-- Withdrawal records a terminal `WITHDRAWN` state instead of deleting the proposal.
 
 #### 3.5.8 Publishing Admin & API Architecture
 
@@ -730,11 +715,8 @@ The publisher API provides the frontend with:
 - proposal detail retrieval
 - proposal filtering by status and proposal type
 - proposal submission for all implemented proposal types
-- proposal withdrawal for pending proposals created by the authenticated publisher member
 
 Publisher access is isolated through active membership checks and object-level proposal authorization. A user cannot access proposals belonging to another publisher.
-
-Proposal withdrawal follows the same publisher-isolation rules. Only an active member of the proposal's publisher may request withdrawal, and withdrawal is limited to proposals that are still pending moderation.
 
 ### 3.6 Digital Licensing (`content`)
 
@@ -787,42 +769,6 @@ License generation occurs after the Order and OrderItems have been created and b
 The resulting License becomes the single source of truth for future authorization checks when accessing protected digital resources.
 
 ---
-
-### 3.7 Wallet & Account Payments (`wallet`)
-
-The wallet subsystem provides each authenticated customer with an internal account balance that can be used to pay for bookstore orders. Balance changes are represented by dedicated transaction records rather than by modifying the balance without an audit record.
-
-#### 3.7.1 Wallet
-
-**Wallet** represents the customer's current stored balance. Each user receives one wallet automatically when the user account is created.
-
-Fields:
-
-- `user`: OneToOne relationship → User
-- `balance`: DecimalField — current available wallet balance
-- audit timestamps
-
-The wallet is created automatically through a `post_save` signal on the user model so that a newly created customer receives a wallet without a separate provisioning request.
-
-#### 3.7.2 WalletTransaction
-
-**WalletTransaction** records every balance mutation performed through the wallet domain.
-
-Fields include:
-
-- `wallet`: ForeignKey → Wallet
-- `transaction_type`: identifies the reason for the balance change
-- `amount`: DecimalField
-- `description`: human-readable transaction description
-- transaction creation timestamp
-
-The transaction ledger distinguishes balance additions such as deposits and refunds from balance deductions such as order payments. Transactions are retained as history and are exposed to the authenticated customer through the wallet transaction-history API.
-
-#### 3.7.3 Wallet Service
-
-All wallet balance mutations are centralized within `WalletService`. The service performs atomic balance updates and records the corresponding `WalletTransaction`. Withdrawals validate available balance and raise a domain-specific `InsufficientBalanceError` when funds are insufficient. Row-level locking is used during balance mutation to protect the wallet from concurrent updates.
-
-The service is used by checkout rather than allowing views or serializers to modify wallet balances directly. This keeps financial state changes inside one business boundary.
 
 ## 4. API Design
 
@@ -899,7 +845,6 @@ The publishing API is a publisher-facing API for organization membership, propos
 | POST | `/api/v1/publishing/proposals/author-create/` | Yes | Submit an author creation proposal. |
 | POST | `/api/v1/publishing/proposals/author-update/` | Yes | Submit an author update proposal. |
 | POST | `/api/v1/publishing/proposals/price-change/` | Yes | Submit a price change proposal. |
-| POST | `/api/v1/publishing/proposals/<id>/withdraw/` | Yes | Withdraw a pending proposal belonging to the authenticated user's publisher. |
 
 Publisher submission requests use `publisher_id` to identify the organization on whose behalf the proposal is submitted. The API resolves the publisher and verifies that the authenticated user has an active membership before creating the proposal.
 
@@ -923,26 +868,11 @@ The publisher-facing detail serializer deliberately omits internal moderation in
 | GET | `/api/v1/cart/wishlist/` | Yes | List the authenticated user's wishlist. |
 | POST | `/api/v1/cart/wishlist/` | Yes | Add a book to the wishlist. |
 | DELETE | `/api/v1/cart/wishlist/<id>/` | Yes | Remove a wishlist item. |
-
 | POST | `/api/v1/cart/checkout/` | Yes | Execute the complete checkout workflow. The CheckoutService builds the order snapshot, delegates per-book pricing to the PricingEngine, creates the order and order items, grants digital licenses, consumes the coupon (if any), clears the cart, and schedules the confirmation email. |
 | GET | `/api/v1/cart/orders/` | Yes | List the authenticated user's order history. |
 | GET | `/api/v1/cart/orders/<id>/` | Yes | Retrieve a complete immutable snapshot of a previously placed order, including purchased items. |
-| POST | `/api/v1/cart/orders/<id>/cancel/` | Yes | Cancel a cancellable order, refund its wallet payment, and revoke licenses granted by the order. |
 
 > *Cart endpoints automatically detect whether the client is authenticated and transparently use session-based storage for anonymous users or persistent database storage for authenticated users.
-
-### 4.6 Wallet Endpoints (`/api/v1/wallet/`)
-
-The wallet API exposes the authenticated customer's current balance and wallet activity. All wallet endpoints are scoped to the current authenticated user; a customer cannot access another user's wallet or transaction history.
-
-| Method | Endpoint | Auth Required | Description |
-|--------|----------|:---:|-------------|
-| GET | `/api/v1/wallet/` | Yes | Retrieve the authenticated user's wallet balance and wallet summary. |
-| POST | `/api/v1/wallet/deposit/` | Yes | Add funds to the authenticated user's wallet and record the corresponding transaction. |
-| POST | `/api/v1/wallet/withdraw/` | Yes | Withdraw funds from the authenticated user's wallet subject to available-balance validation. |
-| GET | `/api/v1/wallet/transactions/` | Yes | List the authenticated user's wallet transactions for the account activity/history view. |
-
-Wallet transactions are returned newest-first and are isolated to the authenticated user's wallet. Checkout payments and order refunds are also reflected in this transaction history.
 
 ---
 
@@ -1006,8 +936,6 @@ ProposalService.apply()
 Rejection is handled by `ProposalService.reject()`, which records the reviewer, timestamp, and rejection reason before transitioning the proposal to `REJECTED`.
 
 Proposal-specific application logic is kept in dedicated handlers so catalog, author, and pricing changes remain separate from generic workflow management.
-
-Proposal withdrawal is handled separately from approval and rejection. A pending proposal may be withdrawn by an authorized active member of its publisher, after which the proposal enters the terminal `WITHDRAWN` state and remains stored for audit history. Withdrawal does not modify the catalog, author, or pricing domain.
 
 ### 5.2 Cart Storage Strategy
 
@@ -1073,22 +1001,6 @@ The checkout process executes the following stages inside a single database tran
 8. After the transaction commits successfully, dispatch the order confirmation email as a Celery background task.
 
 Separating checkout orchestration from pricing calculations results in a modular design where pricing policies can evolve independently of the purchasing workflow.
-
-### 5.4.1 Wallet Payment
-
-The current checkout implementation uses the customer's wallet as the payment source. After the final amount is calculated by `PricingEngine`, `CheckoutService` requests an atomic wallet withdrawal. Only after the withdrawal succeeds does the order become `PROCESSING` and continue to order-item creation and license granting. An insufficient wallet balance aborts checkout without creating a completed order or granting digital access.
-
-### 5.4.2 Order Cancellation & Wallet Refund
-
-Customers may cancel orders that are still in a cancellable state through the order API. Cancellation is handled by `CheckoutService.cancel_order()` inside a database transaction. The service:
-
-1. Verifies that the order belongs to the authenticated user.
-2. Verifies that the order is cancellable.
-3. Credits the original order amount back to the user's wallet and records a refund transaction.
-4. Deactivates licenses granted by the order.
-5. Transitions the order to `REFUNDED`.
-
-This keeps the financial refund and digital-entitlement rollback in the same transactional workflow.
 
 ---
 
@@ -1169,15 +1081,6 @@ The publisher subsystem uses organization membership as the boundary for publish
 - **Role model:** `OWNER`, `MANAGER`, and `EDITOR` roles are currently defined for publisher memberships. The current proposal workflow allows all three roles to participate in publisher proposal submission and viewing; broader organization-management permissions can be introduced separately if required.
 
 Publisher-facing proposal responses intentionally exclude internal moderation information. Administrative review and approval remain restricted to the Django Admin workflow and the centralized `ProposalService`.
-
-### 6.6 Wallet Security & Financial Integrity
-
-- **User isolation:** Wallet detail and transaction history are scoped to the authenticated user.
-- **Atomic mutations:** Wallet balance changes and transaction creation occur together inside transactional service methods.
-- **Insufficient funds:** Wallet withdrawal is rejected when the available balance is lower than the requested amount.
-- **Concurrency protection:** Balance updates use database row locking to avoid lost updates during concurrent wallet operations.
-- **Checkout integrity:** Orders are not finalized and digital licenses are not granted when wallet payment fails.
-- **Refund integrity:** Order cancellation refunds the wallet and deactivates the associated licenses as one transactional operation.
 
 ## 7. Search Implementation
 
@@ -1270,13 +1173,10 @@ Commits are atomic, use imperative mood, and describe one logical change each.
 
 - Tests are written using Django's `TestCase` framework and `APITestCase` from DRF.
 - The publishing subsystem includes dedicated API and workflow coverage for proposal submission, approval, rejection, authorization, and cross-publisher isolation.
-- The wallet subsystem includes service and API coverage for automatic wallet creation, balance mutations, insufficient-funds handling, transaction history, wallet isolation, wallet-backed checkout, and order cancellation/refund behavior.
 - After completing or updating each `views.py`, comprehensive tests were generated and refined with AI assistance to cover:
   - All endpoint functionality (GET, POST, DELETE)
   - Edge cases (empty cart, invalid IDs, duplicate wishlist items)
   - Cross-app integration (checkout flow from cart through pricing to license generation)
-  - Payment and refund integration (wallet withdrawal during checkout, insufficient funds, order cancellation, wallet refund, and license revocation)
-  - Publisher workflow lifecycle (including proposal withdrawal and publisher isolation)
   - Authentication requirements (public vs. authenticated access)
   - Discount logic (subscription, promo codes, anti-stacking behavior)
 - All tests pass before merging to `develop`.
@@ -1433,7 +1333,6 @@ Authorization: Bearer <access_token>
 | Pricing & Subscriptions | `/api/v1/pricing/` |
 | Cart & Checkout | `/api/v1/cart/` |
 | Publishing | `/api/v1/publishing/` |
-| Wallet | `/api/v1/wallet/` |
 | Recommendations [PHASE 3 — PENDING] | `/api/v1/recommendations/` |
 
 ### Response Format

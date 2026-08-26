@@ -1,0 +1,285 @@
+# pricing/views.py
+from catalog.models import Book
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from rest_framework import generics, serializers, status
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+
+from .models import DiscountCode, Price, SubscriptionPlan, UserSubscription
+from .serializers import (DiscountCodeSerializer, PriceChangeSerializer,
+                          PriceSerializer, SubscriptionPlanSerializer,
+                          UserSubscriptionSerializer)
+
+# -------------------------------------------------------------
+# 1. SUBSCRIPTION ENDPOINTS
+# -------------------------------------------------------------
+
+
+# class UserSubscriptionDetailView(generics.RetrieveAPIView):
+#     """
+#     API endpoint to retrieve the current subscription status and benefits of the logged-in user.
+#     Maps to GET /api/v1/pricing/subscription/
+#     """
+
+#     serializer_class = UserSubscriptionSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_object(self):
+#         """
+#         Retrieves the UserSubscription object for the current authenticated user.
+#         If no subscription exists, creates a new, inactive record to avoid crashing.
+#         """
+#         user = self.request.user
+
+#         # We use get_or_create to ensure every authenticated user has a UserSubscription row,
+#         # even if it's inactive (is_active=False), making lookups safer.
+#         user_sub, created = UserSubscription.objects.get_or_create(
+#             user=user,
+#             defaults={"is_active": False, "plan": SubscriptionPlan.objects.first()},
+#         )
+
+#         # Edge Case Handling: If a user somehow has a subscription but the plan was deleted,
+#         # we try to ensure a valid plan exists for the FK. For simplicity, we ensure
+#         # the user gets the first available plan if their current one is gone (or the default was NULL).
+#         if user_sub.plan is None:
+#             default_plan = SubscriptionPlan.objects.first()
+#             if default_plan:
+#                 user_sub.plan = default_plan
+#                 user_sub.save()
+#             else:
+#                 # If no plans exist at all, we can't determine discount, so we return inactive.
+#                 user_sub.is_active = False
+#                 user_sub.save()
+
+#         return user_sub
+
+
+# -------------------------------------------------------------
+# 2. DISCOUNT VALIDATION ENDPOINT
+# -------------------------------------------------------------
+
+
+class DiscountValidationView(generics.GenericAPIView):
+    """
+    Validates a single discount code based on its active status and expiration date.
+    Maps to POST /api/v1/pricing/validate/
+    """
+
+    permission_classes = [AllowAny]
+
+    # Define an input serializer for the code field
+    class InputSerializer(serializers.Serializer):
+        code = serializers.CharField(max_length=50, required=True)
+
+    def post(self, request, *args, **kwargs):
+        input_serializer = self.InputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        code_input = input_serializer.validated_data["code"]
+
+        try:
+            # 1. Find the code, matching case-insensitively
+            discount_code = DiscountCode.objects.get(code__iexact=code_input)
+        except DiscountCode.DoesNotExist:
+            # Security measure: Always return a generic error message for invalid codes
+            return Response(
+                {"detail": _("Invalid discount code.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 2. Use the DiscountCodeSerializer to check active status and expiration (is_valid field)
+        output_serializer = DiscountCodeSerializer(discount_code)
+
+        if output_serializer.data["is_valid"]:
+            # Return full discount details if valid
+            return Response(output_serializer.data, status=status.HTTP_200_OK)
+        else:
+            # Return generic error if found but invalid/expired
+            return Response(
+                {"detail": _("Invalid or expired discount code.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+# -------------------------------------------------------------
+# 3. PRICE MANAGEMENT ENDPOINTS
+# -------------------------------------------------------------
+
+
+class BookPriceListCreateView(generics.ListCreateAPIView):
+    """
+    GET:
+        Returns the complete price history for a book.
+
+    POST:
+        Creates a new active price for a book while preserving
+        the previous price in the history.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_book(self):
+        """Returns the requested Book or raises 404."""
+        return get_object_or_404(Book, pk=self.kwargs["book_id"])
+
+    def get_queryset(self):
+        """Returns all historical prices for the requested book."""
+        return self.get_book().prices.all()
+
+    def get_serializer_class(self):
+        """Uses different serializers for reading and writing."""
+        if self.request.method == "POST":
+            return PriceChangeSerializer
+        return PriceSerializer
+
+    def perform_create(self, serializer):
+        """Delegates price changes to the Book model."""
+        self.created_price = self.get_book().change_price(
+            value=serializer.validated_data["value"],
+            min_price=serializer.validated_data.get("min_price"),
+        )
+
+    def create(self, request, *args, **kwargs):
+        """
+        Handles POST requests and returns the newly created
+        price history record.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+
+        output_serializer = PriceSerializer(self.created_price)
+
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
+
+from .models import SubscriptionPlan, UserSubscription
+from .serializers import (
+    SubscriptionPlanSerializer,
+    UserSubscriptionSerializer,
+    SubscriptionPurchaseSerializer,
+    SubscriptionUpgradeSerializer,
+)
+from .subscription_services import SubscriptionService
+
+
+class SubscriptionPlanListView(generics.ListAPIView):
+    """
+    Returns all active subscription plans available for purchase.
+    """
+
+    serializer_class = SubscriptionPlanSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return (
+            SubscriptionPlan.objects
+            .filter(is_active=True)
+            .order_by("tier")
+        )
+
+
+class MySubscriptionView(generics.ListAPIView):
+    """
+    Returns the authenticated user's subscriptions.
+
+    Includes both the currently active subscription and any reserved
+    subscription waiting for activation.
+    """
+
+    serializer_class = UserSubscriptionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            UserSubscription.objects
+            .filter(user=self.request.user)
+            .filter(
+                status__in=[
+                    UserSubscription.Status.ACTIVE,
+                    UserSubscription.Status.RESERVED,
+                ]
+            )
+            .select_related("plan")
+            .order_by("start_date")
+        )
+
+
+class SubscriptionPurchaseView(generics.GenericAPIView):
+    """
+    Purchases a subscription plan using the user's wallet.
+
+    If the user already has an active subscription, the purchased
+    subscription is reserved until the current one expires.
+    """
+
+    serializer_class = SubscriptionPurchaseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            plan = SubscriptionPlan.objects.get(
+                id=serializer.validated_data["plan_id"],
+                is_active=True,
+            )
+        except SubscriptionPlan.DoesNotExist:
+            raise ValidationError(
+                {"plan_id": "Subscription plan not found."}
+            )
+
+        subscription = SubscriptionService.purchase(
+            user=request.user,
+            plan=plan,
+            auto_renew=serializer.validated_data["auto_renew"],
+        )
+
+        return Response(
+            UserSubscriptionSerializer(subscription).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SubscriptionUpgradeView(generics.GenericAPIView):
+    """
+    Upgrades the user's current active subscription.
+
+    The service calculates the remaining value of the current
+    subscription and charges only the difference.
+    """
+
+    serializer_class = SubscriptionUpgradeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            plan = SubscriptionPlan.objects.get(
+                id=serializer.validated_data["plan_id"],
+                is_active=True,
+            )
+        except SubscriptionPlan.DoesNotExist:
+            raise ValidationError(
+                {"plan_id": "Subscription plan not found."}
+            )
+
+        subscription = SubscriptionService.upgrade(
+            user=request.user,
+            plan=plan,
+        )
+
+        return Response(
+            UserSubscriptionSerializer(subscription).data,
+            status=status.HTTP_200_OK,
+        )

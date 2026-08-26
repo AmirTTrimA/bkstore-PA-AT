@@ -1,0 +1,417 @@
+/* ============================================
+        SUBSCRIPTION PAGE STYLES
+   ============================================ */
+
+
+/* ---Navigation--- */
+.sub-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Container */
+.sub-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 0px;
+    border-radius: 0 0 10px 10px;
+    background-color: var(--bg-primary);
+    box-shadow: 0 0 15px rgba(113, 113, 113, 0.575);
+    width: 90%;
+}
+
+
+/* Title */
+.title-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.sub-title {
+    font-size: 50px;
+    font-weight: 800;
+    background: linear-gradient(to top, var(--sub-text-second), var(--sub-text-first));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Card Grid */
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    padding: 10px 20px;
+    max-width: 1100px;
+    margin: 15px 20px;
+    justify-content: space-evenly;
+}
+
+
+
+/* Individual Card */
+.card {
+    border: 1px solid black;
+    background-color: var(--bg-primary);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(247, 0, 0, 0.08);
+    text-decoration: none;
+    transition: all 0.01s ease-out;
+
+    flex: 0 0 calc(55% - 16px);
+    max-width: calc(55% - 16px);
+    max-width: 300px;
+    text-align: center;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 0px;
+
+}
+
+
+
+/* Card Options(3) */
+
+/* 1) */
+#op-1,
+#op-1 .sub-buy-btn {
+    border: 3px solid rgb(219, 143, 0);
+}
+
+#op-1 .sub-title2,
+#op-1 .description,
+#op-1 .sub-buy-btn {
+    color: rgb(219, 143, 0);
+}
+
+/* 2) */
+#op-2,
+#op-2 .sub-buy-btn {
+    border: 3px solid rgb(173, 173, 173);
+}
+
+#op-2 .sub-title2,
+#op-2 .description,
+#op-2 .sub-buy-btn {
+    color: rgb(177, 177, 177);
+}
+
+/* 3) */
+#op-3,
+#op-3 .sub-buy-btn {
+    border: 3px solid gold;
+}
+
+#op-3 .sub-title2,
+#op-3 .description,
+#op-3 .sub-buy-btn {
+    color: gold;
+}
+
+
+
+
+
+
+/* Card Top */
+.card-top {
+    padding: 0px 5px;
+}
+
+.sub-title2 {
+    font-size: 30px;
+    margin-top: 10px;
+    color: black;
+}
+
+.description {
+    font-weight: 500;
+    padding: 0px 10px;
+    color: black;
+    margin-bottom: 20px;
+}
+
+
+
+/* Price */
+.sub-price {
+    color: green;
+    margin-top: 50px;
+    font-size: 17px;
+}
+
+
+/* But Button */
+.sub-buy-btn {
+    width: 75%;
+    margin-bottom: -15px;
+
+    background-color: var(--bg-primary);
+    font-size: 15px;
+    font-weight: bold;
+    padding: 10px;
+    cursor: pointer;
+}
+
+
+
+
+/* ============================================
+        RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 992px) {
+    .card {
+        flex: 0 0 calc(33.333% - 5px);
+        max-width: calc(33.333% - 5px);
+    }
+
+    #op-1 .sub-buy-btn {
+        margin-top: 15px;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .sub-container {
+        width: 90%;
+        border-radius: 0;
+        box-shadow: 0 0 8px rgba(150, 150, 150, 0.4);
+    }
+
+    .cards-container {
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .card {
+        flex: 0 0 calc(50% - 16px);
+        max-width: calc(50% - 16px);
+    }
+
+    #op-1 .sub-buy-btn {
+        margin-top: 15px;
+    }
+}
+
+
+
+@media(max-width:600px) {
+    .card {
+        flex: 0 0 calc(50% - 5px);
+        max-width: calc(50% - 5px);
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .sub-price {
+        margin-top: 3px;
+    }
+
+    #op-1 .sub-buy-btn {
+        margin-top: 0px;
+    }
+
+    .sub-buy-btn {
+        margin-bottom: 10px;
+    }
+}
+
+/* ============================================
+        SUBSCRIPTION STATES
+   ============================================ */
+
+.subscription-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    min-height: 250px;
+
+    padding: 30px;
+
+    text-align: center;
+
+    color: var(--text-primarys);
+
+    font-size: 18px;
+    font-weight: 600;
+}
+
+
+/* Price period */
+
+.price-period {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+
+/* Disabled purchase button */
+
+.sub-buy-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* ============================================
+        AUTO RENEW
+   ============================================ */
+
+.auto-renew-container {
+    width: fit-content;
+    margin: 10px auto 20px;
+    padding: 12px 18px;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    border-radius: 10px;
+    background-color: var(--bg-primary);
+}
+
+.auto-renew-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primarys);
+
+    cursor: pointer;
+}
+
+.auto-renew-label input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: red;
+}
+
+.auto-renew-help {
+    margin: 8px 0 0 28px;
+    font-size: 13px;
+    opacity: 0.7;
+    color: var(--text-primarys);
+}
+
+/* ============================================
+        CURRENT / RESERVED SUBSCRIPTIONS
+   ============================================ */
+
+
+.current-subscription,
+.reserved-subscription {
+
+    width: 90%;
+    max-width: 900px;
+
+    margin: 20px auto;
+
+    padding: 18px 25px;
+
+    border-radius: 12px;
+
+    background: rgba(255, 255, 255, 0.08);
+
+    backdrop-filter: blur(10px);
+
+    border: 1px solid rgba(255, 255, 255, 0.25);
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.15);
+
+}
+
+
+.current-subscription h3,
+.reserved-subscription h3 {
+
+    margin-bottom: 15px;
+
+    font-size: 22px;
+
+    font-weight: 800;
+
+}
+
+
+
+.current-subscription p,
+.reserved-subscription p {
+
+    margin: 8px 0;
+
+    font-size: 16px;
+
+    font-weight: 500;
+
+}
+
+
+
+/* Active subscription */
+
+.current-subscription {
+
+    border-left: 5px solid rgb(219, 143, 0);
+
+}
+
+
+
+/* Reserved subscription */
+
+.reserved-subscription {
+
+    border-left: 5px solid rgb(173, 173, 173);
+
+    opacity: 0.9;
+
+}
+
+.sub-buy-btn:disabled {
+
+    cursor: not-allowed;
+
+    opacity: 0.65;
+
+}
+
+.subscription-badge {
+
+    margin-left: 12px;
+
+    padding: 4px 10px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+}
+
+
+.subscription-badge.active {
+
+    background: rgba(219,143,0,0.25);
+
+    color: rgb(219,143,0);
+
+}
+
+
+
+.subscription-badge.reserved {
+
+    background: rgba(173,173,173,0.25);
+
+    color: rgb(200,200,200);
+
+}

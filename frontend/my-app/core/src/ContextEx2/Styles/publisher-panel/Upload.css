@@ -1,0 +1,207 @@
+/* ============================================
+      UPLOAD PAGE
+   ============================================ */
+
+/*Container */
+.upload-books-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Title */
+.upload-title{
+  font-size: clamp(0.9rem,4vw,1.3rem);
+  margin: 10px auto;
+}
+
+/* Form */
+.upload-form{
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    gap: 10px;
+    margin: 20px 10px;
+}
+
+
+/* Fields */
+.upload-field{
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.upload-field:focus{
+  outline: none;
+  transform: scaleX(0.99);
+}
+
+
+.upload-field.error-border {
+  border-color: #e7dfdf;
+  background-color: #fff8f8;
+}
+
+/* About Textarea */
+#abouttextarea{
+  height: 100px;
+  font-size: clamp(1rem, 2vw, 1.2rem);  
+  resize: none;  
+  padding: 15px;     
+}
+
+#abouttextarea::-webkit-scrollbar {
+  display: none;
+}
+
+
+
+/* Options */
+.upload-options{
+  font-weight: 600;
+}
+
+
+/* Error container */
+.upload-errors-container {
+  padding: 12px 16px;
+  border: 2px solid #c62828;
+  animation: slideDown 0.3s ease;
+  
+}
+
+.upload-errors-message {
+  text-align: center;
+  color: #c62828;
+  font-size: 15px;
+  font-weight: 500;
+  gap: 10px;
+  animation: fadeInOut 2s ease;
+}
+
+/* Button Group */
+.upload-btn-group{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+button[class^="upload-btn"]{
+  padding: 20px;
+  margin: 20px auto 10px;
+  width: 30%;
+  border:1px solid black;
+  border-radius: 15px;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button[class^="upload-btn"]:active {
+  transform: scale(0.98);
+}
+
+/* Button Variants */
+.upload-btn-main{
+    background-color: rgb(35, 209, 0);
+}
+
+
+.upload-btn-delete{
+  background-color: rgb(255, 0, 0);
+}
+.upload-btn-cancel{
+  background-color: rgb(255, 255, 255);
+  color: red !important;
+}
+
+
+.upload-btn-main:hover {
+  background-color: #17c500;
+}
+
+
+
+/* File Input */
+#bookImage{
+    border:  1px solid white ;
+}
+
+
+
+/* ============================================
+      ANIMATIONS
+   ============================================ */
+@keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+}
+  
+@keyframes fadeInOut {
+    0% {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    10% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    90% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+}
+
+
+
+
+/* ============================================
+      RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 769px) {
+  .upload-form{
+    width: 65%;
+  }
+}
+
+@media (max-width: 600px) {
+  .upload-title{
+    margin-left: 67px;
+  }
+  .upload-form{
+    width: 70%;
+    margin-right: 30px;
+  }
+  .upload-books-container {
+    padding: 15px;
+  }
+  
+  .upload-field {
+    padding: 10px;
+    font-size: 14px;
+  }
+    
+  .error-message {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+}
