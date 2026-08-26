@@ -39,7 +39,9 @@ const BookService = {
       "/books/genres/"
     );
 
-    return response.data;
+    return Array.isArray(response.data.results)
+      ? response.data.results
+      : [];
   },
 };
 
