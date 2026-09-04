@@ -4,6 +4,8 @@ import { useState,useEffect,useRef,useCallback,useMemo } from 'react';
 import { Navigate,useLocation } from 'react-router-dom';
 import { Modal, Box, IconButton, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
+
+import {WalletIcons,CardIcons} from '../../Components/icons/Icons';
 import CloseIcon from '@mui/icons-material/Close';
 import Notification from '../../Components/feature/Notification'
 import iranData from "../../../iranData.json";
@@ -14,7 +16,7 @@ import "../../Styles/components/Checkout.css"
 // ============================================
 //      Constants
 // ============================================
-const PHONE_REGEX = /^09\d{9}$/;  // start 09 and have 9 more num
+const PHONE_REGEX = /^09\d{9}$/;  // start 09 + 9 more num
 const POSTCODE_REGEX = /^\d{10}$/;
 
 
@@ -42,15 +44,7 @@ export default function Checkout() {
     } = location.state || {}; 
 
 
-
-
-    // ---Derived State---
-    const hasPhysicalBooks = useMemo(()=> 
-        cartItems?.some(item => item.type === 'physical') || false,
-        [cartItems]);
-
-
-    
+       
 
 
 
@@ -68,12 +62,7 @@ export default function Checkout() {
             
         });
 
-        const [cardInfo, setCardInfo] = useState({
-              number: '',
-              password:'',
-              expiry: '',
-              cvv: ''
-        });
+        
         const [errors, setErrors] = useState({
             province:"",
             city:"",
@@ -93,17 +82,28 @@ export default function Checkout() {
         const [selectedCity, setSelectedCity] = useState(null);
         
         const [orderId,setOrderId]= useState('');
-        const [generatedPassword, setGeneratedPassword] = useState('');
-        const [validpass, setValidPass] = useState(false);
 
         const [savedAddList,setSavedAddList] = useState([]);
         const [selectedAddress,setSelectedAddress] = useState(null);
         const [addressModalOpen,setAddressModalOpen] = useState(false);
         const [tempSelectedAddressId, setTempSelectedAddressId] = useState(null);
-       
+        const [selectedPaymentMethod,setSelectedPaymentMethod] = useState(null); 
+        
 
         const isLoadingEdit = useRef(false);
     
+
+
+         // ---Derived State---
+        const hasPhysicalBooks = useMemo(()=> 
+            cartItems?.some(item => item.type === 'physical') || false,
+            [cartItems]
+        );
+        
+        const isPaymentMethodSelected = useMemo(()=>
+            selectedPaymentMethod !== null,
+            [selectedPaymentMethod]
+        );
 
 
         const getInitialStep = useCallback(() => { 
@@ -115,6 +115,14 @@ export default function Checkout() {
             return 1;
          },[hasPhysicalBooks,hassavedaddress,startAtStep])
         
+
+
+
+
+
+
+
+
 
 
 // ---Effects---
@@ -362,9 +370,7 @@ useEffect(()=>{
 
     // ---Handlers---
     const handleChange =(e)=>{
-
         const { name , value } = e.target;
-
 
         if(name==='province'){
             const province = provinces.find(p => p.name === value);
@@ -400,61 +406,6 @@ useEffect(()=>{
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-    
-    
-
-    const passfilled = cardInfo.password.length === 6;
-
-    
-
-    const handlepass =()=>{
-        const randpass = Math.floor(Math.random()* 1000000).toString().padStart(6,'0');
-        setGeneratedPassword(randpass)
-        notificationRef.current.showNotif(`${randpass} is send to you`,'info');
-    }
-
-
-
-
-    const handlePlaceOrder = () => {
-            
-            if(cardInfo.password === generatedPassword){
-                notificationRef.current.showNotif('Buy successfully!', 'success');
-                setValidPass(true);
-        }
-            else{
-            setValidPass(false);
-            notificationRef.current.showNotif('Invalid password. Please try again.', 'error');
-            return false;   
-        }
-
-    };
-    
-
-        
-    
-
-
-
-
-
-
-
     const handleConfirmAddressSelect = ()=>{
         const selected = savedAddList.find(addr=> addr.id === tempSelectedAddressId );
 
@@ -480,7 +431,24 @@ useEffect(()=>{
     }
 
 
+    const handlePaymentMethodSelect = useCallback((method)=>{
+        setSelectedPaymentMethod(method);
+    },[])
 
+    const handleContinueToPayment = useCallback(()=>{
+        // double check (dont happen commonly)
+        if(!selectedPaymentMethod){
+            notificationRef.current.showNotif('please select payment method','error');
+            return
+        }
+        // not enough  cash in wallet 
+        // ✅notif work
+        // if(wallet < total.toFixed(2)){
+        //     notificationRef.current.showNotif('Not enogh credit in wallet','error');
+        //     return
+        // }
+        // navigate to shaparak if select card
+    },[selectedPaymentMethod])
 
 
   // ---Redirect if no items---
@@ -700,17 +668,12 @@ useEffect(()=>{
                     
 
 
-
-                    
                     <button 
                     onClick={handlecontinueToStep2}
                     className='checkout-continue-btn'
                     >
                         Continue
                     </button>
-
-
-
 
 
                     
@@ -737,11 +700,11 @@ useEffect(()=>{
 
 
                         {hasPhysicalBooks && 
-                        <>
-                            <h3>Shipping to:</h3>
-                            <p>{shippingInfo.address}</p>
-                            <p>postal: {shippingInfo.postcode}</p>
-                        </>
+                            <>
+                                <h3>Shipping to:</h3>
+                                <p>{shippingInfo.address}</p>
+                                <p>postal: {shippingInfo.postcode}</p>
+                            </>
                         }
                         
 
@@ -761,18 +724,18 @@ useEffect(()=>{
                    
                     <div className="button-group-summary">
                         {savedAddList.length > 0 && selectedAddress && (
-                                <button 
-                                    onClick={() => setAddressModalOpen(true)}
-                                >
-                                  Change
-                                </button>
+                            <button 
+                                onClick={() => setAddressModalOpen(true)}
+                            >
+                                Change
+                            </button>
                         )}
 
                         <button 
                             onClick={()=>setStep(3)}
                             disabled={savedAddList.length > 0 && !selectedAddress} 
                         >
-                             Order
+                            Order
                         </button>
                     </div>
                 </div>
@@ -781,57 +744,71 @@ useEffect(()=>{
 
 
 
-            {/* Step 3: Payment */}
+            {/* Step 3: Payment-Method */}
             {step === 3 && (
                 <div className="step3">
                     <h2 className='title-checkout'>Checkout</h2>
-                    <p>Payment Method</p>
+                    <p>choose payment method</p>
 
-                            <input 
-                                className='pay-card'
-                                placeholder="Card Number"
-                                value={cardInfo.number}
-                                onChange={e => setCardInfo({...cardInfo, number: e.target.value})}
-                            />
-                            
-                            <div className="detail-card-info">
-                                <input 
-                                placeholder="MM/YY"
-                                value={cardInfo.expiry}
-                                onChange={e => setCardInfo({...cardInfo, expiry: e.target.value})}
-                                />
-                                <input 
-                                placeholder="CVV" 
-                                type="text"
-                                value={cardInfo.cvv}
-                                onChange={e => setCardInfo({...cardInfo, cvv: e.target.value})}
-                                />
+                            <div className="payment-options">
+                                {/* Wallet Option */}
+                                <label 
+                                    className={`payment-option ${selectedPaymentMethod === "wallet" ? 'selected': ''}`}
+                                    onClick={()=> handlePaymentMethodSelect('wallet')}
+                                >
+                                    <input
+                                        type="radio"
+                                        name='paymentMethod'
+                                        value="wallet"
+                                        checked={selectedPaymentMethod === 'wallet'}
+                                        onChange={() => handlePaymentMethodSelect('wallet')}
+                                    />
 
+                                    <div className='payment-option-content'>
+                                        <WalletIcons
+                                            fill={`${selectedPaymentMethod === 'wallet' ?'#4caf50':'#ffffff'}`}
+                                            size={24}
+                                        />
+                                        <span>Wallet</span>
+                                        <span className="payment-option-badge">Balance: $250.00</span>
+                                    </div>
+                                </label>
+
+                                {/* Card Option */}
+                                <label 
+                                    className={`payment-option ${selectedPaymentMethod === "card" ? 'selected': ''}`}
+                                    onClick={()=> handlePaymentMethodSelect('card')}
+                                >
+                                    <input
+                                        type="radio"
+                                        name='paymentMethod'
+                                        value="card"
+                                        checked={selectedPaymentMethod === 'card'}
+                                        onChange={() => handlePaymentMethodSelect('card')}
+                                    />
+
+                                    <div className='payment-option-content'>
+                                        <CardIcons
+                                            fill={`${selectedPaymentMethod === 'card' ?'#4caf50':'#ffffff'}`}
+                                            size={24}
+                                        />
+                                        <span>Card</span>
+                                        <span className="payment-option-badge">Card / Debit</span>
+                                    </div>
+                                </label>
                             </div>
-                            <input 
-                                className='pay-card'
-                                placeholder="password"
-                                type="password"
-                                value={cardInfo.password}
-                                onChange={e => setCardInfo({...cardInfo, password: e.target.value})}
-                            />
+                            
                         
                     
                     <div className="button-group">
-                    <button onClick={() => setStep(2)}>Back to Order detail</button>
+                        <button onClick={() => setStep(2)}>Back to detail</button>
                         <button 
-                            onClick={handlePlaceOrder}
-                            disabled={!passfilled}
-                            value={validpass}
-                            className="continue-btn"
-                            style={{
-                                opacity: !passfilled ? 0.5 : 1,
-                                cursor: !passfilled ? 'not-allowed' : 'pointer'
-                            }}
-                            >
-                                Pay
-                            </button>
-                        <button onClick={handlepass}>send pass</button>  
+                            onClick={handleContinueToPayment}
+                            disabled={!isPaymentMethodSelected}
+                            className={!isPaymentMethodSelected ? 'disable-pay':''}
+                        >
+                            Pay
+                        </button>  
                     </div>
                 </div>
             )}

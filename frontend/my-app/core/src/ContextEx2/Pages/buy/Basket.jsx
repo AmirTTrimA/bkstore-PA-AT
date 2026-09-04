@@ -1,71 +1,182 @@
-import React, { useEffect } from 'react'
-import { useState } from 'react'
+
+// ✅
+import React, { useState,useEffect,useCallback,useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../Context/AuthContext'
+import Notification from '../../Components/feature/Notification'
+
 import "../../Styles/components/Basket.css"
 
+// ============================================
+//    Constants
+// ============================================
+
+const VALID_DISCOUNT = {
+  'SAVE10':{type:'percentage',value:20,minPurchase:50},
+  'WELCOME20':{type:'fixed',value:15,minPurchase:50},
+  'BOOKS25':{type:'percentage',value:25,minPurchase:40},
+};
 
 
-import Notification from '../../Components/feature/Notification'
-import { useRef } from 'react'
 
 
 
-
+// ============================================
+//    Main 
+// ============================================
 
 export default function Basket() {
 
 
+// ---Hooks---
+  const {isLoggedIn}=useAuth();
+  const navigate = useNavigate();
+  const notificationRef = useRef();
+
+
+
+
+// ---State---
   const [cartItems,setCartItems] = useState([
     {id:1,name:'100-years-alive',author:'george orwell',price:25.0,quantity:1,type:'physical'},
     {id:2,name:'1984',author:'mark',price:30.6,quantity:3,type:'pdf'},
     {id:3,name:'hamilton',author:'mark-b',price:45,quantity:2,type:'pdf'},
     {id:4,name:'hosiha',author:'nn-poke',price:30.9,quantity:3,type:'pdf'},
-    // {id:5,name:'assassins',author:'csspo',price:40.1,quantity:4,type:'physical'},
-    // {id:6,name:'caraiban work',author:'dpoas',price:20,quantity:4,type:'physical'},
-    // {id:7,name:'art is life',author:'r[pw',price:10,quantity:4,type:'physical'},
-    // {id:8,name:'ai station',author:'hdfljk',price:13.5,quantity:4,type:'physical'},
+    {id:5,name:'assassins',author:'cisso',price:40.1,quantity:4,type:'physical'},
+    {id:6,name:'caraiban work',author:'daphne',price:20,quantity:10,type:'pdf'},
+    {id:7,name:'art is life',author:'rose',price:10,quantity:1,type:'pdf'},
+    {id:8,name:'ai station',author:'hdfljk',price:13.5,quantity:1,type:'physical'},
     
   ])
 
-  // check login(phy-pdf) + hasphysical (need address[profile || step1])
-  // foreach one error show in modal
-  const {isLoggedIn}=useAuth();
 
-  const navigate = useNavigate();
+  const[discountCode,setDiscountCode]=useState('');
+  const[appliedDiscount,setAppliedDiscount]=useState(null);
+  const[discountStatus, setDiscountStatus] = useState(null); // 'valid', 'invalid', 'checking'
+  const[hassavedaddress,setHasSavedAddress] =useState(null)
 
-  const islistempty = cartItems.length === 0;
 
-  const hasphysicalbook = cartItems.some(item=> item.type === 'physical');
- 
 
-// fix address
-  const [hassavedaddress,setHasSavedAddress] =useState(null)
+// ---Memorized Values---
+  const isCartEmpty = useMemo(()=>cartItems.length === 0,[cartItems]);
 
-  useEffect(() => {
-      const savedAddresses = JSON.parse(localStorage.getItem('user-addresses'));
-    
+  const hasphysicalbook = useMemo(()=>
+    cartItems.some(item=> item.type === 'physical'),
+    [cartItems]);
 
+
+
+  const subtotal = useMemo(()=> 
+    cartItems.reduce((sum,item)=> sum + (item.price * item.quantity),0),
+    [cartItems])
+
+  const discountAmount = useMemo(()=>
+    appliedDiscount?.amount || 0,
+    [appliedDiscount])
+   const tax = (subtotal - discountAmount) * 0.1;
+  const total = subtotal - discountAmount + tax;
+
+
+
+// ---Effects---
+
+useEffect(() => {
+    const savedAddresses = JSON.parse(localStorage.getItem('user-addresses'));
     if (savedAddresses && savedAddresses.length > 0) {
-
-
       setHasSavedAddress(true);
-
-
-
     } else{
       setHasSavedAddress(false);
     }
   }, []);
 
 
-  const notificationRef = useRef();
+   
+// discount validation with debounce
+useEffect(()=>{
+  // further in api need to use await
+  const validDiscount = async ()=>{
+    if(!discountCode.trim()){
+      setDiscountStatus(null);
+      setAppliedDiscount(null)
+      return
+    }
 
-// fix address
-  const handleCheckerOpen = async()=> {
+    setDiscountStatus('checking');
+    setTimeout(()=>{
+      const code = discountCode.toUpperCase();
+      const discount = VALID_DISCOUNT[code];
+
+     
+      if(discount && subtotal >= discount.minPurchase){
+        let discountAmount = 0;
+        if(discount.type === 'percentage'){
+          discountAmount = (subtotal * discount.value) /100;
+        } 
+         
+        else{
+          discountAmount = Math.min(discount.value,subtotal);
+        }
+      //save applied code
+        setAppliedDiscount({
+          code: code,
+          type: discount.type,
+          value: discount.value,
+          amount: discountAmount
+      });
+      setDiscountStatus('valid');
+
+      }else if (discount && subtotal < discount.minPurchase){
+        setAppliedDiscount(null);
+        setDiscountStatus('invalid')
+      }else if (!discount) {
+        setAppliedDiscount(null);
+        setDiscountStatus('invalid');
+      }
+
+
+    },500);
+
+
+  };
+
+    const timeoutId = setTimeout(validDiscount, 500);
+    return () => clearTimeout(timeoutId);
+
+
+},[discountCode,subtotal]);
+
+
+
+
+
+
+
+// ---Handlers---
+
+
+
+ 
+
+
+  const removeItems = useCallback((id) => {
+    setCartItems(items => items.filter(item => item.id !== id));
+},[])
+
+
+
+const updateQuantity = useCallback((id, newQuantity) => {
+  if (newQuantity < 1) return;
+  setCartItems(items => 
+      items.map(item => 
+          item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+  );
+},[])
+
+
+  const handleCheckerOpen = useCallback(async()=> {
 
         if(!isLoggedIn){
-          // setLoginChecker(true)
           notificationRef.current.showNotif(' required','error',{
             linkText:"login",
             linkHref:"/login"
@@ -136,121 +247,20 @@ export default function Basket() {
 
 
   
-  }
-
-
-
-
-
-  const[discountCode,setDiscountCode]=useState('');
-  const[appliedDiscount,setAppliedDiscount]=useState(null);
-  const[discountStatus, setDiscountStatus] = useState(null); // 'valid', 'invalid', 'checking'
-
-  
-
-// new + discount
-
-const subtotal = cartItems.reduce((sum,item)=> sum + (item.price * item.quantity),0);
-
-useEffect(()=>{
-  // wait for user to type whole discount input in 0.5s (the reason of async) 
-  // further in api need to use await
-  const validDiscount = async ()=>{
-    // if discount enter space or empty
-    if(!discountCode.trim()){
-      setDiscountStatus(null);
-      setAppliedDiscount(null)
-      return
-    }
-
-    setDiscountStatus('checking');
-
-
-    setTimeout(()=>{
-     
-      const validCodes={
-        'SAVE10':{type:'percentage',value:20,minPurchase:50},
-        'WELCOME20':{type:'fixed',value:15,minPurchase:50},
-        'BOOKS25':{type:'percentage',value:25,minPurchase:40},
-      };
-
-      const code = discountCode.toUpperCase();
-      
-      const discount = validCodes[code];
-
-     
-      if(discount && subtotal >= discount.minPurchase){
-        let discountAmount = 0;
-        if(discount.type === 'percentage'){
-          discountAmount = (subtotal * discount.value) /100;
-        } 
-         
-        else{
-          discountAmount = Math.min(discount.value,subtotal);
-        }
-//save applied code
-        setAppliedDiscount({
-          code: code,
-          type: discount.type,
-          value: discount.value,
-          amount: discountAmount
-      });
-
-      setDiscountStatus('valid');
-
-
-      }else if (discount && subtotal < discount.minPurchase){
-        setAppliedDiscount(null);
-        setDiscountStatus('invalid')
-      }else if (!discount) {
-        setAppliedDiscount(null);
-        setDiscountStatus('invalid');
-      }
-
-
-    },500);
-
-
-  };
-
-  //each word have 0.5s delay to get and store with validDiscount 
-      const timeoutId = setTimeout(validDiscount, 500);
-      return () => clearTimeout(timeoutId);
-
-
-},[discountCode,subtotal]);
-
-
-
-
-    const removeItems = (id) => {
-      setCartItems(items => items.filter(item => item.id !== id));
-  };
-  
-
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity < 1) return;
-    setCartItems(items => 
-        items.map(item => 
-            item.id === id ? { ...item, quantity: newQuantity } : item
-        )
-    );
-};
+  },[
+    appliedDiscount,navigate,subtotal,
+    total,cartItems,hasphysicalbook,
+    discountAmount,hassavedaddress,tax,
+    isLoggedIn
+    ])
 
 
 
 
 
 
-    
-
-  
 
 
-
-  const discountAmount = appliedDiscount?.amount || 0;
-  const tax = (subtotal - discountAmount) * 0.1;
-  const total = subtotal - discountAmount + tax;
 
 
 
@@ -258,8 +268,8 @@ useEffect(()=>{
     
     
   <div className="basket-container">
-    {islistempty ? (
-      /* Show Empty State when cart is empty */
+    {isCartEmpty ? (
+      /* Empty State */
       <div className="empty-state">
         <svg className="empty-cart-icon" viewBox="0 -960 960 960">
           <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z"/>
@@ -269,7 +279,7 @@ useEffect(()=>{
         <button className="shop-button" onClick={()=>navigate('/home')}>Back to Shoplift</button>
       </div>
     ) : (
-      /* Show Cart List when cart has items */
+      /* Cart List */
       <div className="cart-list">
         <h2>Shopping Cart ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</h2>
         
@@ -326,8 +336,7 @@ useEffect(()=>{
             </div>
           ))}
         </div>
-
-{/* div css-classsname in cneter(+ respo) less width than card */}
+        {/* Discount Code */}
         <div className='discount-section'>
             <div className='discount-section-inside'>
               <div className='discount-row'>
@@ -338,7 +347,6 @@ useEffect(()=>{
                         <input
                             type="text"
                             placeholder="Enter code "
-                            // (SAVE10, WELCOME20, BOOKS25)
                             value={discountCode}
                             onChange={(e) => setDiscountCode(e.target.value)}
                             style={{
@@ -358,8 +366,6 @@ useEffect(()=>{
                             }}
                         />
                         
-                        
-                        
                         {/* Checking indicator */}
                         {discountStatus === 'checking' && (
                             <p className='discount-message-check'>
@@ -367,17 +373,14 @@ useEffect(()=>{
                             </p>
                         )}
                     </div>
-
                 </div>
             </div>
 
 
 
             <div className='discount-summary-row'>
-              
               <span>Subtotal:</span>
               <span>${subtotal.toFixed(2)}</span>
-
             </div>
 
 
@@ -393,12 +396,10 @@ useEffect(()=>{
                     <span >${tax.toFixed(2)}</span>
                 </div>
 
-
-
         </div>
         
 
-
+        {/* Footer */}
         <div className="cart-footer">
               <div className="total">
                     <span>Total:</span>
@@ -406,7 +407,6 @@ useEffect(()=>{
               </div>
               <button 
                 className="checkout-btn"
-                // fix address
                 onClick={handleCheckerOpen}
               >
                 Checkout
@@ -415,13 +415,7 @@ useEffect(()=>{
       </div>
     )}
 
-
-
-<Notification ref={notificationRef}/>
-
-
-
-
+    <Notification ref={notificationRef}/>
   </div>
 
   )

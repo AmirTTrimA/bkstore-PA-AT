@@ -387,4 +387,17 @@
       transform: translate(-50%, -50%) rotate(720deg) scale(1);
     }
   }
+
+
+
+/* ============================================
+      RESPONSIVE DESIGN
+   ============================================ */
+
+
+@media (max-width: 768px) {
+        .form-title-login:hover{
+          cursor: pointer;
+        }
+}
   

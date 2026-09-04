@@ -2,7 +2,7 @@
 import React from 'react'
 import { useState,useRef,useEffect } from 'react';
 import { useNavigate,useLocation , matchPath , Link } from 'react-router-dom';
-
+import Notification from './feature/Notification';
 
 import {
   Modal,
@@ -33,10 +33,11 @@ import {
 import { useAuth } from '../Context/AuthContext';
 import { ThemeToggle } from './common/ThemeToggle';
 import {search_results} from '../Pages/search/Search';
+import {ppic13} from "../Constants"
 
 
-// ---Styles---
 import '../Styles/components/Navbar.css'
+import { useCallback } from 'react';
 
 // ---Constants---
 const MAX_RECENT_SEARCHES = 10;
@@ -51,6 +52,7 @@ export default function Navbar() {
     const {isLoggedIn,user,logout,} = useAuth();
     const inputRef= useRef(null)
     const secondaryNavRef = useRef(null)
+    const notificationRef = useRef();
 
 
     // ---States---
@@ -95,9 +97,9 @@ export default function Navbar() {
 
 
 
+// ---Effects---
 
-
-  // ---Recent Searches---
+  // Recent Searches
   useEffect(()=>{
     const savedsearch = localStorage.getItem('recentSearches');
     if(savedsearch){
@@ -111,11 +113,40 @@ export default function Navbar() {
   },[])
 
 
+  // Focus input when modal open
+  useEffect(() => {
+    if (open && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current.focus();
+      }, 100);
+    }
+  }, [open]);
+
+
+   // Scroll Handler for Secondary Nav 
+   useEffect(() => {
+    let lastY = window.scrollY;
+  
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+    
+      if (currentY < 100 || currentY < lastY) {
+        setIsSecondaryVisible(true);
+      } else {setIsSecondaryVisible(false);}
+    
+      lastY = currentY;
+    };
+
+     window.addEventListener('scroll', handleScroll, { passive: true });
+     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
 
 
 
 
+
+// ---Handlers---
 
     const saveRecentSearch = (searchTerm)=>{
       if(!searchTerm || searchTerm.length < SEARCH_MIN_LENGTH) return ;
@@ -131,7 +162,7 @@ export default function Navbar() {
 
 
 
-// ---Search Handlers---
+// Search Handlers
     const handleSearch = (e) => {
     const value = e.target.value?.toLowerCase().trim() || '';
     setSearchInputValue(value);
@@ -141,7 +172,7 @@ export default function Navbar() {
     }
   
 
-  const foundResult = search_results.filter(book=>{
+    const foundResult = search_results.filter(book=>{
 
     const idMatch = book.searchId === value;
     const categoryMatch = book.category.toLocaleLowerCase().includes(value);
@@ -193,14 +224,6 @@ export default function Navbar() {
       localStorage.removeItem('recentSearches');
     };
   
-  // Focus input when modal open
-    useEffect(() => {
-      if (open && inputRef.current) {
-        setTimeout(() => {
-          inputRef.current.focus();
-        }, 100);
-      }
-    }, [open]);
 
 
 
@@ -208,8 +231,7 @@ export default function Navbar() {
 
 
 
-
-    // ---Dashboard Menu Handler---
+    // Dashboard Menu Handler
     const handleClick = (event) => {
       setAnchorEl(event.currentTarget);
     };
@@ -222,32 +244,26 @@ export default function Navbar() {
 
 
 
+    const handleLoginCheck = useCallback((e)=>{
+      if(!isLoggedIn){
+        e.preventDefault();
+        if(notificationRef.current){
+          notificationRef.current.showNotif(' require','error',{
+            linkText:"login",
+            linkHref:"/login"
+          })
+        }
+        return false;
+      }
+      return true;
+    },[isLoggedIn])
 
 
 
 
 
 
-
-    //---Scroll Handler for Secondary Nav---
-    useEffect(() => {
-      let lastY = window.scrollY;
-    
-      const handleScroll = () => {
-        const currentY = window.scrollY;
-      
-        if (currentY < 100 || currentY < lastY) {
-          setIsSecondaryVisible(true);
-        } else {setIsSecondaryVisible(false);}
-      
-        lastY = currentY;
-      };
-
-       window.addEventListener('scroll', handleScroll, { passive: true });
-       return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-
+ 
 
 
 
@@ -276,7 +292,7 @@ export default function Navbar() {
                           >
                               <Avatar 
                                 sx={{ width: 24, height: 24 }}
-                                src="https://boom-zrbn.mohtava.cloud/thumbs/api/v1/image/f0a6ff04-787e-3038-a474-a3784fe6c9e8?zb_svc=fajr-im-prod&zb_dmn=ipm&zb_type=internal&zb_pl=0&zb_referer=zarebin.ir"
+                                src={ppic13}
                               />
                           </Button>
                       
@@ -294,7 +310,7 @@ export default function Navbar() {
                                 <Box sx={{ display: 'flex', alignItems: 'center', py: 1 }}>
                                   <Avatar 
                                     sx={{ width: 40, height: 40, mr: 2 }}
-                                    src="https://boom-zrbn.mohtava.cloud/thumbs/api/v1/image/f0a6ff04-787e-3038-a474-a3784fe6c9e8?zb_svc=fajr-im-prod&zb_dmn=ipm&zb_type=internal&zb_pl=0&zb_referer=zarebin.ir"
+                                    src={ppic13}
                                   />
                                   <Box>
                                     <Typography variant="subtitle1">{username}</Typography>
@@ -372,11 +388,13 @@ export default function Navbar() {
           {!isLibraryPage && (
             <li ><Link to='/library' className='category'>library</Link></li>
           )}
-          <li ><Link to='/favorites' className='favorites'>favorites</Link></li>
+          <li ><Link to='/favorites' onClick={handleLoginCheck}  className='favorites'>favorites</Link></li>
           <li ><Link to='/faq' className='anyquestion'>any question</Link></li>
         </ul>
 
       </nav>
+      
+      <Notification ref={notificationRef} />
 
 
  {/* Search Modal */}
@@ -385,9 +403,7 @@ export default function Navbar() {
         onClose={handleClose}
         aria-labelledby="login-modal-title"
         >
-          <Box 
-            className='mod-box mod-special mod-search'
-            >
+          <Box className='mod-box mod-special mod-search'>
                       <Typography 
                         variant="h4"
                         color='black'

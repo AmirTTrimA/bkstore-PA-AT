@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import Navbar from '../../Components/Navbar';
 import Footer from '../../Components/Footer';
 import ReusableSlider from '../../Components/common/ReusableSlider';
+import Notification from '../../Components/feature/Notification';
+import { useAuth } from '../../Context/AuthContext';
 import  {ThemeToggle}  from '../../Components/common/ThemeToggle';
 
 // ---Styles---
@@ -23,7 +25,23 @@ import {
 // ---Data---
 import { search_results } from '../search/Search';
 
-import {pic1,pic2,pic3,ppic1,ppic2} from '../../Constants'
+import {
+  pic1,pic10,pic11,
+  pic12,pic13,pic14,
+  pic2,pic3,pic4,
+  pic5,pic6,pic7,
+  pic8,pic9,ppic1,
+  ppic10,ppic11,ppic12,
+  ppic2,ppic3,ppic4,
+  ppic5,ppic6,ppic7,
+  ppic8, ppic9
+} from '../../Constants'
+
+import { 
+  cat1,cat2,cat3,
+  cat4,cat5,cat6,
+  cat7,cat8,cat9
+} from '../../Constants';
 
 
 
@@ -40,15 +58,15 @@ const BOOKS=[
 ]
 
 const CATEGORIES=[
-  {title:'history',iconpath:'/icons/cat-history.svg'},
-  {title:'sciense-education',iconpath:'/icons/cat-science.svg'},
-  {title:'art-design',iconpath:'/icons/cat-art.svg'},
-  {title:'psychology',iconpath:'/icons/cat-psychology.svg'},
-  {title:'tech',iconpath:'/icons/cat-tech.svg'},
-  {title:'trip-geo',titlemap:['trip','geo','geography'],iconpath:'/icons/cat-trip.svg'},
-  {title:'financial',iconpath:'/icons/cat-finance.svg'},
-  {title:'religious',iconpath:'/icons/cat-religious.svg'},
-  {title:'novel',iconpath:'/icons/cat-novel.svg'},
+  {title:'history',iconpath:cat1},
+  {title:'sciense-education',iconpath:cat2},
+  {title:'art-design',iconpath:cat3},
+  {title:'psychology',iconpath:cat4},
+  {title:'tech',iconpath:cat5},
+  {title:'trip-geo',titlemap:['trip','geo','geography'],iconpath:cat6},
+  {title:'financial',iconpath:cat7},
+  {title:'religious',iconpath:cat8},
+  {title:'novel',iconpath:cat9},
   
 ]
 
@@ -71,23 +89,23 @@ const USER_EXPERIENCE=[
 
 
 const SLIDER_ITEMS = [
-  { id:1, title: "jules and nothing", price: "40$",link: "1",authorId:1,author_profile:ppic2, img:pic1},
-  { id:2 ,title: "harry potter", price: "50$",link:"2",authorId:2,author_profile:ppic1, img: pic2},
-  { id:3 ,title: "operation os", price: "30$",link:"3",authorId:3, img:pic3},
-  { id:4 ,title: "dsa", price: "25$", img:"/coffee.jpg",link: "4",authorId:2},
-  { id:5 ,title: "gfsd", price: "60$", img:"/restaurant.jpg",link: "4",authorId:1 },
-  { id:6 ,title: "dsafa", price: "20$", img:"/restaurant.jpg",link: "5",authorId:3 },
-  { id:7 ,title: "dada", price: "55$", img:"/restaurant.jpg",link: "6",authorId:2 },
+  { id:1, title: "jules and nothing", price: "40$",link: "1",authorId:1, author_profile:ppic2, img:pic1},
+  { id:2 ,title: "harry potter", price: "50$",link:"2",authorId:2,  author_profile:ppic1, img: pic2},
+  { id:3 ,title: "operation os", price: "30$",link:"3",authorId:3, author_profile:ppic3, img:pic3},
+  { id:4 ,title: "dsa", price: "25$",link: "4", authorId:2, author_profile:ppic4, img:pic4},
+  { id:5 ,title: "gfsd", price: "60$",link: "4", authorId:1,author_profile:ppic5, img:pic5},
+  { id:6 ,title: "dsafa", price: "20$",link: "5", authorId:3,author_profile:ppic6, img:pic6},
+  { id:7 ,title: "dada", price: "55$",link: "6", authorId:2, author_profile:ppic7, img:pic7},
 ];
 
 const SLIDER_ITEMS2 = [
-  { id:1 ,title: "jules and nothing2", price: "40$", img: "/bread.jpg",link: "7",authorId:1 },
-  { id:2 ,title: "harry potter", price: "50$", img: "/cafe.jpg",link: "5",authorId:3 },
-  { id:3 ,title: "operation os", price: "30$", img: "/bakery.jpg",link: "6",authorId:1 },
-  { id:4 ,title: "dsa", price: "25$", img: "/coffee.jpg",link: "2",authorId:1 },
-  { id:5 ,title: "gfsd", price: "60$", img: "/restaurant.jpg",link: "1" ,authorId:2 },
-  { id:6 ,title: "dsafa", price: "20$", img: "/restaurant.jpg",link: "4",authorId:3 },
-  { id:7 ,title: "dada", price: "55$", img: "/restaurant.jpg",link: "3" ,authorId:2},
+  { id:1 ,title: "jules and nothing2", price: "40$", link: "7",authorId:1, author_profile:ppic8, img:pic8 },
+  { id:2 ,title: "harry potter", price: "50$", link: "5",authorId:3 , author_profile:ppic9, img:pic9},
+  { id:3 ,title: "operation os", price: "30$", link: "6",authorId:1, author_profile:ppic10, img:pic10 },
+  { id:4 ,title: "dsa", price: "25$", link: "2",authorId:1 , author_profile:ppic11, img:pic11},
+  { id:5 ,title: "gfsd", price: "60$", link: "1" ,authorId:2 , author_profile:ppic12, img:pic12},
+  { id:6 ,title: "dsafa", price: "20$", link: "4",authorId:3 , author_profile:ppic2, img:pic13},
+  { id:7 ,title: "dada", price: "55$", link: "3" ,authorId:2 , author_profile:ppic3, img:pic14},
 ];
 
 
@@ -101,7 +119,9 @@ const SLIDER_ITEMS2 = [
 export default function Home() {
 
   const navigate = useNavigate();
-  const inputRef= useRef(null)
+  const inputRef= useRef(null);
+  const {isLoggedIn}=useAuth();
+  const notificationRef = useRef();
 
 
 
@@ -112,6 +132,7 @@ export default function Home() {
   const [searchTerm,setSearchTerm]= useState([]);
   const [currentSlide,setCurrentSlide] = useState(0)
   const [isHovered,setIsHovered]=useState(false)
+  
 
 // ---Static Data---
   const books = BOOKS;
@@ -181,6 +202,23 @@ export default function Home() {
       navigate(`/search/${categoryTitle}`);
   };
 
+// ---Handle isLoggedin---
+  const handleLoginCheck = useCallback((e)=>{
+    if(!isLoggedIn){
+      e.preventDefault();
+      if(notificationRef.current){
+        notificationRef.current.showNotif(' require','error',{
+          linkText:"login",
+          linkHref:"/login"
+        })
+      }
+      return false;
+    }
+    return true;
+     
+  },[isLoggedIn])
+
+
 // ---Derived State---
     const slide = totals > 0 ? books[currentSlide] : null;
 
@@ -247,6 +285,7 @@ export default function Home() {
                               <img 
                                 src={items.iconpath}
                                 alt={`${items.title} icon`}
+                                loading='lazy'
                               />
                             </div>
                             <div className="category-title">{items.title}</div>
@@ -268,7 +307,9 @@ export default function Home() {
                           <img 
                             className='slide-image'
                             src={slide.imageUrl}
-                            alt={slide.name} />
+                            alt={slide.name} 
+                            loading='lazy'
+                          />
                             <h3 className='slide-title'>{slide.name}</h3>
                         </div>
                       ):(
@@ -408,14 +449,18 @@ export default function Home() {
                     <span>Home</span>
                 </Link>
 
-                <Link to='/favorites' className="nav-item">
+                <Link to='/favorites'
+                      onClick={handleLoginCheck}
+                      className="nav-item"
+                >
                       <i className='fa-solid fa-heart'></i>
                       <span>favorite</span>
                 </Link>
                 <Link to='/basket' className="nav-item">
-                      <svg className="cart-icon" viewBox="0 -960 960 960">
+                      {/* <svg className="cart-icon" viewBox="0 -960 960 960">
                         <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z"/>
-                      </svg>
+                      </svg> */}
+                      <i className='fas fa-bag-shopping'></i>
                       <span>Cart</span>
                 </Link>
 
@@ -425,12 +470,16 @@ export default function Home() {
                       <span>Library</span>
                 </Link>
 
-                <Link to='/Dashboard' className="nav-item">
+                <Link to="/dashboard"  
+                      onClick={handleLoginCheck}
+                      className="nav-item"
+                >
                       <i className="fas fa-user"></i>
                       <span>Dashboard</span>
                 </Link>
           </nav>
         </div>
+        <Notification ref={notificationRef} />
     </div>
     </>
   )

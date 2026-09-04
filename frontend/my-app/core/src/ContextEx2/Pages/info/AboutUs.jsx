@@ -1,5 +1,7 @@
 // ✅
 import React,{ useEffect }  from 'react'
+import { about_bg } from '../../Constants';
+import { about_icon } from '../../Constants';
 import '../../Styles/components/AboutUs.css'
 
 
@@ -14,8 +16,10 @@ export default function AboutUs() {
   // define in globals.css
   useEffect(()=>{
     document.body.classList.add('about-us-page');
+    document.body.style.setProperty('--bg-image',`url(${about_bg})`);
     return ()=>{
       document.body.classList.remove('about-us-page');
+      document.body.style.removeProperty('--bg-image');
 
     }
   },[])
@@ -28,7 +32,7 @@ export default function AboutUs() {
       <div className="about-us-container">
           <div className="about-us-single-pic">
             <img 
-              src='/about-us-icon.png'
+              src={about_icon}
               alt="logo-didnt-load"
               loading='lazy'  
             />

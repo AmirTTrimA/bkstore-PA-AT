@@ -1,16 +1,12 @@
-/* Add to existing T2Basket.css */
 
-/* T2Basket.css */
+/* ============================================
+      BASKET PAGE 
+   ============================================ */
+
+/* Container  */
 .basket-container {
-  /* min-height: 100%; */
-  /* height: 80%; */
   width: 80%;
   position: relative;
-  /* good */
-  /* background: linear-gradient(100deg, #ff2200f0 25%, #fffb00 100%); */
-
-  /* background: linear-gradient(135deg, #b80000 0%, #4b67a2 100%); */
-
   margin: 0 auto;
   border-radius: 10px;
   overflow: hidden;
@@ -18,8 +14,11 @@
   padding: 50px 50px;
 }
 
+/* ============================================
+      EMPTY STATE
+   ============================================ */
 
-/* Empty state card */
+/* Empty State Card */
 .empty-state {
   position: relative;
   z-index: 1;
@@ -33,26 +32,27 @@
   height: 80%;
   margin: 0 auto;
   
-
-  /* border: 8px solid rgb(255, 255, 0); */
   transform: translateY(0);
   transition: transform 0.3s ease;
 }
 
 
-
-/* Large cart icon */
-.empty-cart-icon {
-  width: 140px;
-  height: 140px;
-  fill: #ee0000;
-  margin: 0 auto 25px;
-  display: block;
-  opacity: 0.8;
-  animation: gentleFloat 1.5s ease-in-out infinite;
+.empty-state::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border-radius: 35px;
+  z-index: -1;
+  opacity: 0.5;
 }
 
-/* Typography */
+
+
+/* Empty State Text */
 .empty-state h3 {
   font-size: 37px;
   color: #201010;
@@ -71,13 +71,23 @@
   font-weight: 400;
 }
 
-/* Button styling */
+
+
+/* Large Empty Cart icon */
+.empty-cart-icon {
+  width: 140px;
+  height: 140px;
+  fill: #ee0000;
+  margin: 0 auto 25px;
+  display: block;
+  opacity: 0.8;
+  animation: gentleFloat 1.5s ease-in-out infinite;
+}
+
+
+/* Shop Button */
 .shop-button {
   background: red  ;
-  /* #009a69f4  good green */
-  /* #007047ee  greensea*/
-  /* #c08a00a8  ajorii*/
-  /* rgb(0, 245, 188) good greensea */
   color: white;
   border: none;
   padding: 14px 40px;
@@ -92,60 +102,20 @@
 }
 
 .shop-button:hover {
-  /* background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%); */
-  /* background:#d800b0 ; */
   box-shadow: 0 15px 30px -5px rgba(102, 126, 234, 0.5);
-  /* [j] fix some attention like make big then small */
-  /* transform: translateX(5px);   */
   animation: slowDrift 1.8s ease-in-out infinite;
-
 }
 
 .shop-button:active {
   box-shadow: 0 5px 15px -5px rgba(102, 126, 234, 0.4);
 }
 
-/* Animations */
-@keyframes slowDrift {
-  0% ,100% {
-      /* transform: translateX(0px); */
-      transform: scaleX(1.1);
-  }
-  50% {
-      /* transform: translateX(-10px); */
-      transform: scaleX(0.9);
-      transform: scaleY(0.9);
-
-  }
-}
-
-@keyframes gentleFloat {
-  0%, 100% {
-      transform: translateY(0);
-  }
-  50% {
-      transform: translateY(-10px);
-  }
-}
-
-/* Optional: Add some decorative elements */
-.empty-state::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
-  /* height: 75%; */
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-  border-radius: 35px;
-  z-index: -1;
-  opacity: 0.5;
-}
 
 
-/* Cart List Styles ---------------------------------------------------------------------------------------*/
-.cart-list {
+/* ============================================
+      CART LIST
+   ============================================ */
+  .cart-list {
     position: relative;
     z-index: 1;
     background: rgba(255, 255, 255, 0.95);
@@ -155,14 +125,29 @@
     width: 90%;
     max-width: 600px;
     
-    /* [j] can scroll with this 2 line   */
     max-height: 80vh;
     overflow-y: auto;
-
     margin: 0 auto;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
-  
+
+
+    /* Scrollbar Styling */
+    .cart-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .cart-list::-webkit-scrollbar-track {
+      background: rgb(241, 241, 241);
+      border-radius: 10px;
+    }
+    
+    .cart-list::-webkit-scrollbar-thumb {
+      background: rgb(139, 0, 0);
+      border-radius: 10px;
+    }
+    
+  /* Cart Title  */
   .cart-list h2 {
     color: #1a202c;
     margin-bottom: 25px;
@@ -172,6 +157,7 @@
     padding-bottom: 15px;
   }
   
+  /* Individual Cart Items */
   .cart-items {
     display: flex;
     flex-direction: column;
@@ -179,6 +165,7 @@
     margin-bottom: 20px;
   }
   
+  /* Individual Cart Item */
   .cart-item {
     display: flex;
     justify-content: space-between;
@@ -196,6 +183,10 @@
     transform: translateY(-2px);
   }
   
+
+
+
+  /* Item Info */
   .item-info h4 {
     color: #2d3748;
     font-size: 20px;
@@ -223,11 +214,23 @@
     font-size: 16px;
   }
   
+  /* Item Actions Container */
+  .container-item-actions{
+    display: flex;
+    justify-content:space-between ;
+    align-items: flex-end;
+    flex-direction: column;
+    color: #2d3748;
+    font-weight: 600;
+    gap: 20px;
+  }
+
+
+  /* Item Actions */
   .item-actions {
     display: flex;
     align-items: center;
     gap: 5px;
-    
     margin-top: 50px;
   }
   
@@ -270,6 +273,72 @@
   }
   
  
+
+
+
+
+  
+/* Discount Section */
+  .discount-section{
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    max-width: 400px;
+    margin: 15px auto;
+  }
+
+  .discount-section-inside{
+    margin-bottom: 20px;
+  }
+
+/* Discount Row */
+  .discount-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 5px 10px;
+  }
+
+  .discount-label{
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .discount-input-wrapper {
+    flex: 1;
+}
+
+
+  .discount-message-check{
+    margin-top: 5px;
+    font-size: 12px;
+    color: #FFC107;
+  }
+
+  .discount-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .discount-summary-row span{
+    color: black;
+  }
+
+
+  #discount-applied{
+    color:#4CAF50;
+  }
+
+
+
+
+/* ============================================
+      CART FOOTER
+   ============================================ */
   
   .cart-footer {
     border-top: 2px solid #e2e8f0;
@@ -292,9 +361,9 @@
     font-size: 24px;
   }
   
+  /* Checkout Button */
   .checkout-btn {
     width: 100%;
-    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
     background: rgb(63, 210, 0);
     color: white;
     border: none;
@@ -313,184 +382,40 @@
     box-shadow: 0 15px 30px -5px rgba(102, 126, 234, 0.5);
   }
   
-  /* Scrollbar styling */
-  .cart-list::-webkit-scrollbar {
-    width: 8px;
+
+
+
+/* ============================================
+      ANIMATIONS
+   ============================================ */
+
+/* Drift Animation for Shop Button */
+@keyframes slowDrift {
+  0% ,100% {
+      transform: scaleX(1.1);
   }
-  
-  .cart-list::-webkit-scrollbar-track {
-    background: rgb(241, 241, 241);
-    /* background: rgba(255, 255, 255, 0.95); */
-    border-radius: 10px;
+  50% {
+      transform: scaleX(0.9);
+      transform: scaleY(0.9);
+
   }
-  
-  .cart-list::-webkit-scrollbar-thumb {
-    background: rgb(139, 0, 0);
-    border-radius: 10px;
+}
+
+/* Float Animation for Empty Cart Icon */
+@keyframes gentleFloat {
+  0%, 100% {
+      transform: translateY(0);
   }
-  
-
-
-
-
-
-
-
-/* [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ */
-.container-item-actions{
-  display: flex;
-  justify-content:space-between ;
-  align-items: flex-end;
-  flex-direction: column;
-
-  color: #2d3748;
-  font-weight: 600;
-  gap: 20px;
+  50% {
+      transform: translateY(-10px);
+  }
 }
 
 
-/* jadid va be daftar */
-
-.discount-section{
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    max-width: 400px;
-    margin: 15px auto;
-  
-}
-
-.discount-section-inside{
-  margin-bottom: 20px;
-}
-
-
-.discount-row{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  padding: 5px 10px;
-  
-}
-
-.discount-label{
-
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-
-}
-
-.discount-input-wrapper {
-  flex: 1;
-}
-
-
-
-
-.discount-message-check{
-    margin-top: 5px;
-    font-size: 12px;
-    color: #FFC107;
-
-}
-
-.discount-summary-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.discount-summary-row span{
-  color: black;
-}
-
-
-#discount-applied{
-  color:#4CAF50;
-}
-
-
-
-/* 
-
-.discount-input {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    outline: none;
-}
-
-.discount-input.valid {
-    border-color: #4CAF50;
-    background-color: #e8f5e9;
-}
-
-.discount-input.invalid {
-    border-color: #f44336;
-    background-color: #ffebee;
-}
-
-.discount-input.checking {
-    border-color: #FFC107;
-}
-
-.discount-message {
-    margin-top: 5px;
-    font-size: 12px;
-}
-
-.discount-message.valid {
-    color: #4CAF50;
-}
-
-.discount-message.invalid {
-    color: #f44336;
-}
-
-.discount-message.checking {
-    color: #FFC107;
-}
-
-
-.summary {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    max-width: 400px;
-    margin-left: auto;
-}
-
-
-
-.summary-row.discount {
-    color: #4CAF50;
-}
-
-.summary-total {
-    display: flex;
-    justify-content: space-between;
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 2px solid #ddd;
-} */
-
-
-
-
-
-
-
-
-
+/* ============================================
+      RESPONSIVE DESIGN
+   ============================================ */
+/* Mobile */
 @media (max-width: 640px) {
   .basket-container{
     width: 75%;
@@ -553,12 +478,6 @@
   .total-amount {
     font-size: 20px;
   }
-
-
-
-
-
-
 
 
 }

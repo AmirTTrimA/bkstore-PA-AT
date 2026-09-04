@@ -286,4 +286,94 @@ ul{
       background-position: 0% 50%;
     }
   }
+
+
+  @media (max-width: 480px) {
+    .footer-column ul li {
+
+      padding-right: 0;
+      margin-left: -25px;
+      white-space: nowrap; 
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .container {
+      padding: 0 10px; 
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden; 
+    }
+  
+    
+    .footer-content {
+        grid-template-columns: 1fr; 
+        gap: 30px;
+        width: 80%;
+        box-sizing: border-box;
+    }
+  
+  
+  
+  
+     
+     .footer-column a {
+      display: inline-block;
+      max-width: 100%;
+      word-break: break-word; 
+    }
+  
+  
+    .footer-column {
+      width: 100%;
+      padding: 0 5px;
+      box-sizing: border-box;
+    }
+  
+    
+    .footer-column p {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+  
+  
+    .copyright {
+      font-size: 0.6em;
+      padding: 0 10px;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+    }
+  
+  
+    .example-link {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      bottom: 80px;
+    }
+  
+    .icon-content {
+      margin: 0 8px;
+    }
+  
+    .icon-content a {
+      width: 40px;
+      height: 40px;
+    }
+  
+    .icon-content a svg {
+      width: 20px;
+      height: 20px;
+    }
+  
+    .contact-text {
+      font-size: large;
+      padding: 10px 0;
+      word-wrap: break-word;
+    }
+}
+
+
   

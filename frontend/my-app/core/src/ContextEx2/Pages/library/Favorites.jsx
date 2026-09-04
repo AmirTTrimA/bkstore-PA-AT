@@ -97,7 +97,7 @@ export default function Favorites() {
                 {favItems.map(item=>{
                        return <a href={`/book/${item.id}`} key={item.id} className="fav-cards">
                             <div className="card-pic">
-                                <img src={item.imageUrl} alt={item.name} />
+                                <img src={item.imageUrl} alt={item.name}  loading='lazy' />
                             </div>
                             <span className='card-title'>{item.name}</span>
                         </a>

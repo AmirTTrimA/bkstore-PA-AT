@@ -96,6 +96,7 @@ export default function ReusableSliderPortrait({
               src={portrait} 
               alt="portrait" 
               className={`portrait-image2 ${isPortraitFaded ? 'faded' : 'normal'}`}
+              loading='lazy'
             />
           )}
           
@@ -115,6 +116,7 @@ export default function ReusableSliderPortrait({
                       src={item.img}
                       alt={item.title}
                       id="card-main2"
+                      loading='lazy'
                     />
                   </div>
                   <h4>{item.title}</h4>

@@ -136,7 +136,7 @@ return (
                     <Tab label="History"/>
                 </Tabs>
                 {/* Tab Content */}
-                <Box p={3} border={1} borderColor="grey.200" borderRadius={1} sx={{overflowY:'auto', flex:1}}>
+                <Box  border={1} borderColor="grey.200" borderRadius={1} sx={{overflowY:'auto', flex:1}}>
 
                     {value === 0 && (
                       <Wallet  

@@ -1,25 +1,27 @@
 // ✅
 import React,{useState,useRef,useEffect, useCallback} from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 import Basket from '../buy/Basket';
 import Profile from './profile/Profile';
 import Addresses from './addresses/Addresses';
 import Financial from './financial/Financial';
 import {ThemeToggle} from '../../Components/common/ThemeToggle'
+import { ppic14 } from '../../Constants';
+
 import '../../Styles/components/Dashboard.css'
 
 
 // ============================================
 //    Constants
 // ============================================
-const TABLE_BOOKS=[
-  {id:1,name:'Harry-Potter',author:'J.K Rolling',category:'Romance',lastpage:'32'},
-  {id:2,name:'Life-Science',author:'A.B scott',category:'Science',lastpage:'10'},
-  {id:3,name:'Simple-Bug',author:'Selfish-men',category:'Science-fiction',lastpage:'0'},
-  {id:4,name:'ESi-Boy',author:'josie mean',category:'Tech',lastpage:'40'},
-  {id:5,name:'Dutch-Grammer',author:'Felian forse',category:'Educational',lastpage:'89'},
-  {id:6,name:'Scooby-doo',author:'Adam derek',category:'Childish-story',lastpage:'5'},
+const TABLE_BOOKS = [
+  {id:1,name:'Harry-Potter',author:'J.K Rolling',category:'Romance',lastpage:'32',type:'physical',pdfid:"1"},
+  {id:2,name:'Life-Science',author:'A.B scott',category:'Science',lastpage:'10',type:'pdf',pdfid:2},
+  {id:3,name:'Simple-Bug',author:'Selfish-men',category:'Science-fiction',lastpage:'00',type:'physical',pdfid:3},
+  {id:4,name:'ESi-Boy',author:'josie mean',category:'Tech',lastpage:'40',type:'pdf',pdfid:3},
+  {id:5,name:'Dutch-Grammer',author:'Felian forse',category:'Educational',lastpage:'89',type:'pdf',pdfid:4},
+  {id:6,name:'Scooby-doo',author:'Adam derek',category:'Childish-story',lastpage:'05',type:'physical',pdfid:5},
 ]
 
 const SEARCH_MIN_LENGTH = 2;
@@ -38,9 +40,11 @@ export default function Dashboard() {
   const {user,logout} = useAuth()
 
 
-  const inputRef= useRef(null)
+  const inputRef= useRef(null);
   const rowRefs = useRef({});
   const asideRef=useRef(null);
+
+  const navigate = useNavigate();
 
 
 
@@ -51,10 +55,10 @@ export default function Dashboard() {
   const [searchTerm,setSearchTerm]= useState([]);
   const [searchInputValue,setSearchInputValue] = useState('');
   const [selectedRowId, setSelectedRowId] = useState(null);
-  const[activePage,setActivePage]=useState('home');
-  const[isModalOpen,setIsModalOpen]=useState(false)
-  const[walletModal,setWalletModal] = useState(false);
-  const[isMobileAsideOpen,setIsMobileAsideOpen]=useState(false);
+  const [activePage,setActivePage]=useState('home');
+  const [isModalOpen,setIsModalOpen]=useState(false)
+  const [walletModal,setWalletModal] = useState(false);
+  const [isMobileAsideOpen,setIsMobileAsideOpen]=useState(false);
 
 
 
@@ -66,8 +70,8 @@ export default function Dashboard() {
     month:'numeric',
     day:'numeric'
   }
+
   const formattedDate = today.toLocaleDateString('en-US',options);
-  
 
 
 
@@ -194,6 +198,17 @@ useEffect(() => {
   }
 
 
+  const goToBook = useCallback((bookId)=>{
+    const book = TABLE_BOOKS.find(b=>b.id === bookId)
+    if(book){
+      navigate(`/pdf/${book.pdfid}`)
+    }else{
+      // notificationRef.current.showNotif('Try again','warning') 
+      console.log('try again');
+    }
+  },[navigate])
+
+
 // ============================================
 //    Render Helpers
 // ============================================
@@ -201,8 +216,9 @@ useEffect(() => {
     <aside>
       <div className="profile-pic">
         <img 
-          src="https://boom-zrbn.mohtava.cloud/thumbs/api/v1/image/808428e1-6eb3-36f6-94c5-5007e2b3cc3f?zb_svc=fajr-im-prod&zb_dmn=ipm&zb_type=internal&zb_pl=0&zb_referer=zarebin.ir"
+          src={ppic14}
           alt="" 
+          loading='lazy'
         />
       </div>
       <ul>
@@ -325,8 +341,26 @@ useEffect(() => {
                         <td>{book.name}</td>
                         <td>{book.author}</td>
                         <td>{book.category}</td>
+
+                        {book.type==="physical"?(
+                          <>
+                            <td>
+                              <p>--</p>
+                            </td>
+                            <td>
+                              <p>--</p>
+                            </td>
+                          </>
+
+                        ):(
+                          <>
                         <td>{book.lastpage}</td>
-                        <td><button>READ</button></td>
+                        <td>
+                          <button onClick={()=>goToBook(book.id)}>READ</button>
+                        </td> 
+                        </>
+                        )}
+                        
                       </tr>
                     ))}
                   </tbody>

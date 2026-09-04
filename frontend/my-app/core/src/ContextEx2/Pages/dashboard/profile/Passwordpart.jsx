@@ -1,5 +1,5 @@
 // ✅
-import React,{useState,useCallback} from 'react'
+import React,{useState,useCallback,useEffect} from 'react'
 import {
   Box,
   Button,
@@ -10,6 +10,16 @@ import {
 // style in Profile.css
 
 
+// ============================================
+//    Constants
+// ============================================
+const MIN_PASSWORD_LENGTH = 8;
+const PASSWORD_PATTERNS = [
+  /[a-z]/, 
+  /[A-Z]/, 
+  /[0-9]/, 
+  /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, 
+];
 
 
 // ============================================
@@ -19,18 +29,49 @@ export default function Passwordpart({updateProfile,notificationRef}) {
   
   // ---State---
     const [passwordData, setPasswordData] = useState({
-      // currentPassword: '',
+      currentPassword: '',
       newPassword: '',
       repeatPassword: '',
     });
 
+    const [strength, setStrength] = useState('none');
 
   // ---Memoized Values---
-    const isFormValid = passwordData.newPassword.length >= 6 && 
-    passwordData.repeatPassword.length >= 6;
+    const isValid = 
+    passwordData.currentPassword &&
+    passwordData.newPassword &&
+    passwordData.repeatPassword 
 
 
 
+  // ---Effects---
+  useEffect(()=>{
+
+    const checkStrength = (pass)=>{
+
+      if(!pass || pass.length === 0) return 'none';
+        
+      
+      
+      let score = PASSWORD_PATTERNS.reduce((count, pattern) => 
+        count + (pattern.test(pass) ? 1 : 0), 0
+      );
+
+      // Length bonus
+      if (pass.length >= MIN_PASSWORD_LENGTH) score++;
+
+      
+      if (score<=2) return 'weak';
+      if (score<=4) return 'medium';
+      if (score>=5) return 'strong';
+      
+    }
+
+
+    setStrength(checkStrength(passwordData.newPassword))
+  
+  },[passwordData.newPassword])
+  
 
 
 
@@ -47,16 +88,27 @@ export default function Passwordpart({updateProfile,notificationRef}) {
   
     const handleSubmit = useCallback((e) => {
       e.preventDefault();
+
+    
+
+      
+      if (passwordData.newPassword.length < MIN_PASSWORD_LENGTH) {
+        notificationRef.current?.showNotif('Password not Strong (8)', 'error');
+        return false;
+      }
+
+      if (strength === 'weak' || strength === 'medium' || strength === 'none' ) {
+        notificationRef.current?.showNotif('Password must contain (symbols,number,upper,lower)', 'error');
+        return false;
+      }
+
+
       if (passwordData.newPassword !== passwordData.repeatPassword) {
         notificationRef.current.showNotif('Passwords dont match','error')
         return;
       }
 
-      // do check and strength test ⚠️
-      if (passwordData.newPassword.length < 8) {
-        notificationRef.current?.showNotif('Password must be at least 8 characters', 'error');
-        return;
-      }
+
 
       
       const NewPass ={
@@ -70,11 +122,11 @@ export default function Passwordpart({updateProfile,notificationRef}) {
 
       // Clear fields 
       setPasswordData({
-        // currentPassword: '',
+        currentPassword: '',
         newPassword: '',
         repeatPassword: '',
       });
-    },[notificationRef,updateProfile,passwordData])
+    },[notificationRef,updateProfile,passwordData,strength])
   
 
 
@@ -104,6 +156,20 @@ return (
               }}
             >
           
+          {/* Old Password */}
+          <TextField
+              fullWidth
+              label="Current Password"
+              name="currentPassword"
+              type="password"
+              className="customTextField"
+              value={passwordData.currentPassword}
+              onChange={handleChange}
+              sx={{ mb: 2 }}
+              required
+            />
+
+
           {/* New Password */}
             <TextField
               fullWidth
@@ -120,7 +186,7 @@ return (
             {/* Repeat Password */}
             <TextField
               fullWidth
-              label="Repeat New Password"
+              label="Repeat Password"
               name="repeatPassword"
               type="password"
               className="customTextField"
@@ -135,7 +201,7 @@ return (
             <Button 
                 type="submit"
                 variant="contained"  
-                disabled={!isFormValid}
+                disabled={!isValid}
                 sx={{
                   p:1.5,
                   mt:2,

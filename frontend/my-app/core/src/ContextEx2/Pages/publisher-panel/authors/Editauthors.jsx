@@ -308,6 +308,7 @@ export default function Editauthors({authorToEdit,onEditComplete}) {
               <img 
                 src={previewUrl} 
                 alt="Preview"  
+                loading='lazy'
               />
             </div>
           )}

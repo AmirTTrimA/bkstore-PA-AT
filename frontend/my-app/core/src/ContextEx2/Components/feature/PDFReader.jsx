@@ -171,7 +171,7 @@ export default function PDFReader() {
             Last
           </button> 
           <button onClick={goBack} className="control-btn back-btn">
-            Go Back
+            Go Home
           </button>
 
         </div>

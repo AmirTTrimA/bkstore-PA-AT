@@ -230,30 +230,77 @@
 
 /* Step3 */
 /* Payment */
-.pay-card{
-    padding: 15px;
-    width: 75%;
-    font-size: clamp(1rem, 2vw, 1.2rem);
-    font-weight: 600;
-    border-radius: 10px;
-    border: none;
-
-}
-
-.detail-card-info{
-    margin: 5px;
+.payment-options{
     display: flex;
-    gap: 10px;
-
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto;
 }
-.detail-card-info >input {
-    width: 195px;
-    padding: 10px;
-    border-radius: 5px;
-    border: none;
-    font-weight: 700;
 
-}
+
+/* Payment Option Card */
+.payment-option {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: #0c0f14;
+    border: 2px solid var(--border-color, #e0e0e0);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .payment-option:hover {
+    border-color: #ff0000;
+    background: rgba(102, 126, 234, 0.05);
+  }
+  
+  .payment-option.selected {
+    border-color: #4caf50;
+    color: #4caf50 !important;
+    background: rgba(76, 175, 80, 0.08);
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
+  }
+  
+  /* Hide Default Radio */
+  .payment-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  /* Payment Option Content */
+  .payment-option-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .payment-option-content svg {
+    flex-shrink: 0;
+  }
+  
+  .payment-option-content span {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  
+  /* Badge */
+  .payment-option-badge {
+    margin-left: auto;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    color: rgb(255, 255, 255) !important;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  
+  
 
 /* Button Group */
 .button-group{
@@ -276,6 +323,22 @@
     margin: 10px 5px;
 }
 
+.button-group-summary button:hover, .button-group button:hover{
+    cursor: pointer;
+}
+
+
+
+/* Disabled Button */
+.button-group button.disabled,
+.button-group button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+
+}
+
+
 
 /* ============================================
         RESPONSIVE DESIGN
@@ -285,8 +348,18 @@
         width: 470px;
         height: 500px;
     }
-    .detail-card-info >input{
-        width: 165px;
-    }
+    
+      .payment-option {
+        padding: 14px 16px;
+      }
+    
+      .payment-option-content svg {
+        width: 28px;
+        height: 28px;
+      }
+    
+      .payment-option-content span {
+        font-size: 14px;
+      }
     
 }

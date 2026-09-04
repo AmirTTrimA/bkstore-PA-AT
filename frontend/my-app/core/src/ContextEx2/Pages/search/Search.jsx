@@ -6,7 +6,13 @@ import { useParams, Link } from 'react-router-dom'
 
 
 import "../../Styles/components/Search.css"
-import { pic9 } from '../../Constants'
+import { 
+  pic9,pic10,pic11,
+  pic12,pic13,pic14,
+  pic15,pic16,pic17,
+  pic18,pic19,pic20,
+  pic21,
+} from '../../Constants'
 
 
 
@@ -24,7 +30,7 @@ const SORT_OPTIONS = [
   { id: 'most visited', label: 'Most Visited' },
 ];
 
-const FORMAT_OPTIONS = ['physical', 'pdf'];
+const FORMAT_OPTIONS = ['physical', 'pdf','audio'];
 
 
 
@@ -33,18 +39,18 @@ const FORMAT_OPTIONS = ['physical', 'pdf'];
 // ============================================
 export const search_results=[
   {searchId:"1",name:"harry-potter",category:'novel',price:"60",since:"2020",imgUrl:pic9},
-  {searchId:"2",name:"sara life",category:'trip-geo',price:"33",since:"1990",imgUrl:"https://di-uploads-pod11.dealerinspire.com/stevelanderschryslerdodgejeepram/uploads/2017/07/DG018_036CLul7gbtg3iqneobqm1lk3178ng4__mid.jpg"},
-  {searchId:"3",name:"KING naser",category:'history',price:"50",since:"2021",imgUrl:"https://cdn.motor1.com/images/mgl/ZXN9K/s3/ford-mustang-shelby-gt500.jpg"},
-  {searchId:"4",name:"new way",category:'trip-geo',price:"30",since:"2021",imgUrl:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlPK_MoPTG57Wp_s_WnFgl6bjL378Xb8M6HQ&s"},
-  {searchId:"5",name:"citizen art",category:'psychology',price:"29",since:"2019",imgUrl:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWtyoKr8-EgU3I8xH4GlEJiPOqPszxHJLWcw&s"},
-  {searchId:"6",name:"Quran",category:'religious',price:"15.09",since:"2002",imgUrl:"https://www.usnews.com/object/image/00000195-1985-dae4-a7d5-d9c784cf0000/p90541178-highres-rolls-royce-arcadia-1.jpg?update-time=1739889995584&size=responsive640"},
-  {searchId:"7",name:"AI king",category:'tech',price:"16",since:"2004",imgUrl:"https://www.mad4wheels.com/img/free-car-images/mobile/22103/jas-motorsport-tensei-by-pininfarina-2026-thumb.jpg"},
-  {searchId:"8",name:"IOT",category:'tech',price:"17",since:"2007",imgUrl:"https://image-cdn.beforward.jp/large/202603/12708974/CA622571_1d16adb9.jpg"},
-  {searchId:"9",name:"police limitations",category:'science-education',price:"80",since:"2018",imgUrl:"https://www.bmw-m.com/content/dam/bmw/marketBMW_M/www_bmw-m_com/topics/magazine-article-pool/2021/e46-gtr-street/bmw-m3-gtr-street-gallery-01.jpg"},
-  {searchId:"10",name:"society engineering",category:'psychology',price:"65",since:"2006",imgUrl:"https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg"},
-  {searchId:"11",name:"money honey",category:'financial',price:"65",since:"2006",imgUrl:"https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg"},
-  {searchId:"12",name:"humanization people",category:'psychology',price:"31",since:"2000",imgUrl:"https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg"},
-  {searchId:"13",name:"utility personality",category:'psychology',price:"22",since:"1989",imgUrl:"https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg"},
+  {searchId:"2",name:"sara life",category:'trip-geo',price:"33",since:"1990",imgUrl:pic10},
+  {searchId:"3",name:"KING naser",category:'history',price:"50",since:"2021",imgUrl:pic11},
+  {searchId:"4",name:"new way",category:'trip-geo',price:"30",since:"2021",imgUrl:pic12},
+  {searchId:"5",name:"citizen art",category:'psychology',price:"29",since:"2019",imgUrl:pic13},
+  {searchId:"6",name:"Quran",category:'religious',price:"15.09",since:"2002",imgUrl:pic14},
+  {searchId:"7",name:"AI king",category:'tech',price:"16",since:"2004",imgUrl:pic15},
+  {searchId:"8",name:"IOT",category:'tech',price:"17",since:"2007",imgUrl:pic16},
+  {searchId:"9",name:"police limitations",category:'science-education',price:"80",since:"2018",imgUrl:pic17},
+  {searchId:"10",name:"society engineering",category:'psychology',price:"65",since:"2006",imgUrl:pic18},
+  {searchId:"11",name:"money honey",category:'financial',price:"65",since:"2006",imgUrl:pic19},
+  {searchId:"12",name:"humanization people",category:'psychology',price:"31",since:"2000",imgUrl:pic20},
+  {searchId:"13",name:"utility personality",category:'psychology',price:"22",since:"1989",imgUrl:pic21},
 
 ]
 

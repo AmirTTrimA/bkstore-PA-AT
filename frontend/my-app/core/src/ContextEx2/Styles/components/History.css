@@ -28,8 +28,9 @@
     font-size: 1.5rem;
 }
 
-.history-card-small-text{
+.history-card-small-text, .history-cards-status{
     font-size: 0.75rem;
+    font-weight: bold;
     color: rgba(0,0,0,0.6);
 }
 
@@ -39,19 +40,9 @@
     margin-top: 5px;
 }
 
-
-/* Icons */
-.icon-withdraw{
-    font-size: 32px;
-    color: #f44336;
+.history-card-items{
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    background-color: orange;
 }
-
-.icon-deposit{ 
-    margin-top: 5px;
-    font-size: 32px;
-    color:#4caf50;
-}
-
-
-
-
