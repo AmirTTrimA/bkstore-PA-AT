@@ -5,6 +5,7 @@ import SimpleNav from "../../Components/SimpleNav";
 import Notification from "../../Components/feature/Notification";
 
 import SubscriptionService from "../../Services/SubscriptionService";
+import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Subscription.css";
 
@@ -506,9 +507,7 @@ export default function Subscription() {
 
                                     <p className="sub-price">
 
-
-                                        ${Number(plan.monthly_price).toFixed(2)}
-
+                                        {formatPrice(plan.monthly_price)}
 
                                         <span className="price-period">
 

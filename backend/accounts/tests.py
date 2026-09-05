@@ -22,6 +22,8 @@ from rest_framework.test import APITestCase
 
 # Get the custom User model
 User = get_user_model()
+from accounts.models import Address
+
 # 🔑 FIX: Get the token blacklist models via apps.get_model()
 OutstandingToken = apps.get_model("token_blacklist", "OutstandingToken")
 BlacklistedToken = apps.get_model("token_blacklist", "BlacklistedToken")
@@ -754,3 +756,115 @@ class PasswordChangeTest(APITestCase):
             response.status_code,
             status.HTTP_401_UNAUTHORIZED,
         )
+
+
+class AddressAPITestCase(APITestCase):
+    """
+    Test suite for user shipping address management endpoints.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="addressuser",
+            email="address@example.com",
+            password="StrongPassword123!",
+        )
+        self.other_user = User.objects.create_user(
+            username="otheraddressuser",
+            email="otheraddress@example.com",
+            password="StrongPassword123!",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.addresses_url = reverse("address-list-create")
+
+    def test_create_address_success(self):
+        data = {
+            "title": "Home",
+            "recipient_name": "Test Recipient",
+            "phone_number": "09123456789",
+            "country": "Iran",
+            "province": "Tehran",
+            "city": "Tehran",
+            "address_line": "Valiasr St, No 123",
+            "postal_code": "1234567890",
+        }
+        response = self.client.post(self.addresses_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["recipient_name"], "Test Recipient")
+        # First address should automatically be default
+        self.assertTrue(response.data["is_default"])
+        self.assertEqual(Address.objects.filter(user=self.user).count(), 1)
+
+    def test_default_address_switch(self):
+        addr1 = Address.objects.create(
+            user=self.user,
+            recipient_name="User 1",
+            city="Tehran",
+            address_line="Line 1",
+            is_default=True,
+        )
+        data = {
+            "title": "Office",
+            "recipient_name": "User Office",
+            "city": "Shiraz",
+            "address_line": "Zand St",
+            "is_default": True,
+        }
+        response = self.client.post(self.addresses_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data["is_default"])
+        addr1.refresh_from_db()
+        self.assertFalse(addr1.is_default)
+
+    def test_list_addresses_isolated_to_user(self):
+        Address.objects.create(
+            user=self.user,
+            recipient_name="My Address",
+            city="Tehran",
+            address_line="Line 1",
+        )
+        Address.objects.create(
+            user=self.other_user,
+            recipient_name="Other User Address",
+            city="Isfahan",
+            address_line="Line 2",
+        )
+        response = self.client.get(self.addresses_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["recipient_name"], "My Address")
+
+    def test_update_address(self):
+        addr = Address.objects.create(
+            user=self.user,
+            recipient_name="Old Name",
+            city="Tehran",
+            address_line="Line 1",
+        )
+        detail_url = reverse("address-detail", kwargs={"pk": addr.pk})
+        response = self.client.patch(
+            detail_url,
+            {"recipient_name": "New Name"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        addr.refresh_from_db()
+        self.assertEqual(addr.recipient_name, "New Name")
+
+    def test_delete_address(self):
+        addr = Address.objects.create(
+            user=self.user,
+            recipient_name="To Delete",
+            city="Tehran",
+            address_line="Line 1",
+        )
+        detail_url = reverse("address-detail", kwargs={"pk": addr.pk})
+        response = self.client.delete(detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Address.objects.filter(pk=addr.pk).exists())
+
+    def test_anonymous_cannot_access_addresses(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(self.addresses_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+

@@ -6,6 +6,7 @@ import { useAuth } from "../../Context/AuthContext";
 import BasketService from "../../Services/BasketService";
 
 import Notification from "../../Components/feature/Notification";
+import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Basket.css";
 
@@ -380,14 +381,7 @@ export default function Basket() {
 
 
                         <p className="item-price">
-
-                          $
-                          {
-                            Number(
-                              item.subtotal
-                            ).toFixed(2)
-                          }
-
+                          {formatPrice(item.subtotal)}
                         </p>
 
 
@@ -483,7 +477,7 @@ export default function Basket() {
 
 
                   <span>
-                    ${subtotal.toFixed(2)}
+                    {formatPrice(subtotal)}
                   </span>
 
 
@@ -506,7 +500,7 @@ export default function Basket() {
 
 
                   <span className="total-amount">
-                    ${total.toFixed(2)}
+                    {formatPrice(total)}
                   </span>
 
 

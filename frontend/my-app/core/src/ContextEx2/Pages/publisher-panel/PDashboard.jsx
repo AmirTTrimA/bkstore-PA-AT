@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 
 import { ppic14 } from '../../Constants';
+import { formatPrice } from '../../utils/formatPrice';
 import '../../Styles/components/Dashboard.css'
 
 
@@ -363,7 +364,7 @@ const closeMobileAside = useCallback(() => {
                       <td>{book.name}</td>
                       <td>{book.author}</td>
                       <td>{book.type}</td>
-                      <td>{book.price}$</td>
+                      <td>{formatPrice(book.price)}</td>
                       <td>
                         <button 
                           onClick={()=>handleEditBooks(book)}

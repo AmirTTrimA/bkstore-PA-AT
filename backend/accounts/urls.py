@@ -5,9 +5,11 @@ from rest_framework_simplejwt.views import (TokenBlacklistView,
                                             TokenObtainPairView,
                                             TokenRefreshView)
 
-from .views import (OTPLoginView, OTPRequestView, OTPVerifyView,
+from .views import (AddressDetailView, AddressListCreateView,
+                    OTPLoginView, OTPRequestView, OTPVerifyView,
                     PasswordChangeView, UserProfileUpdateView, UserProfileView,
                     UserRegistrationView)
+
 
 urlpatterns = [
     # --- JWT Token Management ---
@@ -83,4 +85,16 @@ urlpatterns = [
         PasswordChangeView.as_view(),
         name="password-change",
     ),
+    # --- Saved Addresses ---
+    path(
+        "addresses/",
+        AddressListCreateView.as_view(),
+        name="address-list-create",
+    ),
+    path(
+        "addresses/<int:pk>/",
+        AddressDetailView.as_view(),
+        name="address-detail",
+    ),
 ]
+

@@ -24,7 +24,6 @@ import {
 
 } from '@mui/icons-material';
 
-// ---Styles---
 import {search_results} from '../Pages/search/Search'
 import "../Styles/components/SimpleNav.css"
 
@@ -293,7 +292,7 @@ export default function SimpleNav() {
                                                     {item.name}
                                                   </Typography>
                                                   <Typography variant="body2" color="textSecondary">
-                                                    Category: {item.category} | Price: {item.price}$
+                                                    Category: {item.category} | Price: {formatPrice(item.price)}
                                                   </Typography>
                   
                                            </div>

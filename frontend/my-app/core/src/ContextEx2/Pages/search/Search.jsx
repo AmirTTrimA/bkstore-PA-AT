@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import Footer from "../../Components/Footer";
@@ -6,6 +6,7 @@ import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 
 import BookService from "../../Services/BookService";
+import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Search.css";
 
@@ -15,7 +16,8 @@ import "../../Styles/components/Search.css";
 // ============================================
 
 const MIN_PRICE = 0;
-const MAX_PRICE = 1000;
+const MAX_PRICE = 5000000;
+const PRICE_STEP = 50000;
 
 const SORT_OPTIONS = [
   { id: "cheap", label: "Cheap" },
@@ -407,7 +409,7 @@ export default function Search() {
 
     const value = Math.min(
       Number(event.target.value),
-      maxValue - 1
+      maxValue - PRICE_STEP
     );
 
     setMinValue(value);
@@ -419,7 +421,7 @@ export default function Search() {
 
     const value = Math.max(
       Number(event.target.value),
-      minValue + 1
+      minValue + PRICE_STEP
     );
 
     setMaxValue(value);
@@ -463,6 +465,36 @@ export default function Search() {
 
   const progressWidth2 =
     percent4 - percent3;
+
+
+  // ============================================
+  // Filter & Sort
+  // ============================================
+
+  const displayedBooks = useMemo(() => {
+    return searchValue
+      .filter((item) => {
+        const priceNum = Number(item.price);
+        if (!isNaN(priceNum)) {
+          if (priceNum < minValue || priceNum > maxValue) return false;
+        }
+        if (
+          filterCategory &&
+          !item.category?.toLowerCase().includes(filterCategory.toLowerCase())
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const priceA = Number(a.price) || 0;
+        const priceB = Number(b.price) || 0;
+        if (selectedSort === "cheap") return priceA - priceB;
+        if (selectedSort === "expensive") return priceB - priceA;
+        if (selectedSort === "latest") return (b.since || 0) - (a.since || 0);
+        return 0;
+      });
+  }, [searchValue, minValue, maxValue, filterCategory, selectedSort]);
 
 
   // ============================================
@@ -574,7 +606,7 @@ export default function Search() {
 
             <div className="search-cards-row">
 
-              {searchValue.length === 0 ? (
+              {displayedBooks.length === 0 ? (
 
                 <p className="search-result-empty-error">
                   No Result found
@@ -582,7 +614,7 @@ export default function Search() {
 
               ) : (
 
-                searchValue.map((item) => (
+                displayedBooks.map((item) => (
 
                   <Link
                     key={item.searchId}
@@ -608,7 +640,7 @@ export default function Search() {
                       </span>
 
                       <span className="search-card-field-price">
-                        {item.price}﷼
+                        {formatPrice(item.price)}
                       </span>
 
                     </div>
@@ -735,6 +767,7 @@ export default function Search() {
                       type="range"
                       min={MIN_PRICE}
                       max={MAX_PRICE}
+                      step={PRICE_STEP}
                       value={minValue}
                       onChange={handleMinChange}
                       className="price-range-slider slider-left"
@@ -745,6 +778,7 @@ export default function Search() {
                       type="range"
                       min={MIN_PRICE}
                       max={MAX_PRICE}
+                      step={PRICE_STEP}
                       value={maxValue}
                       onChange={handleMaxChange}
                       className="price-range-slider slider-right"
@@ -756,11 +790,11 @@ export default function Search() {
                   <div className="price-range-display">
 
                     <span>
-                      {minValue.toLocaleString()} ﷼
+                      {formatPrice(minValue)}
                     </span>
 
                     <span>
-                      {maxValue.toLocaleString()} ﷼
+                      {formatPrice(maxValue)}
                     </span>
 
                   </div>
@@ -1062,6 +1096,7 @@ export default function Search() {
                     type="range"
                     min={MIN_PRICE}
                     max={MAX_PRICE}
+                    step={PRICE_STEP}
                     value={minValue}
                     onChange={handleMinChange}
                     className="price-range-slider slider-left"
@@ -1072,6 +1107,7 @@ export default function Search() {
                     type="range"
                     min={MIN_PRICE}
                     max={MAX_PRICE}
+                    step={PRICE_STEP}
                     value={maxValue}
                     onChange={handleMaxChange}
                     className="price-range-slider slider-right"
@@ -1083,11 +1119,11 @@ export default function Search() {
                 <div className="price-range-display">
 
                   <span>
-                    {minValue.toLocaleString()} ﷼
+                    {formatPrice(minValue)}
                   </span>
 
                   <span>
-                    {maxValue.toLocaleString()} ﷼
+                    {formatPrice(maxValue)}
                   </span>
 
                 </div>

@@ -46,3 +46,52 @@ class OTPCode(models.Model):
         if not self.pk:
             self.code = str(random.randint(100000, 999999))
         super().save(*args, **kwargs)
+
+
+class Address(models.Model):
+    """
+    Stores user shipping addresses for physical order delivery.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="addresses",
+        verbose_name=_("User"),
+    )
+    title = models.CharField(
+        _("Title"),
+        max_length=100,
+        blank=True,
+        help_text=_("e.g. Home, Office"),
+    )
+    recipient_name = models.CharField(_("Recipient Name"), max_length=255)
+    phone_number = models.CharField(_("Phone Number"), max_length=30, blank=True)
+    country = models.CharField(_("Country"), max_length=100, default="Iran")
+    province = models.CharField(_("Province/State"), max_length=100, blank=True)
+    city = models.CharField(_("City"), max_length=100)
+    address_line = models.CharField(_("Address Line"), max_length=255)
+    postal_code = models.CharField(_("Postal Code"), max_length=20, blank=True)
+    is_default = models.BooleanField(_("Default Address"), default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Address")
+        verbose_name_plural = _("Addresses")
+        ordering = ["-is_default", "-created_at"]
+
+    def __str__(self):
+        title_prefix = f"[{self.title}] " if self.title else ""
+        return f"{title_prefix}{self.recipient_name}, {self.city}, {self.address_line}"
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            Address.objects.filter(user=self.user, is_default=True).exclude(
+                pk=self.pk
+            ).update(is_default=False)
+        elif not Address.objects.filter(user=self.user).exclude(pk=self.pk).exists():
+            self.is_default = True
+        super().save(*args, **kwargs)
+

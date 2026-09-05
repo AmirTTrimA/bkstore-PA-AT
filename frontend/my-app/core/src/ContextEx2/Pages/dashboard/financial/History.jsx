@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import OrderService from "../../../Services/OrderService";
+import { formatPrice } from "../../../utils/formatPrice";
 
 import "../../../Styles/components/History.css";
 
@@ -147,7 +148,7 @@ export default function History() {
 
 
               <div className="history-cards-total-amount">
-                ${Number(order.total_amount).toFixed(2)}
+                {formatPrice(order.total_amount)}
               </div>
 
             </div>
@@ -195,10 +196,7 @@ export default function History() {
                     </p>
 
                     <p>
-                      Price: $
-                      {Number(
-                        item.snapshot_price
-                      ).toFixed(2)}
+                      Price: {formatPrice(item.snapshot_price)}
                     </p>
 
                   </div>

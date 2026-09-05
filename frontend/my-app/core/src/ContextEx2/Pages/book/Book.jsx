@@ -11,6 +11,7 @@ import SimpleNav from "../../Components/SimpleNav";
 import Notification from "../../Components/feature/Notification";
 
 import { useAuth } from "../../Context/AuthContext";
+import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Book.css";
 
@@ -557,7 +558,7 @@ export default function Book() {
 
                     {format.type}
                     {" - "}
-                    {format.price}
+                    {formatPrice(format.price)}
 
                   </option>
 
@@ -570,7 +571,7 @@ export default function Book() {
 
             <div className="show-price">
 
-              {selectedFormat?.price}
+              {formatPrice(selectedFormat?.price)}
 
             </div>
 
