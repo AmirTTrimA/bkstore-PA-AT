@@ -347,5 +347,6 @@ class UserSubscription(models.Model):
     def is_current(self):
         return (
             self.status == self.Status.ACTIVE
+            and bool(self.end_date)
             and self.end_date > timezone.now()
         )

@@ -31,10 +31,6 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         "slug": ("name",),
     }
 
-    readonly_fields = (
-        "slug",
-    )
-
     fieldsets = (
         (
             "Plan Information",
@@ -42,6 +38,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
                 "fields": (
                     "name",
                     "slug",
+                    "tier",
                 )
             },
         ),
@@ -109,6 +106,8 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
         description="Valid",
     )
     def currently_valid(self, obj):
+        if not obj or not obj.end_date:
+            return False
         return obj.is_current()
 
     fieldsets = (

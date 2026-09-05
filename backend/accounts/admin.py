@@ -69,9 +69,9 @@ class UserAdmin(BaseUserAdmin):
         return (
             super()
             .get_queryset(request)
-            .select_related(
-                "subscription",
-                "subscription__plan",
+            .prefetch_related(
+                "subscriptions",
+                "subscriptions__plan",
             )
             .annotate(
                 order_total=Count(
@@ -104,19 +104,19 @@ class UserAdmin(BaseUserAdmin):
         description="Subscribed",
     )
     def subscription_status(self, obj):
-
-        if not hasattr(obj, "subscription"):
-            return False
-
-        return obj.subscription.is_current()
+        active_sub = next(
+            (s for s in obj.subscriptions.all() if s.status == "ACTIVE" and s.is_current()),
+            None,
+        )
+        return active_sub is not None
 
     @admin.display(description="Plan")
     def subscription_plan(self, obj):
-
-        if not hasattr(obj, "subscription"):
-            return "-"
-
-        return obj.subscription.plan.name
+        active_sub = next(
+            (s for s in obj.subscriptions.all() if s.status == "ACTIVE" and s.is_current()),
+            None,
+        )
+        return active_sub.plan.name if active_sub else "-"
 
 @admin.register(OTPCode)
 class OTPCodeAdmin(admin.ModelAdmin):

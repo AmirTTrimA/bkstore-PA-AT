@@ -7,9 +7,11 @@ from cart.models import Order, OrderItem
 from content.models import License
 # 🔑 FIX: Use apps.get_model for reliable access to token models in tests
 from django.apps import apps
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_str  # Import for localization fixes
@@ -867,4 +869,55 @@ class AddressAPITestCase(APITestCase):
         self.client.force_authenticate(user=None)
         response = self.client.get(self.addresses_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AdminPanelSmokeTestCase(TestCase):
+    """
+    Automated smoke tests ensuring that all registered Django admin views
+    (changelists, add forms, change forms) render without server errors.
+    """
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin_panel_tester",
+            email="admin_panel_tester@example.com",
+            password="adminpassword123",
+        )
+        self.client = Client()
+        self.client.force_login(self.admin_user)
+
+    def test_all_registered_admin_views_render_successfully(self):
+        for model, model_admin in admin.site._registry.items():
+            app_label = model._meta.app_label
+            model_name = model._meta.model_name
+
+            # 1. Changelist view
+            changelist_url = f"/admin/{app_label}/{model_name}/"
+            resp = self.client.get(changelist_url)
+            self.assertEqual(
+                resp.status_code,
+                200,
+                f"Changelist for {app_label}.{model_name} failed with status {resp.status_code}",
+            )
+
+            # 2. Add form view (200 or 403 if add is restricted)
+            add_url = f"/admin/{app_label}/{model_name}/add/"
+            resp = self.client.get(add_url)
+            self.assertIn(
+                resp.status_code,
+                (200, 403),
+                f"Add form for {app_label}.{model_name} failed with status {resp.status_code}",
+            )
+
+            # 3. Change form view (if an instance exists)
+            instance = model.objects.first()
+            if instance:
+                change_url = f"/admin/{app_label}/{model_name}/{instance.pk}/change/"
+                resp = self.client.get(change_url)
+                self.assertIn(
+                    resp.status_code,
+                    (200, 403),
+                    f"Change form for {app_label}.{model_name} failed with status {resp.status_code}",
+                )
+
 
