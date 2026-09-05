@@ -21,6 +21,7 @@ class WalletService:
         user,
         amount,
         description="",
+        transaction_type=None,
     ):
         amount = Decimal(str(amount))
 
@@ -37,7 +38,7 @@ class WalletService:
 
         transaction_record = WalletTransaction.objects.create(
             wallet=wallet,
-            transaction_type=WalletTransaction.TransactionType.DEPOSIT,
+            transaction_type=transaction_type or WalletTransaction.TransactionType.DEPOSIT,
             amount=amount,
             balance_after=wallet.balance,
             description=description or "Wallet deposit",

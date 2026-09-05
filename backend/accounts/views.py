@@ -275,6 +275,7 @@ class AddressListCreateView(generics.ListCreateAPIView):
 
     serializer_class = AddressSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return Address.objects.filter(user=self.request.user)

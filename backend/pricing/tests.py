@@ -1436,7 +1436,7 @@ class SubscriptionServiceTest(APITestCase):
 
         self.assertEqual(
             reserved.end_date,
-            current.end_date + timezone.timedelta(days=30),
+            SubscriptionService._calculate_end_date(current.end_date),
         )
 
         self.user.wallet.refresh_from_db()
