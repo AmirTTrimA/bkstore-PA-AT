@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import WalletService from "../../../Services/WalletService";
+import { formatPrice } from "../../../utils/formatPrice";
 
 import "../../../Styles/components/History.css";
 
@@ -167,13 +168,7 @@ export default function Transactions() {
                                             : ""
                                     }
 
-                                    $
-
-                                    {
-                                        Number(
-                                            transaction.amount
-                                        ).toFixed(2)
-                                    }
+                                    {formatPrice(transaction.amount)}
 
                                 </div>
 
@@ -191,13 +186,7 @@ export default function Transactions() {
                                     Balance:
                                     {" "}
 
-                                    $
-
-                                    {
-                                        Number(
-                                            transaction.balance_after
-                                        ).toFixed(2)
-                                    }
+                                    {formatPrice(transaction.balance_after)}
 
                                 </p>
 

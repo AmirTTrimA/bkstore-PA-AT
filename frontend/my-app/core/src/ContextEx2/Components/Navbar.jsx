@@ -484,9 +484,9 @@ export default function Navbar() {
                                                <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                                                     {item.name}
                                                   </Typography>
-                                                  <Typography variant="body2" color="textSecondary">
-                                                    Category: {item.category} | Price: {item.price}$
-                                                  </Typography>
+                                                   <Typography variant="body2" color="textSecondary">
+                                                     Category: {item.category} | Price: {formatPrice(item.price)}
+                                                   </Typography>
                   
                                            </div>
                                        ))

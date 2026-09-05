@@ -5,6 +5,7 @@ import BookService from "../../Services/BookService";
 
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
+import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Library.css";
 
@@ -397,9 +398,7 @@ export default function Library() {
 
                                         <p className="library-card-price">
 
-                                            {Number(
-                                                book.price
-                                            ).toLocaleString()} ﷼
+                                            {formatPrice(book.price)}
 
                                         </p>
 
