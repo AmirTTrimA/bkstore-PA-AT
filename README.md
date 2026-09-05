@@ -78,6 +78,23 @@ The backend has since been extended with an implemented **wallet and account-pay
 - `is_valid`: BooleanField (default: True)
 - **Behavior:** Previous valid codes for a user are invalidated upon new code generation. Codes are single-use and expire after 5 minutes.
 
+**Address**
+
+Represents saved physical shipping addresses for customer accounts.
+
+- `user`: ForeignKey → User (CASCADE, related_name="addresses")
+- `title`: CharField(64) — label for the address (e.g. "Home", "Work", default: "Home")
+- `recipient_name`: CharField(255) — full name of receiver
+- `phone_number`: CharField(20) — contact telephone/mobile number
+- `country`: CharField(100, default="Iran")
+- `province`: CharField(100)
+- `city`: CharField(100)
+- `address_line`: TextField — detailed street address, building, and unit number
+- `postal_code`: CharField(20) — 10-digit postal code
+- `is_default`: BooleanField (default: False)
+- `created_at`, `updated_at`: DateTimeField
+- **Behavior:** If an address is marked as `is_default=True`, any existing default address for that user is automatically unset. If a user only has one address, it automatically defaults to `is_default=True`. Exposed as part of user profile and selectable by `address_id` during checkout.
+
 ### 3.2 Product Catalog (`catalog`)
 
 #### 3.2.1 Author
@@ -194,8 +211,8 @@ The pricing system separates **pricing data** (stored in models) from **pricing 
 Represents the historical selling price of a book.
 
 - `book`: ForeignKey → Book (CASCADE, related_name="prices")
-- `value`: DecimalField (max_digits=10, decimal_places=2)
-- `currency`: CharField(3, default="USD")
+- `value`: DecimalField (max_digits=12, decimal_places=0) — stored in whole units of Iranian Rial (IRR)
+- `currency`: CharField(3, default="IRR")
 - `min_price`: DecimalField (nullable) — optional minimum selling price after discounts
 - `effective_from`: DateTimeField
 - `effective_until`: DateTimeField (nullable)
@@ -487,6 +504,7 @@ Clear Cart
 
 The service is intentionally divided into small private methods, each responsible for a single stage of the workflow:
 
+- `_resolve_shipping_data()`
 - `_build_order_snapshot()`
 - `_create_order()`
 - `_create_order_items()`
@@ -495,6 +513,10 @@ The service is intentionally divided into small private methods, each responsibl
 - `_clear_cart()`
 
 This separation improves maintainability, simplifies testing, and keeps pricing logic isolated from order management.
+
+`_resolve_shipping_data()` implements conditional physical vs. digital checkout rules:
+- If the cart contains any items with format `PHYSICAL`, a shipping address is strictly required. Customers may supply either an `address_id` (referencing an `Address` owned by the user) or explicit shipping fields (`shipping_name`, `shipping_address_line1`, `shipping_city`, `shipping_country`). Supplying `address_id` automatically populates the snapshot fields from the saved address model.
+- If the cart contains exclusively digital or audiobook formats, shipping fields are optional and default to empty snapshot strings, allowing frictionless digital checkouts.
 
 The checkout workflow was later extended to use the customer's wallet as the payment source. Wallet withdrawal occurs before the order is finalized and before digital licenses are granted. If the wallet does not contain sufficient funds, checkout is rejected and the surrounding database transaction is rolled back.
 
@@ -839,7 +861,13 @@ The service is used by checkout rather than allowing views or serializers to mod
 | POST | `/api/v1/auth/password/reset/confirm/` | No | Complete the password reset using a valid reset token. |
 | POST | `/api/v1/auth/otp/request/` | No | Request a one-time password. Invalidates previous active OTPs and sends a new code via email. |
 | POST | `/api/v1/auth/otp/verify/` | Yes | Verify a one-time password for two-factor authentication or re-authentication. |
-| GET | `/api/v1/auth/profile/` | Yes | Retrieve the authenticated user's profile, active subscription, licenses, and order history. |
+| GET | `/api/v1/auth/profile/` | Yes | Retrieve the authenticated user's profile, active subscription, licenses, order history, and saved addresses. |
+| GET | `/api/v1/auth/addresses/` | Yes | List all saved shipping addresses for the authenticated user. |
+| POST | `/api/v1/auth/addresses/` | Yes | Create a new shipping address for the authenticated user. |
+| GET | `/api/v1/auth/addresses/<id>/` | Yes | Retrieve a specific shipping address owned by the user. |
+| PUT | `/api/v1/auth/addresses/<id>/` | Yes | Update all fields of a shipping address owned by the user. |
+| PATCH | `/api/v1/auth/addresses/<id>/` | Yes | Partially update a shipping address owned by the user. |
+| DELETE | `/api/v1/auth/addresses/<id>/` | Yes | Delete a shipping address owned by the user. |
 
 ---
 
@@ -924,7 +952,7 @@ The publisher-facing detail serializer deliberately omits internal moderation in
 | POST | `/api/v1/cart/wishlist/` | Yes | Add a book to the wishlist. |
 | DELETE | `/api/v1/cart/wishlist/<id>/` | Yes | Remove a wishlist item. |
 
-| POST | `/api/v1/cart/checkout/` | Yes | Execute the complete checkout workflow. The CheckoutService builds the order snapshot, delegates per-book pricing to the PricingEngine, creates the order and order items, grants digital licenses, consumes the coupon (if any), clears the cart, and schedules the confirmation email. |
+| POST | `/api/v1/cart/checkout/` | Yes | Execute the complete checkout workflow. Accepts `address_id` (referencing a saved address) or raw shipping fields. Enforces shipping address strictly when physical books are present in the cart, allowing digital/audio-only checkouts to proceed without shipping data. The CheckoutService verifies wallet balance, withdraws funds, delegates per-book pricing to the PricingEngine, creates the immutable order snapshot, grants digital licenses, consumes the coupon (if any), clears the cart, and schedules confirmation email. |
 | GET | `/api/v1/cart/orders/` | Yes | List the authenticated user's order history. |
 | GET | `/api/v1/cart/orders/<id>/` | Yes | Retrieve a complete immutable snapshot of a previously placed order, including purchased items. |
 | POST | `/api/v1/cart/orders/<id>/cancel/` | Yes | Cancel a cancellable order, refund its wallet payment, and revoke licenses granted by the order. |
@@ -1276,6 +1304,7 @@ Commits are atomic, use imperative mood, and describe one logical change each.
   - Edge cases (empty cart, invalid IDs, duplicate wishlist items)
   - Cross-app integration (checkout flow from cart through pricing to license generation)
   - Payment and refund integration (wallet withdrawal during checkout, insufficient funds, order cancellation, wallet refund, and license revocation)
+  - Address management and shipping integration (Address model CRUD, default address handling, physical vs. digital checkout shipping enforcement, and address snapshot creation)
   - Publisher workflow lifecycle (including proposal withdrawal and publisher isolation)
   - Authentication requirements (public vs. authenticated access)
   - Discount logic (subscription, promo codes, anti-stacking behavior)
