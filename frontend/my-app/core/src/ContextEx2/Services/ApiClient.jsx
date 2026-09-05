@@ -3,7 +3,7 @@ import axios from "axios";
 // ============================================
 // Constants
 // ============================================
-const API_BASE_URL = "http://localhost:8000/api/v1";
+const API_BASE_URL = "/api/v1";
 
 const TOKEN_KEY = "token";
 const REFRESH_TOKEN_KEY = "refreshToken";
