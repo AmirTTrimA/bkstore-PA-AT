@@ -43,6 +43,7 @@ import Publisher from '../Pages/publisher/Publisher';
 
 // ---Feature Components---
 import PDFReader from '../Components/feature/PDFReader';
+import AudioPlayer from '../Components/feature/AudioPlayer';
 import ProtectedView from '../Components/feature/ProtectedView';
 import NotFound from '../Pages/NotFound';
 
@@ -149,6 +150,9 @@ export default function Router() {
 
         {/* Feature Routes */}
         <Route path='/pdfreader' element={<PDFReader />} />
+        <Route path='/pdf/:bookId' element={<PDFReader />} />
+        <Route path='/audioplayer' element={<AudioPlayer />} />
+        <Route path='/audio/:bookId' element={<AudioPlayer />} />
 
         {/* 404 - Catch All */}
         <Route path='*' element={<NotFound />} />

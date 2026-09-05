@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Document, Page } from "react-pdf";
-import {useNavigate} from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ThemeToggle } from "../common/ThemeToggle";
 
 import "../../../pdf-worker"; 
@@ -25,6 +25,8 @@ const KEYBOARD_NAVIGATION_KEYS = {
 export default function PDFReader() {
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const book = location.state?.book;
 
   // ---States---
   const [numPages, setNumPages] = useState(null);
@@ -138,7 +140,12 @@ export default function PDFReader() {
   return (
     <div className="pdf-container">
       <div className="pdf-content">
-        <h2 className="pdf-title">PDF Viewer</h2>
+        <h2 className="pdf-title">{book?.book_title || "PDF Viewer"}</h2>
+        {book?.author && (
+          <p style={{ color: "var(--text-primarys)", marginTop: "-12px", marginBottom: "16px", opacity: 0.8 }}>
+            by {book.author}
+          </p>
+        )}
         
         <div className="controls">
           <button 
@@ -170,8 +177,8 @@ export default function PDFReader() {
           <button onClick={goToLastPage} className="control-btn reset-btn">
             Last
           </button> 
-          <button onClick={goBack} className="control-btn back-btn">
-            Go Home
+          <button onClick={() => navigate("/dashboard")} className="control-btn back-btn">
+            ← Dashboard
           </button>
 
         </div>
@@ -179,7 +186,7 @@ export default function PDFReader() {
         <div className="document-wrapper">
 
           <Document
-            file="/k2.pdf"
+            file={book?.pdf_url || book?.file_url || "/k2.pdf"}
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
             loading="Loading document..."
