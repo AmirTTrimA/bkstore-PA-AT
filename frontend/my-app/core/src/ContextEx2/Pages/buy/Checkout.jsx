@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useState
+} from "react";
 import { Navigate } from "react-router-dom";
 
 import { useAuth } from "../../Context/AuthContext";
@@ -49,6 +53,13 @@ export default function Checkout() {
 
 
     const [error, setError] = useState("");
+
+    const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState("");
+
+    const handlePaymentMethodSelect = useCallback((method) => {
+        setSelectedPaymentMethod(method);
+    }, [])
 
 
 
@@ -308,15 +319,10 @@ export default function Checkout() {
 
     }
 
-
-    const handlePaymentMethodSelect = useCallback((method)=>{
-        setSelectedPaymentMethod(method);
-    },[])
-
-    const handleContinueToPayment = useCallback(()=>{
+    const handleContinueToPayment = useCallback(() => {
         // double check (dont happen commonly)
-        if(!selectedPaymentMethod){
-            notificationRef.current.showNotif('please select payment method','error');
+        if (!selectedPaymentMethod) {
+            notificationRef.current.showNotif('please select payment method', 'error');
             return
         }
         // not enough  cash in wallet 
@@ -326,7 +332,7 @@ export default function Checkout() {
         //     return
         // }
         // navigate to shaparak if select card
-    },[selectedPaymentMethod])
+    }, [selectedPaymentMethod])
 
 
     if (error) {
