@@ -109,12 +109,14 @@ return (
                     src={item.img}
                     alt={item.title}
                     id="card-main" 
+                    loading='lazy'
                    />
                   <img 
                     src={item.author_profile}
                     onClick={(e)=>handleAuthor(e,item.authorId)} 
                     alt="profile pic" 
                     id="card-profile"
+                    loading='lazy'
                   />
                 </div>
                 {/* Card Content */}

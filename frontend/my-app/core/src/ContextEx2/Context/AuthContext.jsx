@@ -12,7 +12,7 @@ const AuthContext = createContext();
 
 
 
-// ============================================
+// ============================================x
 //    Provider Component
 // ============================================
 export default function AuthProvider({ children }){

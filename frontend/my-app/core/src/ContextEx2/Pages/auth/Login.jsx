@@ -2,6 +2,7 @@
 import React, { useState,useEffect,useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
+import { useMediaQuery } from 'react-responsive';
 import Notification from '../../Components/feature/Notification';
 import '../../Styles/components/Login.css'
 
@@ -34,11 +35,12 @@ export default function Login() {
 
   const[showPassword,setShowPassword]=useState(false)
   const[isHover,setIsHover]=useState(false)
+  const isMobile = useMediaQuery({maxWidth:768});
   const isCheckedRef = useRef(false)
   const labelTextRef = useRef(null)
 
   // ---Derived State---
-  const isValidD= formData.name && formData.password
+  const isValid= formData.name && formData.password
   
 
 
@@ -79,16 +81,11 @@ export default function Login() {
   // ---Handlers---
   const handleSubmit = useCallback(async(e) => {
 
-
     e.preventDefault();
     
-    
- 
     const usable_name = formData.name.trim();
     const usable_password = formData.password;
 
-      
-      
     const isempty = !formData.name.trim() || !formData.password 
       
     // Validation
@@ -183,7 +180,10 @@ const toggleShowPass =()=>{
 
 
 
-
+// mobile
+const toggleHover = useCallback(() => {
+  setIsHover(prev=>!prev);
+}, []);
 
 
 
@@ -197,12 +197,14 @@ const toggleShowPass =()=>{
 <>
     
   <div className={`login-container ${isHover ? 'expanded':''}`}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={()=>setIsHover(false)}>
+        onMouseEnter={!isMobile ? handleMouseEnter : undefined}
+        onMouseLeave={!isMobile ? () =>setIsHover(false) : undefined}
+        
+    >
 
 
     <div>
-        <h2 className='form-title-login'>Login</h2>
+        <h2 className='form-title-login' onClick={isMobile ? toggleHover : undefined}>Login</h2>
           <div className={`form-content ${isHover ?'visible':''}`}>
 
               <form onSubmit={handleSubmit}>
@@ -259,8 +261,6 @@ const toggleShowPass =()=>{
                       Register
                     </span>
                     
-                    
-                   
                    </label>
                    
                   </span>
@@ -276,7 +276,7 @@ const toggleShowPass =()=>{
                 <button 
                   type='submit'
                   className="form-button"
-                  disabled={!isValidD}
+                  disabled={!isValid}
                 >
                   Login
                 </button>

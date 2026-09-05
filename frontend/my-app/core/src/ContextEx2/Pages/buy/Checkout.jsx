@@ -309,7 +309,24 @@ export default function Checkout() {
     }
 
 
+    const handlePaymentMethodSelect = useCallback((method)=>{
+        setSelectedPaymentMethod(method);
+    },[])
 
+    const handleContinueToPayment = useCallback(()=>{
+        // double check (dont happen commonly)
+        if(!selectedPaymentMethod){
+            notificationRef.current.showNotif('please select payment method','error');
+            return
+        }
+        // not enough  cash in wallet 
+        // ✅notif work
+        // if(wallet < total.toFixed(2)){
+        //     notificationRef.current.showNotif('Not enogh credit in wallet','error');
+        //     return
+        // }
+        // navigate to shaparak if select card
+    },[selectedPaymentMethod])
 
 
     if (error) {

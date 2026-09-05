@@ -5,6 +5,8 @@ import OrderService from "../../../Services/OrderService";
 import "../../../Styles/components/History.css";
 
 
+// status => Pending Payment, Processing Order, Shipped , Delivered , Cancelled
+
 
 export default function History() {
 

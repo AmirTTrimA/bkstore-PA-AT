@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   Box,
@@ -8,8 +8,12 @@ import {
   Typography
 } from "@mui/material";
 
+import Notification from "../../../Components/feature/Notification";
+
 import PaymentService from "../../../Services/PaymentService";
 import WalletService from "../../../Services/WalletService";
+
+import "../../../Styles/components/Wallet.css";
 
 
 // ============================================
@@ -17,6 +21,11 @@ import WalletService from "../../../Services/WalletService";
 // ============================================
 
 export default function Wallet() {
+
+
+  // ============================================
+  // State
+  // ============================================
 
   const [wallet, setWallet] = useState(null);
 
@@ -31,6 +40,16 @@ export default function Wallet() {
   const [chargeError, setChargeError] = useState("");
 
 
+
+  // ============================================
+  // Ref
+  // ============================================
+
+  const notificationRef = useRef();
+
+
+
+
   // ============================================
   // Load Wallet
   // ============================================
@@ -42,7 +61,9 @@ export default function Wallet() {
       const response =
         await WalletService.getWallet();
 
+
       setWallet(response.data);
+
 
     }
     catch (err) {
@@ -51,6 +72,7 @@ export default function Wallet() {
         "Failed loading wallet:",
         err
       );
+
 
       setError(
         "Could not load wallet."
@@ -66,11 +88,14 @@ export default function Wallet() {
   };
 
 
+
   useEffect(() => {
 
     loadWallet();
 
   }, []);
+
+
 
 
   // ============================================
@@ -84,8 +109,10 @@ export default function Wallet() {
     setChargeError("");
 
 
+
     const numericAmount =
       Number(amount);
+
 
 
     if (
@@ -102,9 +129,11 @@ export default function Wallet() {
     }
 
 
+
     try {
 
       setCharging(true);
+
 
 
       const response =
@@ -113,8 +142,10 @@ export default function Wallet() {
         );
 
 
+
       const paymentUrl =
         response.data?.payment_url;
+
 
 
       if (!paymentUrl) {
@@ -126,20 +157,24 @@ export default function Wallet() {
       }
 
 
+
       /*
-       * The backend has created the payment
-       * and returned the gateway redirect.
+       * Backend created the payment.
        *
-       * Do not update the wallet locally.
-       * The backend will credit it only after
-       * successful gateway verification.
+       * Wallet balance should NOT
+       * be updated here.
+       *
+       * It will update after the
+       * gateway callback succeeds.
        */
 
       window.location.href =
         paymentUrl;
 
+
     }
     catch (err) {
+
 
       console.error(
         "Wallet top-up failed:",
@@ -152,11 +187,15 @@ export default function Wallet() {
         "Could not start the payment."
       );
 
+
       setCharging(false);
 
     }
 
   };
+
+
+
 
 
   // ============================================
@@ -178,11 +217,14 @@ export default function Wallet() {
           Loading wallet...
         </Typography>
 
+
       </Box>
 
     );
 
   }
+
+
 
 
   if (error) {
@@ -200,11 +242,15 @@ export default function Wallet() {
           {error}
         </Typography>
 
+
       </Box>
 
     );
 
   }
+
+
+
 
 
   // ============================================
@@ -213,129 +259,153 @@ export default function Wallet() {
 
   return (
 
-    <Box sx={{ mt: 2 }}>
+    <Box
+      sx={{
+        mt: 2
+      }}
+    >
 
 
-      {/* Balance Display */}
+      {/* Balance */}
 
       <Grid
         sx={{
           textAlign: "center",
-          mb: 3,
-          mt: 6
+          mb: 4,
+          mt: 5
         }}
       >
 
         <Typography
           variant="h4"
           gutterBottom
-          sx={{ mb: 1 }}
+          sx={{
+            mb: 1,
+            fontWeight: 700
+          }}
         >
           Wallet Balance
         </Typography>
 
 
+
         <Typography
           variant="h3"
-          gutterBottom
           sx={{
-            mb: 2,
-            mt: 2,
             fontWeight: "bold"
           }}
         >
 
-          {Number(wallet.balance).toLocaleString("fa-IR")}
+          {
+            Number(
+              wallet?.balance || 0
+            ).toLocaleString("fa-IR")
+          }
 
-          {" "}
-
-          IRR
+          {" "}IRR
 
         </Typography>
+
 
       </Grid>
 
 
 
-      {/* Top Up */}
+
+
+      {/* Top Up Form */}
 
       <Box
         component="form"
         onSubmit={handleTopUp}
       >
 
+
         <TextField
-
           fullWidth
-
           label="Amount (IRR)"
-
           type="number"
-
           value={amount}
-
           onChange={(event) =>
-            setAmount(event.target.value)
+            setAmount(
+              event.target.value
+            )
           }
-
           inputProps={{
             min: 1,
             step: 1
           }}
-
           disabled={charging}
-
         />
 
 
-        {chargeError && (
 
-          <Typography
-            color="error"
-            sx={{ mt: 1 }}
-          >
-            {chargeError}
-          </Typography>
 
-        )}
+        {
+          chargeError && (
+
+            <Typography
+              color="error"
+              sx={{
+                mt: 1
+              }}
+            >
+              {chargeError}
+            </Typography>
+
+          )
+        }
+
+
+
 
 
         <Grid
           container
-          spacing={2}
           justifyContent="center"
+          sx={{
+            mt: 2
+          }}
         >
 
           <Button
-
             type="submit"
-
             variant="contained"
-
             disabled={
               charging ||
               !amount
             }
-
             sx={{
-              pl: 4,
-              pr: 4,
-              mt: 2,
-              backgroundColor: "#00a859"
+              px: 5,
+              backgroundColor:
+                "#00a859"
             }}
-
           >
 
-            {charging
-              ? "Redirecting..."
-              : "Top Up"
+            {
+              charging
+                ?
+                "Redirecting..."
+                :
+                "Top Up"
             }
+
 
           </Button>
 
+
         </Grid>
 
+
       </Box>
+
+
+
+
+
+      <Notification
+        ref={notificationRef}
+      />
 
 
     </Box>

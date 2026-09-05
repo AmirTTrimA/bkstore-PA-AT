@@ -1,5 +1,5 @@
 // ✅
-import React,{useState,useRef,useEffect,useMemo} from 'react';
+import React,{useState,useRef,useEffect,useMemo,useCallback } from 'react';
 import Profile from '../dashboard/profile/Profile';
 import Authors from './authors/Authors';
 import Upload from './Upload';
@@ -11,8 +11,8 @@ import Notification from '../../Components/feature/Notification';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 
+import { ppic14 } from '../../Constants';
 import '../../Styles/components/Dashboard.css'
-import { useCallback } from 'react';
 
 
 
@@ -258,8 +258,9 @@ const closeMobileAside = useCallback(() => {
     <aside>
       <div className="profile-pic">
         <img 
-          src="https://boom-zrbn.mohtava.cloud/thumbs/api/v1/image/808428e1-6eb3-36f6-94c5-5007e2b3cc3f?zb_svc=fajr-im-prod&zb_dmn=ipm&zb_type=internal&zb_pl=0&zb_referer=zarebin.ir" 
-          alt="" 
+          src={ppic14}
+          alt=""
+          loading='lazy' 
         />
       </div>
       <ul>

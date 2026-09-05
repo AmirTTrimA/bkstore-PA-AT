@@ -2,11 +2,13 @@ import { motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-// --- Components ---
-import Footer from "../../Components/Footer";
-import Navbar from "../../Components/Navbar";
-import ReusableSlider from "../../Components/common/ReusableSlider";
-import { ThemeToggle } from "../../Components/common/ThemeToggle";
+// ---Components---
+import Navbar from '../../Components/Navbar';
+import Footer from '../../Components/Footer';
+import ReusableSlider from '../../Components/common/ReusableSlider';
+import Notification from '../../Components/feature/Notification';
+import { useAuth } from '../../Context/AuthContext';
+import  {ThemeToggle}  from '../../Components/common/ThemeToggle';
 
 // --- Styles ---
 import "../../Styles/components/Home.css";
@@ -155,6 +157,8 @@ export default function Home() {
   const [newBooks, setNewBooks] = useState([]);
   const [latestBooks, setLatestBooks] = useState([]);
   const [genres, setGenres] = useState([]);
+  const {isLoggedIn}=useAuth();
+  const notificationRef = useRef();
 
 
   const [loadingBooks, setLoadingBooks] = useState(true);
@@ -179,6 +183,11 @@ export default function Home() {
   // ----------------------------------------
   // Static Presentation Data
   // ----------------------------------------
+// ---States---
+  // eslint-disable-next-line no-unused-vars
+  const [currentSlide,setCurrentSlide] = useState(0)
+  const [isHovered,setIsHovered]=useState(false)
+  
 
   const introduce = INTRODUCE;
   const user_experience = USER_EXPERIENCE;
@@ -474,6 +483,25 @@ export default function Home() {
 
   const getGenreIcon = (genre) =>
     GENRE_ICONS[genre] || "/icons/cat-default.svg";
+// ---Handle isLoggedin---
+  const handleLoginCheck = useCallback((e)=>{
+    if(!isLoggedIn){
+      e.preventDefault();
+      if(notificationRef.current){
+        notificationRef.current.showNotif(' require','error',{
+          linkText:"login",
+          linkHref:"/login"
+        })
+      }
+      return false;
+    }
+    return true;
+     
+  },[isLoggedIn])
+
+
+// ---Derived State---
+    const slide = totals > 0 ? books[currentSlide] : null;
 
 
   // ============================================
@@ -676,8 +704,6 @@ export default function Home() {
             )}
 
 
-            {totalSlides > 0 && (
-
               <div className="indicators">
 
                 {heroBooks.map(
@@ -702,8 +728,6 @@ export default function Home() {
                 )}
 
               </div>
-
-            )}
 
           </div>
 
@@ -880,6 +904,7 @@ export default function Home() {
 
             <Link
               to="/favorites"
+              onClick={handleLoginCheck}
               className="nav-item"
             >
 
@@ -928,26 +953,19 @@ export default function Home() {
 
             </Link>
 
-
-            <Link
-              to="/dashboard"
-              className="nav-item"
-            >
-
-              <i className="fas fa-user"></i>
-
-              <span>
-                Dashboard
-              </span>
-
-            </Link>
-
+                <Link to="/dashboard"  
+                      onClick={handleLoginCheck}
+                      className="nav-item"
+                >
+                      <i className="fas fa-user"></i>
+                      <span>Dashboard</span>
+                </Link>
           </nav>
 
         </div>
 
-      </div>
-
+        <Notification ref={notificationRef} />
+    </div>
     </>
 
   );
