@@ -145,29 +145,53 @@ class WishlistCreateSerializer(serializers.Serializer):
 class CheckoutInputSerializer(serializers.Serializer):
     """
     Serializer for input data during final order submission (checkout).
+    Supports either selecting a saved address_id or providing manual shipping details.
+    Shipping details are only mandatory if the cart contains physical books.
     """
 
-    # --- Shipping Address Snapshot (Required for physical delivery) ---
+    address_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        label=_("Saved Address ID"),
+    )
     shipping_name = serializers.CharField(
-        max_length=255, required=True, label=_("Recipient Name")
+        max_length=255,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("Recipient Name"),
     )
     shipping_address_line1 = serializers.CharField(
-        max_length=255, required=True, label=_("Address Line 1")
+        max_length=255,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("Address Line 1"),
     )
     shipping_city = serializers.CharField(
-        max_length=100, required=True, label=_("City")
+        max_length=100,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("City"),
     )
     shipping_country = serializers.CharField(
-        max_length=100, required=True, label=_("Country")
+        max_length=100,
+        required=False,
+        allow_blank=True,
+        default="Iran",
+        label=_("Country"),
     )
 
     # --- Optional Discount Code ---
     discount_code = serializers.CharField(
-        max_length=50, required=False, allow_blank=True, label=_("Discount Code")
+        max_length=50,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("Discount Code"),
     )
 
-    # Validation: We don't need extensive validation here; it will happen in the View/Service layer
-    # to enforce business rules (like checking code validity and availability).
 
 
 class OrderItemOutputSerializer(serializers.ModelSerializer):

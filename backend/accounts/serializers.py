@@ -8,7 +8,7 @@ from pricing.models import SubscriptionPlan  # Import Subscription models
 from pricing.models import UserSubscription
 from rest_framework import serializers
 
-from .models import User
+from .models import Address, User
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -275,6 +275,50 @@ class OrderHistorySerializer(serializers.ModelSerializer):
         return obj.items.count()
 
 
+class AddressSerializer(serializers.ModelSerializer):
+    """Serializer for user shipping addresses."""
+
+    class Meta:
+        model = Address
+        fields = (
+            "id",
+            "title",
+            "recipient_name",
+            "phone_number",
+            "country",
+            "province",
+            "city",
+            "address_line",
+            "postal_code",
+            "is_default",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+    def validate_recipient_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError(_("Recipient name cannot be empty."))
+        return value
+
+    def validate_address_line(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError(_("Address line cannot be empty."))
+        return value
+
+    def validate_city(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError(_("City cannot be empty."))
+        return value
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Master serializer for the User Profile Hub. Nests all required data.
@@ -294,6 +338,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     # Uses reverse relation/related_name 'order_set' (or custom name if set on Order model)
     orders = OrderHistorySerializer(source="order_set", many=True, read_only=True)
 
+    # 4. Addresses: Fetches all saved shipping addresses
+    addresses = serializers.SerializerMethodField()
+
+    def get_addresses(self, obj):
+        return AddressSerializer(obj.addresses.all(), many=True).data
+
     class Meta:
         model = User
         fields = [
@@ -306,6 +356,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "active_subscription",
             "licenses",
             "orders",
+            "addresses",
         ]
         read_only_fields = fields  # Profile is read-only for this endpoint
 

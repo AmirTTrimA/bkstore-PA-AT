@@ -20,8 +20,10 @@ from wallet.models import Wallet
 
 from .models import CartItem, WishlistItem
 from .services import CheckoutService
+from accounts.models import Address
 
 User = get_user_model()
+
 
 # Set the session key used for anonymous cart data (needs to match settings)
 CART_SESSION_KEY = getattr(settings, "CART_SESSION_KEY", "cart")
@@ -1098,9 +1100,57 @@ class CheckoutServiceTestCase(TestCase):
             ).exists()
         )
 
+    def test_checkout_digital_only_without_shipping_succeeds(self):
+        self.add_item(
+            self.book_digital,
+            book_format=self.digital_format,
+        )
+
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data={},
+        )
+        self.assertIsInstance(order, Order)
+        self.assertEqual(order.shipping_name, "")
+
+    def test_checkout_physical_without_shipping_fails(self):
+        self.add_item(
+            self.book_physical,
+            book_format=self.physical_format,
+        )
+
+        with self.assertRaises(serializers.ValidationError):
+            self.service.checkout(
+                cart=self.cart,
+                shipping_data={},
+            )
+
+    def test_checkout_physical_with_address_id_succeeds(self):
+        addr = Address.objects.create(
+            user=self.user,
+            recipient_name="Saved Recipient",
+            city="Isfahan",
+            address_line="Chaharbagh Abbasi",
+            country="Iran",
+        )
+        self.add_item(
+            self.book_physical,
+            book_format=self.physical_format,
+        )
+
+        order = self.service.checkout(
+            cart=self.cart,
+            shipping_data={"address_id": addr.pk},
+        )
+        self.assertIsInstance(order, Order)
+        self.assertEqual(order.shipping_name, "Saved Recipient")
+        self.assertEqual(order.shipping_city, "Isfahan")
+        self.assertEqual(order.shipping_address_line1, "Chaharbagh Abbasi")
+
     # ============================================================
     # Cancellation / Refund
     # ============================================================
+
 
     def _create_paid_order(self):
         """

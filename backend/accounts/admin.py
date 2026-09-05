@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.db.models import Count
 
-from .models import OTPCode, User
+from .models import Address, OTPCode, User
 
 
 @admin.register(User)
@@ -156,3 +156,31 @@ class OTPCodeAdmin(admin.ModelAdmin):
     list_select_related = (
         "user",
     )
+
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "title",
+        "recipient_name",
+        "city",
+        "phone_number",
+        "is_default",
+        "created_at",
+    )
+    list_filter = (
+        "is_default",
+        "city",
+        "country",
+        "created_at",
+    )
+    search_fields = (
+        "user__username",
+        "user__email",
+        "recipient_name",
+        "city",
+        "address_line",
+        "phone_number",
+    )
+    autocomplete_fields = ("user",)

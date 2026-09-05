@@ -10,8 +10,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import OTPCode, User
+from .models import Address, OTPCode, User
 from .serializers import (
+    AddressSerializer,
     OTPLoginSerializer,
     OTPRequestSerializer,
     OTPVerificationSerializer,
@@ -20,6 +21,7 @@ from .serializers import (
     UserProfileUpdateSerializer,
     PasswordChangeSerializer,
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -264,3 +266,30 @@ class PasswordChangeView(generics.GenericAPIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class AddressListCreateView(generics.ListCreateAPIView):
+    """
+    List user's saved shipping addresses or create a new one.
+    """
+
+    serializer_class = AddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Address.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update, or delete a specific saved shipping address.
+    """
+
+    serializer_class = AddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Address.objects.filter(user=self.request.user)
