@@ -124,6 +124,9 @@ function mapBookForSlider(book) {
     id: book.id,
     title: book.title || "Untitled Book",
     price: getBookPrice(book),
+    original_price: book.original_price ? formatPrice(book.original_price) : null,
+    discount_percent: book.discount_percent || 0,
+    has_discount: Boolean(book.has_discount),
     link: String(book.id),
     authorId: book.author_id || book.author?.id || 0,
     author_profile:

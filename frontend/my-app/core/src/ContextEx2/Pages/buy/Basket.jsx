@@ -123,6 +123,13 @@ export default function Basket() {
     0
   );
 
+  const originalSubtotal = cartItems.reduce(
+    (sum, item) =>
+      sum + (Number(item.original_price || item.unit_price) * item.quantity),
+    0
+  );
+
+  const discountSavings = originalSubtotal - subtotal;
   const total = subtotal;
 
   // ==============================
@@ -379,10 +386,27 @@ export default function Basket() {
                           }
                         </h4>
 
-
-                        <p className="item-price">
-                          {formatPrice(item.subtotal)}
-                        </p>
+                        <div className="basket-item-price-block">
+                          {item.has_discount && item.discount_percent > 0 ? (
+                            <>
+                              <div className="basket-item-price-row">
+                                <span className="basket-original-unit">
+                                  {formatPrice(item.original_price)}
+                                </span>
+                                <span className="basket-discount-badge">
+                                  -{item.discount_percent}%
+                                </span>
+                              </div>
+                              <p className="item-price">
+                                {formatPrice(item.subtotal)}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="item-price">
+                              {formatPrice(item.subtotal)}
+                            </p>
+                          )}
+                        </div>
 
 
                       </div>
@@ -467,23 +491,32 @@ export default function Basket() {
 
 
               <div className="discount-section">
+                {discountSavings > 0 && (
+                  <>
+                    <div className="discount-summary-row" style={{ color: "#aaa", fontSize: "0.95rem" }}>
+                      <span>Original Subtotal:</span>
+                      <span style={{ textDecoration: "line-through" }}>
+                        {formatPrice(originalSubtotal)}
+                      </span>
+                    </div>
 
+                    <div className="discount-summary-row" style={{ color: "#00e384", fontWeight: "600" }}>
+                      <span>Total Savings:</span>
+                      <span>
+                        -{formatPrice(discountSavings)}
+                      </span>
+                    </div>
+                  </>
+                )}
 
                 <div className="discount-summary-row">
-
                   <span>
                     Subtotal:
                   </span>
-
-
                   <span>
                     {formatPrice(subtotal)}
                   </span>
-
-
                 </div>
-
-
               </div>
 
 

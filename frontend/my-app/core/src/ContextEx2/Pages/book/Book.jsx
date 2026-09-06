@@ -555,24 +555,35 @@ export default function Book() {
                     key={format.id}
                     value={format.id}
                   >
-
                     {format.type}
                     {" - "}
                     {formatPrice(format.price)}
-
+                    {format.has_discount ? ` (${format.discount_percent}% OFF)` : ""}
                   </option>
-
                 ))}
-
               </select>
-
             </div>
 
-
             <div className="show-price">
-
-              {formatPrice(selectedFormat?.price)}
-
+              {selectedFormat?.has_discount ? (
+                <div className="book-discount-box">
+                  <div className="book-price-top-row">
+                    <span className="book-original-price">
+                      {formatPrice(selectedFormat.original_price)}
+                    </span>
+                    <span className="book-discount-tag">
+                      -{selectedFormat.discount_percent}%
+                    </span>
+                  </div>
+                  <span className="book-final-price">
+                    {formatPrice(selectedFormat.price)}
+                  </span>
+                </div>
+              ) : (
+                <span className="book-final-price">
+                  {formatPrice(selectedFormat?.price)}
+                </span>
+              )}
             </div>
 
 

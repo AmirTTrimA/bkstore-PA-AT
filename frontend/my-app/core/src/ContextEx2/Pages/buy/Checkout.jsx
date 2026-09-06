@@ -105,10 +105,18 @@ export default function Checkout() {
     // Helpers
     // ============================================
 
+    const originalSubtotal = cartItems.reduce(
+        (sum, item) => sum + Number((item.original_price ?? item.unit_price) || 0) * (item.quantity || 1),
+        0
+    );
+
     const subtotal = cartItems.reduce(
         (sum, item) => sum + Number(item.subtotal || 0),
         0
     );
+
+    const discountSavings = Math.max(0, originalSubtotal - subtotal);
+    const hasDiscount = discountSavings > 0;
 
     const hasItems = cartItems.length > 0;
 
@@ -409,24 +417,75 @@ export default function Checkout() {
                     <h2 className="title-checkout">Order Summary</h2>
 
                     <div className="checkout-items">
-                        {cartItems.map((item) => (
-                            <div
-                                key={`${item.book_id}-${item.format_id}`}
-                                className="checkout-item"
-                            >
-                                <span>
-                                    {item.title} x {item.quantity} (
-                                    {item.format_type})
-                                </span>
-                                <span>{formatPrice(item.subtotal)}</span>
-                            </div>
-                        ))}
+                        {cartItems.map((item) => {
+                            const unitOriginal = Number(item.original_price ?? item.unit_price);
+                            const hasItemDiscount = Boolean(
+                                item.has_discount ||
+                                (item.original_price && Number(item.original_price) > Number(item.unit_price))
+                            );
+                            const discountPercent =
+                                item.discount_percent ||
+                                (hasItemDiscount && item.original_price
+                                    ? Math.round(
+                                          ((Number(item.original_price) - Number(item.unit_price)) /
+                                              Number(item.original_price)) *
+                                              100
+                                      )
+                                    : 0);
+
+                            return (
+                                <div
+                                    key={`${item.book_id}-${item.format_id}`}
+                                    className="checkout-item"
+                                >
+                                    <div className="checkout-item-info">
+                                        <span className="checkout-item-title">
+                                            {item.title} x {item.quantity} ({item.format_type})
+                                        </span>
+                                        {hasItemDiscount && discountPercent > 0 && (
+                                            <span className="checkout-item-badge">
+                                                -{discountPercent}%
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="checkout-item-prices">
+                                        {hasItemDiscount && (
+                                            <span className="checkout-item-original">
+                                                {formatPrice(unitOriginal * item.quantity)}
+                                            </span>
+                                        )}
+                                        <span className="checkout-item-final">
+                                            {formatPrice(item.subtotal)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="checkout-summary">
-                        <p style={{ fontSize: "1.1rem", fontWeight: "700" }}>
-                            Total: {formatPrice(subtotal)}
-                        </p>
+                        {hasDiscount && (
+                            <>
+                                <div className="checkout-summary-row original">
+                                    <span>Original Subtotal:</span>
+                                    <span className="checkout-summary-strikethrough">
+                                        {formatPrice(originalSubtotal)}
+                                    </span>
+                                </div>
+                                <div className="checkout-summary-row savings">
+                                    <span>Discount Savings:</span>
+                                    <span className="checkout-summary-savings-val">
+                                        -{formatPrice(discountSavings)}
+                                    </span>
+                                </div>
+                            </>
+                        )}
+                        <div className="checkout-summary-row total">
+                            <span>Total:</span>
+                            <span className="checkout-summary-total-val">
+                                {formatPrice(subtotal)}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Optional Discount Code */}

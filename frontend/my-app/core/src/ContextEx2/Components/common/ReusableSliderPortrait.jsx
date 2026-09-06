@@ -112,16 +112,34 @@ export default function ReusableSliderPortrait({
                   role="button"
                   tabIndex={0}
                 >
-                  <div className="card-image-wrapper2">
+                  <div className="card-image-wrapper2" style={{ position: "relative" }}>
+                    {item.has_discount && item.discount_percent > 0 && (
+                      <span className="slider-discount-badge">
+                        -{item.discount_percent}%
+                      </span>
+                    )}
                     <img 
-                      src={item.img}
+                      src={item.img} 
                       alt={item.title}
-                      id="card-main2"
+                      id="card-main2" 
                       loading='lazy'
                     />
                   </div>
                   <h4>{item.title}</h4>
-                  <p>{typeof item.price === 'number' || (!isNaN(Number(item.price)) && !String(item.price).includes(' ')) ? formatPrice(item.price) : item.price}</p>
+                  <div className="slider-pricing-row">
+                    {item.has_discount && item.original_price ? (
+                      <>
+                        <span className="slider-original-price">
+                          {item.original_price}
+                        </span>
+                        <p className="slider-discounted-price">
+                          {typeof item.price === 'number' || (!isNaN(Number(item.price)) && !String(item.price).includes(' ')) ? formatPrice(item.price) : item.price}
+                        </p>
+                      </>
+                    ) : (
+                      <p>{typeof item.price === 'number' || (!isNaN(Number(item.price)) && !String(item.price).includes(' ')) ? formatPrice(item.price) : item.price}</p>
+                    )}
+                  </div>
                 </div>
               </React.Fragment>
             ))}

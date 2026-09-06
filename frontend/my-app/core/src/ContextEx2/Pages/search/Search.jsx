@@ -64,6 +64,9 @@ function mapBookToSearchCard(book) {
     name: book.title,
     category: book.genre || "general",
     price: book.price || "0",
+    original_price: book.original_price || book.price || "0",
+    discount_percent: book.discount_percent || 0,
+    has_discount: Boolean(book.has_discount),
     since: book.created_at
       ? new Date(book.created_at).getFullYear()
       : "",
@@ -622,27 +625,40 @@ export default function Search() {
                     className="search-cards"
                   >
 
-                    <div className="search-card-pic">
-
+                    <div className="search-card-pic" style={{ position: "relative" }}>
+                      {item.has_discount && item.discount_percent > 0 && (
+                        <span className="search-card-floating-badge">
+                          -{item.discount_percent}%
+                        </span>
+                      )}
                       <img
                         src={item.imgUrl}
                         alt={item.name}
                         loading="lazy"
                       />
-
                     </div>
 
-
                     <div className="search-card-info">
-
                       <span className="search-card-field-name">
                         {item.name}
                       </span>
 
-                      <span className="search-card-field-price">
-                        {formatPrice(item.price)}
-                      </span>
-
+                      <div className="search-card-pricing">
+                        {item.has_discount && item.discount_percent > 0 ? (
+                          <>
+                            <span className="search-card-original-price">
+                              {formatPrice(item.original_price)}
+                            </span>
+                            <span className="search-card-field-price search-card-discounted">
+                              {formatPrice(item.price)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="search-card-field-price">
+                            {formatPrice(item.price)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                   </Link>

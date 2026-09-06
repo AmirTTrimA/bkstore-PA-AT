@@ -289,3 +289,36 @@
   }
   
 }
+
+/* Discount Badges & Strikethrough Pricing */
+.slider-discount-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #e53935;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 3;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.slider-pricing-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slider-original-price {
+  font-size: 0.8rem;
+  color: #888;
+  text-decoration: line-through;
+}
+
+.slider-discounted-price {
+  color: rgb(103, 172, 0);
+  font-weight: 700;
+  margin: 0;
+}
