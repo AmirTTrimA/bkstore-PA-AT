@@ -911,8 +911,9 @@ The publishing API is a publisher-facing API for organization membership, propos
 
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|:---:|-------------|
-| GET | `/api/v1/publishing/publishers/` | Yes | List the publishers to which the authenticated user has an active membership. |
-| GET | `/api/v1/publishing/publishers/<publisher_id>/proposals/` | Yes | List proposals belonging to a publisher. Access requires active membership in that publisher. |
+| GET | `/api/v1/publishing/publishers/` | Yes | List the publishers to which the authenticated user has an active membership (or all active publishers for staff/superusers). |
+| GET | `/api/v1/publishing/publishers/<publisher_id>/books/` | Yes | List catalog books associated with a specific publisher. |
+| GET | `/api/v1/publishing/publishers/<publisher_id>/proposals/` | Yes | List proposals belonging to a publisher. Access requires active membership in that publisher or staff access. |
 | GET | `/api/v1/publishing/publishers/<publisher_id>/proposals/?status=<status>` | Yes | Filter publisher proposals by workflow status. |
 | GET | `/api/v1/publishing/publishers/<publisher_id>/proposals/?proposal_type=<type>` | Yes | Filter publisher proposals by proposal type. |
 | GET | `/api/v1/publishing/proposals/<id>/` | Yes | Retrieve publisher-safe details for a proposal belonging to the authenticated user's publisher. |
@@ -929,7 +930,7 @@ The publishing API is a publisher-facing API for organization membership, propos
 | POST | `/api/v1/publishing/proposals/price-change/` | Yes | Submit a price change proposal. |
 | POST | `/api/v1/publishing/proposals/<id>/withdraw/` | Yes | Withdraw a pending proposal belonging to the authenticated user's publisher. |
 
-Publisher submission requests use `publisher_id` to identify the organization on whose behalf the proposal is submitted. The API resolves the publisher and verifies that the authenticated user has an active membership before creating the proposal.
+Publisher submission requests use `publisher_id` to identify the organization on whose behalf the proposal is submitted. The API resolves the publisher and verifies that the authenticated user has an active membership (or staff/superuser privileges) before creating the proposal.
 
 #### Publishing API Security
 
