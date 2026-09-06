@@ -1365,6 +1365,23 @@ Commits are atomic, use imperative mood, and describe one logical change each.
   - Discount logic (subscription, promo codes, anti-stacking behavior)
 - All tests pass before merging to `develop`.
 
+### 10.4 Demo Data & Catalog Management Commands
+
+The platform provides two dedicated Django management commands for seeding and populating data:
+
+1. **`python manage.py generate_demo_data`**:
+   - Generates the base development environment: creates demo users, addresses, wallets, subscription plans, default discounts, and baseline catalog items.
+
+2. **`python manage.py populate_realistic_catalog`**:
+   - Upgrades the store catalog to an authentic Iranian bookstore lineup:
+     - Safely purges existing books, formats, authors, publishers, moderation proposals, and dependent order histories while preserving user accounts, addresses, and wallets.
+     - Seeds **10 authentic Iranian publishers** (نشر افق, انتشارات پرتقال, آوانامه, انتشارات نسل نو اندیش, انتشارات نگاه, نشر چشمه, ماه‌آوا, انتشارات خیلی سبز, نشر نون, نشر روزنه) with verified slugs matching frontend components.
+     - Seeds **24 prominent Persian & international authors** with detailed biographies.
+     - Populates **50 authentic, iconic books** across all 6 platform genres (Fiction, Sci-Fi, History, Science, Tech, Business) with authentic ISBNs, Persian descriptions, and local cover artwork from `/images/`.
+     - Configures available formats (Physical, E-book with `/k2.pdf`, Audiobook with `/sample-audio.wav`) and realistic pricing in Iranian Rial (`IRR`).
+     - Links all books to publishers via applied proposals, sets up sample pending/approved moderation proposals, and grants superusers owner privileges in the primary publisher.
+     - Generates realistic completed customer orders, active digital licenses, wishlists, and active shopping carts.
+
 ---
 
 ## 11. Phase 3 — Recommendation System & Social Media (Designed & Planned)
