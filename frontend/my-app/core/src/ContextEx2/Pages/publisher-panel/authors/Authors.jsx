@@ -17,14 +17,11 @@ import { useCallback } from 'react';
 // ============================================
 //    Main 
 // ============================================
-export default function Authors() {
+export default function Authors({ currentPublisher, onProposalCreated }) {
 
   //---State--- 
   const [value,setValue]= useState(0); // 0  Edit, 1  All
   const [authorToEdit, setAuthorToEdit] = useState(null);
-
-
-  
 
 //---Handlers---
   const handleTabChange = useCallback((_, newValue) => {
@@ -34,27 +31,15 @@ export default function Authors() {
     }
   },[])
 
-
-  
   const handleEditAuthor = useCallback((author)=>{
     setAuthorToEdit(author);
     setValue(0);
   },[])
 
-  
   const clearEditMode = useCallback(()=>{
     setAuthorToEdit(null);
   },[])
 
-
-
-
-
-
-
-
-
-  
   return (
     <div  className='authors-container'>
       {/* Tabs */}
@@ -76,23 +61,28 @@ export default function Authors() {
               }
             }}
         >
-            <Tab label="Edit" sx={{color:'white'}}/>
-            <Tab label="All" sx={{color:'white'}}/>
+            <Tab label={authorToEdit ? "Edit Author" : "New Author"} sx={{color:'white'}}/>
+            <Tab label="All Authors" sx={{color:'white'}}/>
         </Tabs>
 
         <div className='form-authors-container' >
-                {value === 0 &&
-                  <Editauthors
-                    authorToEdit={authorToEdit}
-                    onEditComplete={clearEditMode}
-                  />
-                  }
-                {value === 1 &&
-                  <Allauthor
-                    onEditAuthor={handleEditAuthor}
-                  />
-                  }
-            </div>
+          {value === 0 &&
+            <Editauthors
+              authorToEdit={authorToEdit}
+              onEditComplete={() => {
+                clearEditMode();
+                setValue(1); // Switch to All Authors tab
+              }}
+              currentPublisher={currentPublisher}
+              onProposalCreated={onProposalCreated}
+            />
+          }
+          {value === 1 &&
+            <Allauthor
+              onEditAuthor={handleEditAuthor}
+            />
+          }
+        </div>
     </div>
   )
 }

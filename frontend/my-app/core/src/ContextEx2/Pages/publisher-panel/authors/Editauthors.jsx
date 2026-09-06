@@ -1,12 +1,10 @@
 // ✅
-
-import React,{useState,useRef,useEffect,useMemo} from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Notification from '../../../Components/feature/Notification';
+import PublisherService from '../../../Services/PublisherService';
 import { TextField } from '@mui/material';
 
 import '../../../Styles/publisher-panel/Editauthors.css'
-import { useCallback } from 'react';
-
 
 // ============================================
 // Constants
@@ -17,10 +15,7 @@ const MIN_BIO_LENGTH = 10;
 // ============================================
 //    Main 
 // ============================================
-export default function Editauthors({authorToEdit,onEditComplete}) {
-
-
-
+export default function Editauthors({ authorToEdit, onEditComplete, currentPublisher, onProposalCreated }) {
 
   //---State---
   const [authorsform,setAuthorsForm] = useState({
@@ -32,21 +27,17 @@ export default function Editauthors({authorToEdit,onEditComplete}) {
   const [errors, setErrors] = useState({});
   const [previewUrl, setPreviewUrl] = useState(null);
 
-
   //---Ref---
   const notificationRef = useRef('');
 
-
-    // ---Memoized Values---
-    const isEditMode = useMemo(() => authorToEdit !== null, [authorToEdit]);
-    const isFormValid = useMemo(() => {
-      return (
-        authorsform.name?.trim().length >= MIN_NAME_LENGTH &&
-        authorsform.bio?.trim().length >= MIN_BIO_LENGTH
-      );
-    }, [authorsform]);
-
-
+  // ---Memoized Values---
+  const isEditMode = useMemo(() => authorToEdit !== null, [authorToEdit]);
+  const isFormValid = useMemo(() => {
+    return (
+      authorsform.name?.trim().length >= MIN_NAME_LENGTH &&
+      authorsform.bio?.trim().length >= MIN_BIO_LENGTH
+    );
+  }, [authorsform]);
 
 //---Effects---
   useEffect(()=>{
@@ -54,15 +45,13 @@ export default function Editauthors({authorToEdit,onEditComplete}) {
       setAuthorsForm({
         id:authorToEdit.id,
         name:authorToEdit.name || '', 
-        bio:authorToEdit.bio || '',
+        bio:authorToEdit.biography || authorToEdit.bio || '',
         profilePic:authorToEdit.profilePic || null,
       });
 
-      // if profilePic ecist set it as preview
       if(authorToEdit.profilePic && typeof authorToEdit.profilePic === 'string'){
         setPreviewUrl(authorToEdit.profilePic);
       }
-
     }else{
       setAuthorsForm({
         id:'',
@@ -71,9 +60,7 @@ export default function Editauthors({authorToEdit,onEditComplete}) {
         profilePic:null,
       });
       setPreviewUrl(null);
-
     }
-
   },[isEditMode,authorToEdit])
 
 
@@ -157,36 +144,26 @@ export default function Editauthors({authorToEdit,onEditComplete}) {
 
 
 
-  const handleSubmit = useCallback((e)=>{
+  const handleSubmit = useCallback(async (e)=>{
 
       e.preventDefault();
 
       if(AuthorValidation()){
-
-        const existingAuthors = localStorage.getItem('authors-list');
-        let savedAuthors = existingAuthors ? JSON.parse(existingAuthors) : [];
-
-        if (!Array.isArray(savedAuthors)) {
-          savedAuthors = [];
+        if (!currentPublisher) {
+          notificationRef.current.showNotif('No active publisher selected', 'error');
+          return;
         }
-      
 
-        
-        if(isEditMode){
-          const updatedAuthors = savedAuthors.map(author=>
-            author.id === authorsform.id
-            ?{
-              ...author,
-                name: authorsform.name.trim(),
-                bio: authorsform.bio.trim(),
-                profilePic: authorsform.profilePic instanceof File 
-                  ? URL.createObjectURL(authorsform.profilePic)
-                  : authorsform.profilePic || author.profilePic,
-                updatedAt: new Date().toISOString(),
-            }:author);
+        try {
+          if(isEditMode){
+            await PublisherService.updateAuthorProposal({
+              publisher_id: currentPublisher.id,
+              author: authorsform.id,
+              name: authorsform.name.trim(),
+              biography: authorsform.bio.trim(),
+            });
 
-            localStorage.setItem('authors-list', JSON.stringify(updatedAuthors));
-            notificationRef.current.showNotif('Author updated successfully!', 'success');
+            notificationRef.current.showNotif('Author update proposal submitted for review!', 'success');
 
             setTimeout(() => {
               setAuthorsForm({
@@ -200,48 +177,50 @@ export default function Editauthors({authorToEdit,onEditComplete}) {
               if (onEditComplete) {
                 onEditComplete();
               }
+              if (onProposalCreated) {
+                onProposalCreated();
+              }
             }, 1000);
 
-
-          //Create new author
           }else{
-            const authorExists = savedAuthors.some(auth => auth.name.toLowerCase() === authorsform.name.trim().toLowerCase());
-            
-            if(!authorExists){
+            await PublisherService.createAuthorProposal({
+              publisher_id: currentPublisher.id,
+              name: authorsform.name.trim(),
+              biography: authorsform.bio.trim(),
+            });
 
-              const newAuthors = {
-                id: Date.now(),
-                name:authorsform.name,
-                bio:authorsform.bio,
-  
-                profilePic:authorsform.profilePic instanceof File
-                ? URL.createObjectURL(authorsform.profilePic):null,
-  
-                createdAt: new Date().toISOString(),
+            notificationRef.current.showNotif('Author creation proposal submitted for review!', 'success');
+
+            setTimeout(() => {
+              setAuthorsForm({
+                id: '',
+                name: '',
+                bio: '',
+                profilePic: null,
+              });
+              setPreviewUrl(null);
+
+              if (onEditComplete) {
+                onEditComplete();
               }
-  
-                savedAuthors.push(newAuthors);
-                localStorage.setItem('authors-list',JSON.stringify(savedAuthors));
-      
-      
-                setAuthorsForm({
-                  name: '',
-                  bio: '',
-                  profilePic: null,
-                });
-                setPreviewUrl(null);
-                notificationRef.current.showNotif('Added to waiting queue','success');
-  
-            }else{
-              notificationRef.current.showNotif('Authors  already exist','error');
-            }
-
-
+              if (onProposalCreated) {
+                onProposalCreated();
+              }
+            }, 1000);
           }
-
+        } catch (err) {
+          console.error('Failed to submit author proposal:', err);
+          const data = err.response?.data;
+          let msg = 'Failed to submit author proposal';
+          if (typeof data === 'object') {
+            const firstVal = Object.values(data)[0];
+            msg = Array.isArray(firstVal) ? firstVal[0] : (typeof firstVal === 'string' ? firstVal : msg);
+          }
+          notificationRef.current.showNotif(msg, 'error');
+        }
       }
  
-  },[authorsform,AuthorValidation,isEditMode,onEditComplete])
+  },[authorsform,AuthorValidation,isEditMode,currentPublisher,onEditComplete,onProposalCreated])
 
 
 

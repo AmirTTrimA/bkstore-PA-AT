@@ -11,6 +11,7 @@ import Notification from '../../Components/feature/Notification';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 
+import PublisherService from '../../Services/PublisherService';
 import { ppic14 } from '../../Constants';
 import { formatPrice } from '../../utils/formatPrice';
 import '../../Styles/components/Dashboard.css'
@@ -27,18 +28,16 @@ export default function PDashboard() {
 
   const {user,logout} = useAuth()
 
-  
-
-
-
   //---State---
+  const[publishers, setPublishers] = useState([]);
+  const[currentPublisher, setCurrentPublisher] = useState(null);
+  const[proposals, setProposals] = useState([]);
   const[bookToEdit,setBookToEdit] = useState(null);
   const[allbooks,setAllBooks] = useState([]);
   const[isMobileAsideOpen,setIsMobileAsideOpen]=useState(false);
   const[activePage,setActivePage]=useState('mybook');
   const[isModalOpen,setIsModalOpen]=useState(false)
   const[notifModal,setNotifModal]=useState(false)
-  // const[notificationCount, setNotificationCount] = useState('');
   // eslint-disable-next-line no-unused-vars
   const [searchTerm,setSearchTerm]= useState([]);
   const [searchInputValue,setSearchInputValue] = useState('');
@@ -61,17 +60,10 @@ export default function PDashboard() {
   const notificationRef = useRef();
   const asideRef=useRef(null);
 
-
-
-
-const notifmessage = useMemo(()=>[
-  {id:1,msg:'harry potter book rejected cause high-price'},
-  {id:2,msg:'madison book confirm'},
-  {id:3,msg:'Alison (author) confirm'},
-  {id:4,msg:'maryam (author) rejected'}
-],[])
-
-const notificationCount = useMemo(() => notifmessage.length, [notifmessage]);
+  const notificationCount = useMemo(() => {
+    const pending = proposals.filter(p => p.status === 'PENDING');
+    return pending.length > 0 ? pending.length : proposals.length;
+  }, [proposals]);
   
 
 
@@ -83,16 +75,63 @@ const closeMobileAside = useCallback(() => {
 
 //---Effects---
 
-// Load Books
-  useEffect(()=>{
-    const bookslist = localStorage.getItem('accepted-books');
-    if(bookslist){
-      const availableBooks = JSON.parse(bookslist);
-      setAllBooks(availableBooks);
-    }else{
-      setAllBooks([]);
+  // Load Publishers
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPublishers = async () => {
+      try {
+        const pubs = await PublisherService.getMyPublishers();
+        if (isMounted) {
+          setPublishers(pubs);
+          if (pubs.length > 0) {
+            setCurrentPublisher(pubs[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load publishers:', err);
+      }
+    };
+    fetchPublishers();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Load Publisher Books & Proposals
+  const loadPublisherData = useCallback(async (pubId) => {
+    if (!pubId) return;
+    try {
+      const [booksData, proposalsData] = await Promise.all([
+        PublisherService.getPublisherBooks(pubId),
+        PublisherService.getPublisherProposals(pubId),
+      ]);
+
+      const formattedBooks = (booksData || []).map(b => ({
+        id: b.id,
+        name: b.title || 'Untitled',
+        title: b.title || 'Untitled',
+        author: b.author_name || (typeof b.author === 'string' ? b.author : b.author?.name) || 'Unknown',
+        author_name: b.author_name || (typeof b.author === 'string' ? b.author : b.author?.name) || 'Unknown',
+        type: b.formats && b.formats.length > 0 ? b.formats.map(f => f.type).join(', ') : 'Physical',
+        price: b.price || (b.formats && b.formats[0]?.price) || '0',
+        discount: '0',
+        category: [b.genre || 'FICTION'],
+        aboutbook: b.description || '',
+        bookImage: b.cover_image_url || '',
+        isbn: b.isbn || '',
+        raw: b,
+      }));
+
+      setAllBooks(formattedBooks);
+      setProposals(proposalsData || []);
+    } catch (err) {
+      console.error('Failed to load publisher books & proposals:', err);
     }
-  },[])
+  }, []);
+
+  useEffect(() => {
+    if (currentPublisher?.id) {
+      loadPublisherData(currentPublisher.id);
+    }
+  }, [currentPublisher, loadPublisherData]);
 
 
 
@@ -202,14 +241,43 @@ const closeMobileAside = useCallback(() => {
 
 
 
-  const handleDeleteBooks = useCallback((bookId)=>{
-    const updateBooks = allbooks.filter(book=> book.id !== bookId);
+  const handleDeleteBooks = useCallback(async (bookId) => {
+    if (currentPublisher) {
+      try {
+        await PublisherService.deleteBookProposal({
+          publisher_id: currentPublisher.id,
+          book: bookId,
+          reason: 'Book deletion proposal from publisher dashboard',
+        });
+        notificationRef.current.showNotif('Deletion proposal submitted for review', 'success');
+        loadPublisherData(currentPublisher.id);
+        setActivePage('mybook');
+        return;
+      } catch (err) {
+        console.error('Failed to submit book delete proposal:', err);
+        const msg = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Failed to submit delete proposal';
+        notificationRef.current.showNotif(msg, 'error');
+        return;
+      }
+    }
+    const updateBooks = allbooks.filter(book => book.id !== bookId);
     setAllBooks(updateBooks);
-    localStorage.setItem('accepted-books',JSON.stringify(updateBooks));
-    notificationRef.current.showNotif('Book removed successfully','success');
-    setActivePage('mybook')
+    notificationRef.current.showNotif('Book removed successfully', 'success');
+    setActivePage('mybook');
+  }, [allbooks, currentPublisher, loadPublisherData]);
 
-  },[allbooks])
+  const handleWithdrawProposal = useCallback(async (proposalId) => {
+    try {
+      await PublisherService.withdrawProposal(proposalId, 'Withdrawn by publisher');
+      notificationRef.current.showNotif('Proposal withdrawn successfully', 'success');
+      if (currentPublisher) {
+        loadPublisherData(currentPublisher.id);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Failed to withdraw proposal';
+      notificationRef.current.showNotif(msg, 'error');
+    }
+  }, [currentPublisher, loadPublisherData]);
 
   const PageChanger = useCallback((newpage)=>{
     setActivePage(newpage)
@@ -342,7 +410,25 @@ const closeMobileAside = useCallback(() => {
           {/* Content Page */}
           {activePage === "mybook" && (
             <>
-              <p>Joined PN in: January 2024</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <p style={{ margin: 0 }}>
+                  Publisher: <strong>{currentPublisher ? currentPublisher.name : 'No active publisher'}</strong>
+                </p>
+                {publishers.length > 1 && (
+                  <select
+                    value={currentPublisher?.id || ''}
+                    onChange={(e) => {
+                      const selected = publishers.find(p => p.id === parseInt(e.target.value, 10));
+                      if (selected) setCurrentPublisher(selected);
+                    }}
+                    style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}
+                  >
+                    {publishers.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.role})</option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <div className='table-container'>
                 <table>
                   <thead>
@@ -351,32 +437,37 @@ const closeMobileAside = useCallback(() => {
                       <th>Author</th>
                       <th>Type</th>
                       <th>Price</th>
-                      <th>Edit</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                  {allbooks.map(book=>(
-                    <tr 
-                      key={book.id}
-                      ref={el => rowRefs.current[book.id] =el}
-                      className={selectedRowId === book.id ? 'highlight-row':''}
-                    >
-                      <td>{book.name}</td>
-                      <td>{book.author}</td>
-                      <td>{book.type}</td>
-                      <td>{formatPrice(book.price)}</td>
-                      <td>
-                        <button 
-                          onClick={()=>handleEditBooks(book)}
-                        >
-                          Detail
-                        </button>
+                  {allbooks.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '24px' }}>
+                        No books found for this publisher. Submit a book upload proposal to get started!
                       </td>
                     </tr>
-                  ))}
-                    
-                    
-
+                  ) : (
+                    allbooks.map(book=>(
+                      <tr 
+                        key={book.id}
+                        ref={el => rowRefs.current[book.id] =el}
+                        className={selectedRowId === book.id ? 'highlight-row':''}
+                      >
+                        <td>{book.name || book.title}</td>
+                        <td>{book.author || book.author_name}</td>
+                        <td>{book.type}</td>
+                        <td>{formatPrice(book.price)}</td>
+                        <td>
+                          <button 
+                            onClick={()=>handleEditBooks(book)}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                   </tbody>
                 </table>
               </div>
@@ -385,15 +476,22 @@ const closeMobileAside = useCallback(() => {
 
           {activePage === 'upload' && 
             <Upload 
-             bookToEdit={bookToEdit}
+              bookToEdit={bookToEdit}
               handleEditBooks={handleEditBooks}
               handleDeleteBooks={handleDeleteBooks}
               clearEditMode={clearEditMode}
               PageChanger={PageChanger}
+              currentPublisher={currentPublisher}
+              onProposalCreated={() => currentPublisher && loadPublisherData(currentPublisher.id)}
             />
           }
 
-          {activePage === 'authors' && <Authors/>}
+          {activePage === 'authors' && (
+            <Authors 
+              currentPublisher={currentPublisher}
+              onProposalCreated={() => currentPublisher && loadPublisherData(currentPublisher.id)}
+            />
+          )}
         </div>
 
         {/* Desktop Menu */}
@@ -420,7 +518,8 @@ const closeMobileAside = useCallback(() => {
          <NotifModal 
             open={notifModal} 
             onClose={handlenotifClose} 
-            notifmessage={notifmessage}
+            notifmessage={proposals}
+            onWithdraw={handleWithdrawProposal}
           />
         )}
 

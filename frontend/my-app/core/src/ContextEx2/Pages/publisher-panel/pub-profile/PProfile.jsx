@@ -12,9 +12,9 @@ import {
 
 import CloseIcon from '@mui/icons-material/Close';
 import Notification from '../../../Components/feature/Notification';
-import PPassword from './PPassword';
-import PAccount from './PAccount';
-import { useAuth } from '../../../Context/AuthProvider';
+import PPassword from '../../dashboard/profile/Passwordpart';
+import PAccount from '../../dashboard/profile/Accountpart';
+import { useAuth } from '../../../Context/AuthContext';
 
 import "../../../Styles/publisher-panel/PProfile.css"
 // style in globals.css
