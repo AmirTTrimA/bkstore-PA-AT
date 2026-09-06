@@ -528,6 +528,23 @@ export default function Checkout() {
                         <strong>{order.status_display || order.status}</strong>
                     </p>
 
+                    <div style={{ margin: "14px 0", padding: "12px 16px", background: "rgba(255,255,255,0.05)", borderRadius: "8px", textAlign: "left", width: "100%", maxWidth: "380px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                            <span style={{ color: "#aaa" }}>Subtotal:</span>
+                            <span>{formatPrice(order.subtotal)}</span>
+                        </div>
+                        {Number(order.discount_amount) > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", color: "#00e384" }}>
+                                <span>Discount Saved:</span>
+                                <span>-{formatPrice(order.discount_amount)}</span>
+                            </div>
+                        )}
+                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "700", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "6px" }}>
+                            <span>Total Paid:</span>
+                            <span style={{ color: "#00e384" }}>{formatPrice(order.total_amount)}</span>
+                        </div>
+                    </div>
+
                     <p
                         style={{
                             fontSize: "0.9rem",

@@ -7,6 +7,7 @@ import { useNavigate} from 'react-router-dom';
 
 // ---Style---
 import '../../Styles/components/ReusableSliderPortrait.css';
+import { formatPrice } from '../../utils/formatPrice';
 
 
 // ============================================
@@ -120,7 +121,7 @@ export default function ReusableSliderPortrait({
                     />
                   </div>
                   <h4>{item.title}</h4>
-                  <p>{item.price}</p>
+                  <p>{typeof item.price === 'number' || (!isNaN(Number(item.price)) && !String(item.price).includes(' ')) ? formatPrice(item.price) : item.price}</p>
                 </div>
               </React.Fragment>
             ))}

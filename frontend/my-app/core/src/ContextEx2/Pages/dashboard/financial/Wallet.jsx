@@ -12,6 +12,7 @@ import Notification from "../../../Components/feature/Notification";
 
 import PaymentService from "../../../Services/PaymentService";
 import WalletService from "../../../Services/WalletService";
+import { formatPrice } from "../../../utils/formatPrice";
 
 import "../../../Styles/components/Wallet.css";
 
@@ -295,15 +296,7 @@ export default function Wallet() {
             fontWeight: "bold"
           }}
         >
-
-          {
-            Number(
-              wallet?.balance || 0
-            ).toLocaleString("fa-IR")
-          }
-
-          {" "}IRR
-
+          {formatPrice(wallet?.balance || 0)}
         </Typography>
 
 

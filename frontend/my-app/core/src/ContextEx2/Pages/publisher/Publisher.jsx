@@ -41,31 +41,31 @@ const CONTENT = `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
 // ============================================
 const slider_items_same_vibe = [
   { id:1, title: "jules and nothing",
-    price: "40$",link: "2",authorId:1,
+    price: "400,000 IRR",link: "2",authorId:1,
     img:pic14,author_profile:ppic12
   },
   { id:2, title: "harry potter",
-    price: "50$",link:"3",authorId:3,
+    price: "500,000 IRR",link:"3",authorId:3,
     img: pic15,author_profile:ppic3
   },
   { id:3, title: "operation os",
-    price: "30$",link:"7",authorId:2,
+    price: "300,000 IRR",link:"7",authorId:2,
     img: pic10,author_profile:ppic1
   },
   { id:4, title: "dsa", 
-    price: "25$",link: "6",authorId:1,
+    price: "250,000 IRR",link: "6",authorId:1,
     img:pic9,author_profile:ppic8
   },
   { id:5, title: "gfsd",
-    price: "60$",link: "5",authorId:3,
+    price: "600,000 IRR",link: "5",authorId:3,
     img:pic10,author_profile:ppic5
   },
   { id:6, title: "dsafa",
-    price: "20$",link: "4",authorId:2,
+    price: "200,000 IRR",link: "4",authorId:2,
     img:pic15,author_profile:ppic3
   },
   { id:7, title: "dada",
-    price: "55$",link: "1",authorId:2,
+    price: "550,000 IRR",link: "1",authorId:2,
     img:pic13,author_profile:ppic11
 },
 ];
@@ -75,19 +75,19 @@ const slider_items_same_vibe3 = [
 
 
 { id:1, title: "operation os",
-  price: "30$",link:"2",
+  price: "300,000 IRR",link:"2",
   authorId:1,img: pic3
 },
 { id:2, title: "dsa",
-  price: "25$",link: "3",
+  price: "250,000 IRR",link: "3",
   authorId:2,img:pic11
 },
 { id:3, title: "gfsd",
-  price: "60$",link: "5",
+  price: "600,000 IRR",link: "5",
   authorId:3,img:pic12
 },
 { id:4, title: "dsafa",
- price: "20$",link: "6",
+ price: "200,000 IRR",link: "6",
  authorId:3,img:pic13
 }
 

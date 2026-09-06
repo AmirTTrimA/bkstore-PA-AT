@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 // ---Style---
 import '../../Styles/components/ReusableSlider.css';
+import { formatPrice } from '../../utils/formatPrice';
 
 
 // ============================================
@@ -121,7 +122,7 @@ return (
                 </div>
                 {/* Card Content */}
                 <h4>{item.title}</h4>
-                <p>{item.price}</p>
+                <p>{typeof item.price === 'number' || (!isNaN(Number(item.price)) && !String(item.price).includes(' ')) ? formatPrice(item.price) : item.price}</p>
               </div>
             ))}
         </div>

@@ -23,6 +23,7 @@ import {
 
 // --- Services ---
 import BookService from "../../Services/BookService";
+import { formatPrice } from "../../utils/formatPrice";
 
 // --- Constants ---
 import { ppic1 } from "../../Constants";
@@ -114,13 +115,7 @@ function getBookPrice(book) {
     return "N/A";
   }
 
-  const numericPrice = Number(book.price);
-
-  if (Number.isNaN(numericPrice)) {
-    return `${book.price} IRR`;
-  }
-
-  return `${numericPrice.toLocaleString()} IRR`;
+  return formatPrice(book.price);
 }
 
 
