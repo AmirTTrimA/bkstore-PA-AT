@@ -187,10 +187,31 @@ SIMPLE_JWT = {
 # 🔑 NEW: EMAIL & DJ-REST-AUTH / ALLAUTH CONFIGURATION
 # -------------------------------------------------------------
 
-# 1. EMAIL CONFIGURATION (CRUCIAL for Password Reset/OTP)
-# In development, prints emails to the console/terminal.
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "support@bookstore.com"
+# 1. EMAIL CONFIGURATION (Gmail SMTP / Console)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in ("true", "1", "t")
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in ("true", "1", "t")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = (
+    os.getenv("DEFAULT_FROM_EMAIL")
+    or (f"Bookstore <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "Bookstore <support@bookstore.com>")
+)
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "15"))
+
+# Use SMTP backend if configured; fallback to console backend in development/testing if no user is set
+_configured_backend = os.getenv("EMAIL_BACKEND")
+if _configured_backend:
+    EMAIL_BACKEND = _configured_backend
+    if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend" and not EMAIL_HOST_USER:
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = (
+        "django.core.mail.backends.smtp.EmailBackend"
+        if EMAIL_HOST_USER
+        else "django.core.mail.backends.console.EmailBackend"
+    )
 
 
 # 2. ALLAUTH DEPENDENCIES (Required by dj-rest-auth)
@@ -236,6 +257,13 @@ HAYSTACK_CONNECTIONS = {
 HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.BaseSignalProcessor"
 
 CART_SESSION_KEY = "cart"
+
+# 🔑 CELERY CONFIGURATION
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+# In development without a dedicated Celery worker daemon, execute tasks eagerly (inline)
+CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "True").lower() in ("true", "1", "t")
+CELERY_TASK_EAGER_PROPAGATES = True
 
 # 🔑 CELERY BEAT SCHEDULE (Periodic Tasks) - Schedule the high-priority tasks
 CELERY_BEAT_SCHEDULE = {

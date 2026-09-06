@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import generics, status
@@ -90,11 +91,24 @@ class OTPRequestView(generics.GenericAPIView):
         latest_otp_code = new_otp_entry.code
 
         # 3. Send Email
+        plain_message = f"Your verification code is: {latest_otp_code}. It is valid for 5 minutes."
+        try:
+            html_message = render_to_string(
+                "email/otp_code.html",
+                {
+                    "username": user.username,
+                    "otp_code": latest_otp_code,
+                },
+            )
+        except Exception:
+            html_message = None
+
         send_mail(
             subject=_("Your One-Time Password (OTP)"),
-            message=f"Your verification code is: {latest_otp_code}. It is valid for 5 minutes.",
+            message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
+            html_message=html_message,
             fail_silently=False,
         )
 

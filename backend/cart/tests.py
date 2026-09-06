@@ -6,6 +6,8 @@ from catalog.models import Author, Book
 from content.models import License
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core import mail
+from django.core.management import call_command
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.test import TestCase
@@ -2119,3 +2121,130 @@ class CartFormatTest(APITestCase):
                 book_format=self.digital,
             ).exists()
         )
+
+
+class OrderConfirmationEmailTaskTest(TestCase):
+    """
+    Tests order confirmation email generation, formatting, and test email command.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="email_test_user",
+            email="buyer@example.com",
+            password="testpassword123",
+        )
+        self.author = Author.objects.create(name="Author Email Test")
+        self.book = Book.objects.create(
+            title="Email Test Book",
+            description="A book to test email formatting",
+            author=self.author,
+        )
+        from catalog.models import BookFormat
+        self.physical_format = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.PHYSICAL,
+        )
+        self.digital_format = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.DIGITAL,
+        )
+
+    def test_send_order_confirmation_email_with_shipping(self):
+        from .tasks import send_order_confirmation_email
+
+        order = Order.objects.create(
+            user=self.user,
+            subtotal=Decimal("300000"),
+            discount_amount=Decimal("50000"),
+            total_amount=Decimal("250000"),
+            shipping_name="John Doe",
+            shipping_address_line1="123 Main St",
+            shipping_city="Tehran",
+            shipping_country="Iran",
+            status="PROCESSING",
+        )
+        OrderItem.objects.create(
+            order=order,
+            book=self.book,
+            book_format=self.physical_format,
+            quantity=2,
+            snapshot_price=Decimal("150000"),
+            snapshot_title=self.book.title,
+            snapshot_author_name=self.author.name,
+        )
+
+        mail.outbox.clear()
+        success = send_order_confirmation_email(order.pk)
+        self.assertTrue(success)
+
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertIn(f"Order #{order.pk} Confirmation", sent.subject)
+        self.assertEqual(sent.to, ["buyer@example.com"])
+        self.assertIn("250,000 IRR", sent.body)
+        self.assertIn("123 Main St", sent.body)
+        self.assertIn("Email Test Book", sent.body)
+        # Verify HTML alternative is attached
+        self.assertTrue(any(content_type == "text/html" for _, content_type in sent.alternatives))
+
+    def test_send_order_confirmation_email_digital_only(self):
+        from .tasks import send_order_confirmation_email
+
+        order = Order.objects.create(
+            user=self.user,
+            subtotal=Decimal("90000"),
+            discount_amount=Decimal("0"),
+            total_amount=Decimal("90000"),
+            status="COMPLETED",
+        )
+        OrderItem.objects.create(
+            order=order,
+            book=self.book,
+            book_format=self.digital_format,
+            quantity=1,
+            snapshot_price=Decimal("90000"),
+            snapshot_title=self.book.title,
+            snapshot_author_name=self.author.name,
+        )
+
+        mail.outbox.clear()
+        success = send_order_confirmation_email(order.pk)
+        self.assertTrue(success)
+
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertIn("90,000 IRR", sent.body)
+        self.assertIn("Digital Delivery", sent.body)
+
+    def test_send_order_confirmation_handles_invalid_cases(self):
+        from .tasks import send_order_confirmation_email
+
+        mail.outbox.clear()
+        # Non-existent order id
+        result = send_order_confirmation_email(999999)
+        self.assertFalse(result)
+        self.assertEqual(len(mail.outbox), 0)
+
+        # User without email
+        no_email_user = User.objects.create_user(
+            username="no_email_user",
+            email="",
+            password="testpassword123",
+        )
+        order = Order.objects.create(
+            user=no_email_user,
+            subtotal=Decimal("10000"),
+            total_amount=Decimal("10000"),
+        )
+        result = send_order_confirmation_email(order.pk)
+        self.assertFalse(result)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_send_test_email_management_command(self):
+        mail.outbox.clear()
+        call_command("send_test_email", "custom_test@example.com")
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertEqual(sent.to, ["custom_test@example.com"])
+        self.assertIn("Bookstore - Email Configuration Test", sent.subject)
