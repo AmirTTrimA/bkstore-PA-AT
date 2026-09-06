@@ -877,8 +877,8 @@ The service is used by checkout rather than allowing views or serializers to mod
 |--------|----------|:---:|-------------|
 | GET | `/api/v1/authors/` | No | List all authors. |
 | GET | `/api/v1/authors/<id>/` | No | Retrieve complete author details. |
-| GET | `/api/v1/books/` | No | List books with pagination, ordering, and PostgreSQL Full-Text Search (`?search=`). |
-| GET | `/api/v1/books/<id>/` | No | Retrieve complete book information, including current active price. |
+| GET | `/api/v1/books/` | No | List books with pagination, ordering, and PostgreSQL Full-Text Search (`?search=`). Each book exposes dynamic pricing with `price`, `original_price`, `discount_percent`, and `has_discount` calculated via `PricingEngine`. |
+| GET | `/api/v1/books/<id>/` | No | Retrieve complete book information, including available formats with `price`, `original_price`, `discount_percent`, and `has_discount`. |
 
 **Planned Recommendation Endpoints (Future Work)**
 
@@ -945,7 +945,7 @@ The publisher-facing detail serializer deliberately omits internal moderation in
 
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|:---:|-------------|
-| GET | `/api/v1/cart/items/` | No* | Retrieve the current cart with prices calculated by the PricingEngine. |
+| GET | `/api/v1/cart/items/` | No* | Retrieve the current cart with unit prices, `original_price`, `discount_percent`, and `has_discount` calculated by the PricingEngine. |
 | POST | `/api/v1/cart/items/` | No* | Add a book to the cart or increase its quantity. |
 | DELETE | `/api/v1/cart/items/` | No* | Remove a book from the cart. |
 | POST | `/api/v1/cart/merge/` | Yes | Merge the anonymous session cart into the authenticated user's persistent cart. |
