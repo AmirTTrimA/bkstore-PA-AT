@@ -1267,9 +1267,63 @@ Book listings are paginated using Django REST Framework's pagination system, all
 |------|----------|---------|
 | `expire_old_otp_codes` | Hourly | Invalidates OTP codes where `expires_at` has passed |
 | `process_license_expiry` | Daily | Deactivates licenses where `valid_until` has passed |
-| `send_order_confirmation_email` | On-commit (after checkout) | Sends order confirmation email with line-item details and shipping address |
+| `send_order_confirmation_email` | On-commit (after checkout) | Sends order confirmation email with line-item details, formatted IRR prices, and shipping address |
 | `compute_book_similarities` [PHASE 3 — PENDING] | On-demand / scheduled | Offline batch computation of content-based similarity scores between books |
 | `generate_user_recommendations` [PHASE 3 — PENDING] | On-demand / scheduled | Generates personalized recommendation sets based on user profile and history |
+
+### 9.1 Email Infrastructure & Gmail SMTP Integration
+
+The backend supports dual-mode email handling configured dynamically via environment variables (`backend/.env`):
+
+- **Development / Fallback Mode:** When `EMAIL_HOST_USER` is not set or empty, Django automatically logs emails to the developer console (`django.core.mail.backends.console.EmailBackend`).
+- **Production / Gmail SMTP Mode:** When `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` are provided, emails are dispatched via Google's SMTP servers (`smtp.gmail.com:587`, TLS enabled).
+- **Synchronous Dev Execution (`CELERY_TASK_ALWAYS_EAGER=True`):** In local development without an active Celery worker or Redis broker daemon, background tasks such as `send_order_confirmation_email` execute immediately and synchronously inside the request/checkout lifecycle, ensuring email delivery happens without requiring background queue daemons.
+
+#### Gmail SMTP Setup Guide
+
+To use a personal or business Gmail account with the bookstore backend:
+
+1. **Enable 2-Step Verification:** Go to your [Google Account Security Settings](https://myaccount.google.com/security) and activate 2-Step Verification.
+2. **Generate an App Password:**
+   - Navigate to [Google App Passwords](https://myaccount.google.com/apppasswords).
+   - Enter `Bookstore` as the application name and click **Create**.
+   - Copy the generated 16-character password (e.g. `abcd efgh ijkl mnop`).
+3. **Configure `backend/.env`:**
+   ```bash
+   EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=True
+   EMAIL_USE_SSL=False
+   EMAIL_HOST_USER=your_email@gmail.com
+   EMAIL_HOST_PASSWORD=your_16_character_app_password
+   DEFAULT_FROM_EMAIL="Bookstore <your_email@gmail.com>"
+   ```
+
+#### Testing Email Configuration
+
+A dedicated management command is available to verify SMTP authentication and email delivery:
+
+```bash
+# Test with a specific recipient:
+python manage.py send_test_email recipient@example.com
+
+# Default test (uses EMAIL_HOST_USER):
+python manage.py send_test_email
+```
+
+The command verifies connection parameters, prints active configuration diagnostics, and sends a test email containing both plain-text and HTML formatting.
+
+#### Email Templates & Content Presentation
+
+- **Order Confirmation (`templates/email/order_confirmation.html`):**
+  - Displays customer name, order ID, order status, and formatted purchase date.
+  - Itemized table with title, author, format type (Physical, E-book, Audiobook), quantity, unit price, and subtotal.
+  - All monetary values are presented in Iranian Rial (`IRR`) formatted with comma separators (e.g. `250,000 IRR`).
+  - Conditional shipping section: displays recipient name, street address, and city for physical deliveries; displays instant digital activation notice for digital purchases.
+  - Dual-mode email structure: sends rich HTML email with plain-text fallback (`strip_tags`).
+- **OTP Verification (`templates/email/otp_code.html`):**
+  - Displays branded verification email with a prominent 6-digit verification code badge, expiration notice (5 minutes), and security advisory.
 
 ---
 
