@@ -538,6 +538,18 @@ class Command(BaseCommand):
                     is_active=True,
                 )
 
+        # Ensure superusers also have an active membership for testing
+        first_publisher = publishers[0] if publishers else None
+        if first_publisher:
+            for su in User.objects.filter(is_superuser=True):
+                if not PublisherMembership.objects.filter(user=su).exists():
+                    PublisherMembership.objects.create(
+                        publisher=first_publisher,
+                        user=su,
+                        role=PublisherMembership.Role.OWNER,
+                        is_active=True,
+                    )
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Created {len(self.publishers)} publishers "
@@ -1177,6 +1189,42 @@ class Command(BaseCommand):
                 )
             )
             return
+
+        # ------------------------------------------------------------
+        # Associate catalog books with publishers via APPLIED proposals
+        # ------------------------------------------------------------
+        self.stdout.write("Linking catalog books to publishers...")
+        for idx, book in enumerate(self.book_list):
+            publisher = publishers[idx % len(publishers)]
+            owner_member = PublisherMembership.objects.filter(publisher=publisher, is_active=True).first()
+            submitted_by = owner_member.user if owner_member else members[0].user
+
+            applied_proposal = Proposal.objects.create(
+                title=f"Published: {book.title}",
+                publisher=publisher,
+                submitted_by=submitted_by,
+                proposal_type=Proposal.ProposalType.BOOK_CREATE,
+                status=Proposal.Status.APPLIED,
+                submitted_at=timezone.now() - timezone.timedelta(days=random.randint(30, 180)),
+                reviewed_at=timezone.now() - timezone.timedelta(days=random.randint(20, 29)),
+                applied_at=timezone.now() - timezone.timedelta(days=random.randint(1, 19)),
+            )
+
+            BookCreateProposal.objects.create(
+                proposal=applied_proposal,
+                created_book=book,
+                author=book.author,
+                title=book.title,
+                description=book.description,
+                isbn=book.isbn,
+                cover_image_url=book.cover_image_url,
+                genre=book.genre,
+                is_digital=book.is_digital,
+                is_audio=book.is_audio,
+                digital_file_path=book.digital_file_path,
+                audio_file_path=book.audio_file_path,
+            )
+            self.proposals.append(applied_proposal)
 
         # ------------------------------------------------------------
         # Book creation proposals

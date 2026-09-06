@@ -5,7 +5,7 @@ from .views import (BookCreateProposalSubmissionView,
                     BookDeleteProposalSubmissionView,
                     BookUpdateProposalSubmissionView, MyPublishersView,
                     PriceChangeProposalCreateView, ProposalDetailView, ProposalWithdrawalView,
-                    PublisherProposalListView, AuthorCreateProposalSubmissionView,
+                    PublisherProposalListView, PublisherBooksView, AuthorCreateProposalSubmissionView,
                     AuthorUpdateProposalSubmissionView
                     )
 
@@ -16,6 +16,10 @@ urlpatterns = [
         "publishers/",
         MyPublishersView.as_view(),
         name="my-publishers" ),
+    path(
+        "publishers/<int:publisher_id>/books/",
+        PublisherBooksView.as_view(),
+        name="publisher-books" ),
     path(
         "publishers/<int:publisher_id>/proposals/",
         PublisherProposalListView.as_view(),
