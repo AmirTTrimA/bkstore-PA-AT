@@ -211,6 +211,13 @@ class CartItemHandlerView(generics.GenericAPIView):
             ).calculate()
 
             unit_price = pricing.final_price
+            base_price = pricing.base_price
+            has_discount = unit_price < base_price
+            discount_percent = (
+                int(round((base_price - unit_price) / base_price * 100))
+                if has_discount and base_price > 0
+                else 0
+            )
 
             cart_output.append(
                 {
@@ -220,6 +227,9 @@ class CartItemHandlerView(generics.GenericAPIView):
                     "format_type": book_format.get_format_type_display(),
                     "quantity": quantity,
                     "unit_price": unit_price,
+                    "original_price": base_price,
+                    "discount_percent": discount_percent,
+                    "has_discount": has_discount,
                     "cover_image_url": book.cover_image_url,
                 }
             )

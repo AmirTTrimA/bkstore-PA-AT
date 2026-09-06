@@ -124,6 +124,42 @@ class PricingTestCase(PricingBaseTestCase):
 
         self.assertIsNone(serializer.data["price"])
 
+    def test_book_list_serializer_exposes_discount_fields(self):
+        """Serializer returns original_price, discount_percent, and has_discount when discounts apply."""
+        from catalog.models import BookFormat
+        from pricing.models import Discount
+
+        format_obj = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.DIGITAL,
+            is_available=True,
+        )
+        Price.objects.create(
+            book=self.book,
+            book_format=format_obj,
+            value=Decimal("1000000"),
+            effective_from=timezone.now() - timedelta(days=1),
+        )
+        Discount.objects.create(
+            name="20% Off Promotion",
+            discount_type=Discount.DiscountType.PERCENT,
+            value=Decimal("20"),
+            scope=Discount.Scope.BOOK,
+            book=self.book,
+            is_active=True,
+            activation=Discount.Activation.AUTOMATIC,
+        )
+
+        serializer = BookListSerializer(self.book)
+        self.assertEqual(serializer.data["price"], "800000")
+        self.assertEqual(serializer.data["original_price"], "1000000")
+        self.assertEqual(serializer.data["discount_percent"], 20)
+        self.assertTrue(serializer.data["has_discount"])
+        self.assertEqual(serializer.data["formats"][0]["price"], "800000")
+        self.assertEqual(serializer.data["formats"][0]["original_price"], "1000000")
+        self.assertEqual(serializer.data["formats"][0]["discount_percent"], 20)
+        self.assertTrue(serializer.data["formats"][0]["has_discount"])
+
 class BookPriceChangeTestCase(PricingBaseTestCase):
 
     def test_change_price_creates_first_price(self):

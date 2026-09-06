@@ -46,27 +46,114 @@ class GenreSerializer(serializers.Serializer):
 
 
 class CurrentPriceMixin(serializers.Serializer):
-    """Provides the current active price for a book."""
+    """Provides the current active price and discount information for a book."""
 
     price = serializers.SerializerMethodField()
+    original_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    has_discount = serializers.SerializerMethodField()
+
+    def _get_book_pricing(self, obj):
+        if not hasattr(obj, "_cached_book_pricing"):
+            from pricing.services import PricingEngine
+
+            request = self.context.get("request")
+            user = request.user if request and request.user.is_authenticated else None
+
+            primary_format = None
+            if hasattr(obj, "formats"):
+                primary_format = obj.formats.filter(is_available=True).first()
+
+            try:
+                engine = PricingEngine(book=obj, book_format=primary_format, user=user)
+                obj._cached_book_pricing = engine.calculate()
+            except Exception:
+                obj._cached_book_pricing = None
+        return obj._cached_book_pricing
 
     def get_price(self, obj):
+        res = self._get_book_pricing(obj)
+        if res:
+            return str(int(round(res.final_price)))
         current_price = obj.current_price
         return str(current_price.value) if current_price else None
+
+    def get_original_price(self, obj):
+        res = self._get_book_pricing(obj)
+        if res:
+            return str(int(round(res.base_price)))
+        current_price = obj.current_price
+        return str(current_price.value) if current_price else None
+
+    def get_discount_percent(self, obj):
+        res = self._get_book_pricing(obj)
+        if res and res.final_price < res.base_price and res.base_price > 0:
+            return int(round((res.base_price - res.final_price) / res.base_price * 100))
+        return 0
+
+    def get_has_discount(self, obj):
+        res = self._get_book_pricing(obj)
+        return bool(res and res.final_price < res.base_price)
+
 
 class BookFormatSerializer(serializers.ModelSerializer):
     type = serializers.CharField(source="format_type", read_only=True)
     price = serializers.SerializerMethodField()
+    original_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    has_discount = serializers.SerializerMethodField()
 
     class Meta:
         model = BookFormat
-        fields = ("id", "type", "price")
+        fields = (
+            "id",
+            "type",
+            "price",
+            "original_price",
+            "discount_percent",
+            "has_discount",
+        )
+
+    def _get_pricing(self, obj):
+        if not hasattr(obj, "_cached_pricing"):
+            from pricing.services import PricingEngine
+
+            request = self.context.get("request")
+            user = request.user if request and request.user.is_authenticated else None
+            try:
+                engine = PricingEngine(book_format=obj, user=user)
+                obj._cached_pricing = engine.calculate()
+            except Exception:
+                obj._cached_pricing = None
+        return obj._cached_pricing
 
     def get_price(self, obj):
+        res = self._get_pricing(obj)
+        if res:
+            return str(int(round(res.final_price)))
         from pricing.services import PricingEngine
 
         price = PricingEngine(book_format=obj).get_current_price()
         return str(price.value) if price else None
+
+    def get_original_price(self, obj):
+        res = self._get_pricing(obj)
+        if res:
+            return str(int(round(res.base_price)))
+        from pricing.services import PricingEngine
+
+        price = PricingEngine(book_format=obj).get_current_price()
+        return str(price.value) if price else None
+
+    def get_discount_percent(self, obj):
+        res = self._get_pricing(obj)
+        if res and res.final_price < res.base_price and res.base_price > 0:
+            return int(round((res.base_price - res.final_price) / res.base_price * 100))
+        return 0
+
+    def get_has_discount(self, obj):
+        res = self._get_pricing(obj)
+        return bool(res and res.final_price < res.base_price)
 
 
 class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
@@ -86,6 +173,9 @@ class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
             "cover_image_url",
             "formats",
             "price",
+            "original_price",
+            "discount_percent",
+            "has_discount",
         )
 
 

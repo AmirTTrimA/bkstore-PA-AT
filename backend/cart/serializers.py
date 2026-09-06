@@ -72,6 +72,9 @@ class CartItemOutputSerializer(serializers.Serializer):
 
     subtotal = serializers.SerializerMethodField()
     unit_price = serializers.SerializerMethodField()
+    original_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    has_discount = serializers.SerializerMethodField()
 
     cover_image_url = serializers.URLField(
         allow_null=True,
@@ -93,6 +96,18 @@ class CartItemOutputSerializer(serializers.Serializer):
             "unit_price",
             Decimal("0.00"),
         )
+
+    def get_original_price(self, item):
+        return item.get(
+            "original_price",
+            item.get("unit_price", Decimal("0.00")),
+        )
+
+    def get_discount_percent(self, item):
+        return item.get("discount_percent", 0)
+
+    def get_has_discount(self, item):
+        return item.get("has_discount", False)
 
 
 class WishlistItemSerializer(serializers.ModelSerializer):
