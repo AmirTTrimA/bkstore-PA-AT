@@ -237,6 +237,9 @@ class BookCreateProposalSubmissionSerializer(serializers.ModelSerializer):
     def validate_publisher_id(self, publisher):
         user = self.context["request"].user
 
+        if user.is_staff or user.is_superuser:
+            return publisher
+
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,
             user=user,
@@ -351,6 +354,9 @@ class BookUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
     def validate_publisher_id(self, publisher_id):
         user = self.context["request"].user
 
+        if user.is_staff or user.is_superuser:
+            return publisher_id
+
         is_member = PublisherMembership.objects.filter(
             publisher=publisher_id,
             user=user,
@@ -463,8 +469,11 @@ class BookDeleteProposalSubmissionSerializer(serializers.ModelSerializer):
             "reason",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher):
         user = self.context["request"].user
+
+        if user.is_staff or user.is_superuser:
+            return publisher
 
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,
@@ -582,17 +591,19 @@ class PriceChangeProposalSubmissionSerializer(serializers.Serializer):
     def validate(self, attrs):
 
         request = self.context["request"]
+        user = request.user
 
-        membership = PublisherMembership.objects.filter(
-            user=request.user,
-            publisher=attrs["publisher"],
-            is_active=True,
-        ).exists()
+        if not (user.is_staff or user.is_superuser):
+            membership = PublisherMembership.objects.filter(
+                user=user,
+                publisher=attrs["publisher"],
+                is_active=True,
+            ).exists()
 
-        if not membership:
-            raise serializers.ValidationError(
-                "You are not a member of this publisher."
-            )
+            if not membership:
+                raise serializers.ValidationError(
+                    "You are not a member of this publisher."
+                )
 
         if attrs["value"] <= 0:
             raise serializers.ValidationError(
@@ -703,8 +714,11 @@ class AuthorCreateProposalSubmissionSerializer(serializers.ModelSerializer):
             "biography",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher):
         user = self.context["request"].user
+
+        if user.is_staff or user.is_superuser:
+            return publisher
 
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,
@@ -771,8 +785,11 @@ class AuthorUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
             "biography",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher):
         user = self.context["request"].user
+
+        if user.is_staff or user.is_superuser:
+            return publisher
 
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,
