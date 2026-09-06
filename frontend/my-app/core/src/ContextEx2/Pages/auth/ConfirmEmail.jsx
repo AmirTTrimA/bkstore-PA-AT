@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 import ApiClient from '../../Services/ApiClient';
 import "../../Styles/components/ConfirmEmail.css";
@@ -125,6 +126,16 @@ export default function ConfirmEmail() {
             {success}
           </div>
         )}
+
+        <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+          <Link to="/login?mode=otp" style={{ color: "var(--clr)", fontSize: "0.85rem", textDecoration: "none", fontWeight: 600 }}>
+            <i className="fas fa-key" style={{ marginRight: 6 }}></i>
+            Sign in with an OTP code instead
+          </Link>
+          <Link to="/login" style={{ color: "#94a3b8", fontSize: "0.8rem", textDecoration: "none" }}>
+            Back to Login
+          </Link>
+        </div>
       </form>
     </div>
   );

@@ -1,6 +1,5 @@
-// ✅
-import React, { useState,useEffect,useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 import { useMediaQuery } from 'react-responsive';
 import Notification from '../../Components/feature/Notification';
@@ -21,26 +20,35 @@ const ERROR_DURATION = 2000;
 export default function Login() {
 
   const navigate = useNavigate();
+  const location = useLocation();
   const notificationRef = useRef();
 
   // ---Auth Context---
-  const { login,setError,error,clearError} = useAuth();
+  const { login, loginWithOtp, requestOtp, setError, error, clearError } = useAuth();
 
 
   // ---States---
-  const[formData,setFormData]=useState({
-    name:'',
-    password:''
-})
+  const [formData, setFormData] = useState({
+    name: '',
+    password: ''
+  });
 
-  const[showPassword,setShowPassword]=useState(false)
-  const[isHover,setIsHover]=useState(false)
-  const isMobile = useMediaQuery({maxWidth:768});
-  const isCheckedRef = useRef(false)
-  const labelTextRef = useRef(null)
+  const [loginMode, setLoginMode] = useState('password'); // 'password' | 'otp'
+  const [otpIdentifier, setOtpIdentifier] = useState('');
+  const [otpStep, setOtpStep] = useState(1); // 1: request, 2: verify
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const digitInputRefs = useRef([]);
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [isHover, setIsHover] = useState(false);
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const isCheckedRef = useRef(false);
+  const labelTextRef = useRef(null);
 
   // ---Derived State---
-  const isValid= formData.name && formData.password
+  const isValid = formData.name && formData.password;
   
 
 
@@ -78,11 +86,118 @@ export default function Login() {
   
 
 
-  // ---Handlers---
-  const handleSubmit = useCallback(async(e) => {
+  // Detect ?mode=otp query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('mode') === 'otp') {
+      setLoginMode('otp');
+      setIsHover(true);
+    }
+  }, [location.search]);
 
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  // ---Handlers---
+
+  // Request OTP
+  const handleRequestOtp = useCallback(async () => {
+    const identifier = (otpIdentifier || formData.name).trim();
+    if (!identifier) {
+      notificationRef.current.showNotif('Please enter your username or email', 'error');
+      return;
+    }
+    setOtpLoading(true);
+    const res = await requestOtp(identifier);
+    setOtpLoading(false);
+
+    if (res.success) {
+      setOtpStep(2);
+      setCountdown(60);
+      setOtpDigits(['', '', '', '', '', '']);
+      notificationRef.current.showNotif('Verification code sent to your email!', 'success');
+      setTimeout(() => {
+        digitInputRefs.current[0]?.focus();
+      }, 100);
+    } else {
+      notificationRef.current.showNotif(res.error || 'Failed to send OTP code', 'error');
+    }
+  }, [otpIdentifier, formData.name, requestOtp]);
+
+  // Handle single digit entry in OTP boxes
+  const handleDigitChange = useCallback((idx, val) => {
+    const clean = val.replace(/\D/g, '').slice(-1);
+    setOtpDigits((prev) => {
+      const next = [...prev];
+      next[idx] = clean;
+      return next;
+    });
+    if (clean && idx < 5) {
+      digitInputRefs.current[idx + 1]?.focus();
+    }
+  }, []);
+
+  // Handle Backspace navigation across OTP digit boxes
+  const handleDigitKeyDown = useCallback((idx, e) => {
+    if (e.key === 'Backspace') {
+      if (!otpDigits[idx] && idx > 0) {
+        digitInputRefs.current[idx - 1]?.focus();
+      } else {
+        setOtpDigits((prev) => {
+          const next = [...prev];
+          next[idx] = '';
+          return next;
+        });
+      }
+    }
+  }, [otpDigits]);
+
+  // Handle Paste event for complete 6-digit code
+  const handlePasteOtp = useCallback((e) => {
     e.preventDefault();
-    
+    const pasted = e.clipboardData.getData('text').trim().replace(/\D/g, '').slice(0, 6);
+    if (pasted.length > 0) {
+      const next = ['', '', '', '', '', ''];
+      for (let i = 0; i < 6; i++) {
+        next[i] = pasted[i] || '';
+      }
+      setOtpDigits(next);
+      const targetIndex = Math.min(pasted.length, 5);
+      digitInputRefs.current[targetIndex]?.focus();
+    }
+  }, []);
+
+  // Verify OTP and Log In
+  const handleVerifyOtp = useCallback(async (e) => {
+    if (e) e.preventDefault();
+    const identifier = (otpIdentifier || formData.name).trim();
+    const code = otpDigits.join('');
+    if (code.length !== 6) {
+      notificationRef.current.showNotif('Please enter the full 6-digit code', 'error');
+      return;
+    }
+    setOtpLoading(true);
+    const ok = await loginWithOtp(identifier, code);
+    setOtpLoading(false);
+
+    if (ok) {
+      notificationRef.current.showNotif('Login success!', 'success', {
+        navigateTo: '/dashboard',
+      });
+    } else {
+      notificationRef.current.showNotif(error || 'Invalid or expired OTP code', 'error');
+    }
+  }, [otpIdentifier, formData.name, otpDigits, loginWithOtp, error]);
+
+  // Standard username/password submit
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+
     const usable_name = formData.name.trim();
     const usable_password = formData.password;
 
@@ -207,6 +322,31 @@ const toggleHover = useCallback(() => {
         <h2 className='form-title-login' onClick={isMobile ? toggleHover : undefined}>Login</h2>
           <div className={`form-content ${isHover ?'visible':''}`}>
 
+            {/* Mode Switcher Tabs */}
+            <div className="login-mode-tabs">
+              <button
+                type="button"
+                className={`login-tab-btn ${loginMode === 'password' ? 'active' : ''}`}
+                onClick={() => {
+                  setLoginMode('password');
+                  if (error) clearError();
+                }}
+              >
+                Password
+              </button>
+              <button
+                type="button"
+                className={`login-tab-btn ${loginMode === 'otp' ? 'active' : ''}`}
+                onClick={() => {
+                  setLoginMode('otp');
+                  if (error) clearError();
+                }}
+              >
+                OTP Code
+              </button>
+            </div>
+
+            {loginMode === 'password' ? (
               <form onSubmit={handleSubmit}>
                 <div className="input-group">
                   {/* Username */}
@@ -266,12 +406,6 @@ const toggleHover = useCallback(() => {
                   </span>
                 </small>
                 
-               
-                    
-
-
-
-               
                 {/* Submit Button */}
                 <button 
                   type='submit'
@@ -281,6 +415,99 @@ const toggleHover = useCallback(() => {
                   Login
                 </button>
               </form>
+            ) : (
+              <div className="otp-form-content">
+                {otpStep === 1 ? (
+                  <div>
+                    <p className="otp-info-text">
+                      Enter your username or email to receive a 6-digit verification code:
+                    </p>
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        name="otpIdentifier"
+                        value={otpIdentifier}
+                        onChange={(e) => {
+                          setOtpIdentifier(e.target.value);
+                          if (error) clearError();
+                        }}
+                        placeholder="Username or Email"
+                        required
+                        className="form-fields"
+                        autoComplete="username"
+                        autoFocus
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="form-button"
+                      onClick={handleRequestOtp}
+                      disabled={otpLoading || !(otpIdentifier || formData.name).trim()}
+                      style={{ marginTop: 14 }}
+                    >
+                      {otpLoading ? "Sending Code..." : "Send Verification Code"}
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="otp-info-text">
+                      Enter the 6-digit code sent to:<br />
+                      <strong style={{ color: "#d17842" }}>{otpIdentifier || formData.name}</strong>
+                    </p>
+                    <div className="otp-digit-group">
+                      {otpDigits.map((digit, idx) => (
+                        <input
+                          key={idx}
+                          ref={(el) => (digitInputRefs.current[idx] = el)}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => handleDigitChange(idx, e.target.value)}
+                          onKeyDown={(e) => handleDigitKeyDown(idx, e)}
+                          onPaste={handlePasteOtp}
+                          className="otp-digit-input"
+                          autoFocus={idx === 0}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="form-button"
+                      onClick={handleVerifyOtp}
+                      disabled={otpLoading || otpDigits.some((d) => !d)}
+                    >
+                      {otpLoading ? "Verifying..." : "Verify & Login"}
+                    </button>
+                    <div className="otp-actions-row">
+                      <button
+                        type="button"
+                        className="otp-back-btn"
+                        onClick={() => {
+                          setOtpStep(1);
+                          setOtpDigits(["", "", "", "", "", ""]);
+                        }}
+                      >
+                        &#8592; Change Email
+                      </button>
+                      {countdown > 0 ? (
+                        <span style={{ color: "#94a3b8" }}>Resend ({countdown}s)</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="otp-resend-btn"
+                          onClick={handleRequestOtp}
+                          disabled={otpLoading}
+                        >
+                          Resend Code
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
     </div>
     
