@@ -259,11 +259,27 @@ HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.BaseSignalProcessor"
 CART_SESSION_KEY = "cart"
 
 # 🔑 CELERY CONFIGURATION
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+# Default to memory:// for zero-dependency local development and testing.
+# If redis is configured, verify that the redis library is available before using it.
+_env_broker = os.getenv("CELERY_BROKER_URL", "memory://")
+if _env_broker.startswith("redis"):
+    try:
+        import redis  # noqa: F401
+    except ImportError:
+        _env_broker = "memory://"
+CELERY_BROKER_URL = _env_broker
+
+_env_result_backend = os.getenv("CELERY_RESULT_BACKEND", "cache+memory://")
+if _env_result_backend.startswith("redis"):
+    try:
+        import redis  # noqa: F401
+    except ImportError:
+        _env_result_backend = "cache+memory://"
+CELERY_RESULT_BACKEND = _env_result_backend
+
 # In development without a dedicated Celery worker daemon, execute tasks eagerly (inline)
 CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "True").lower() in ("true", "1", "t")
-CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_EAGER_PROPAGATES = False
 
 # 🔑 CELERY BEAT SCHEDULE (Periodic Tasks) - Schedule the high-priority tasks
 CELERY_BEAT_SCHEDULE = {

@@ -1783,6 +1783,32 @@ class CheckoutWalletIntegrationTest(APITestCase):
             Decimal("25"),
         )
 
+    def test_checkout_api_dispatches_confirmation_email_on_commit(self):
+        self.user.email = "checkoutuser@example.com"
+        self.user.save(update_fields=["email"])
+        mail.outbox.clear()
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.checkout_url,
+                self.shipping_data,
+                format="json",
+            )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Confirmation", mail.outbox[0].subject)
+        self.assertEqual(mail.outbox[0].to, ["checkoutuser@example.com"])
+
+    def test_checkout_api_succeeds_even_if_email_dispatch_raises(self):
+        from unittest.mock import patch
+        with patch("cart.views.send_order_confirmation_email.delay", side_effect=RuntimeError("Broker down")):
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(
+                    self.checkout_url,
+                    self.shipping_data,
+                    format="json",
+                )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
     def test_checkout_fails_when_wallet_balance_is_insufficient(self):
         wallet = self.user.wallet
         wallet.balance = Decimal("5")

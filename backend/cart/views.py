@@ -1,5 +1,8 @@
 # cart/views.py
+import logging
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 from catalog.models import Book
 from content.models import License
@@ -410,9 +413,17 @@ class CheckoutView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        transaction.on_commit(
-            lambda: send_order_confirmation_email.delay(order.id)
-        )
+        def _dispatch_confirmation_email():
+            try:
+                send_order_confirmation_email.delay(order.id)
+            except Exception as exc:
+                logger.exception(
+                    "CheckoutView: Failed to dispatch order confirmation email for order #%s: %s",
+                    order.id,
+                    exc,
+                )
+
+        transaction.on_commit(_dispatch_confirmation_email)
 
         return Response(
             OrderOutputSerializer(order).data,
