@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 
 import BookService from "../../Services/BookService";
+import PublisherService from "../../Services/PublisherService";
 import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Search.css";
-
 
 // ============================================
 // Constants
@@ -20,472 +20,249 @@ const MAX_PRICE = 5000000;
 const PRICE_STEP = 50000;
 
 const SORT_OPTIONS = [
-  { id: "cheap", label: "Cheap" },
-  { id: "expensive", label: "Expensive" },
   { id: "latest", label: "Latest" },
-  { id: "topsell", label: "Top Sell" },
-  { id: "most visited", label: "Most Visited" },
+  { id: "cheap", label: "Price: Low to High" },
+  { id: "expensive", label: "Price: High to Low" },
+  { id: "title", label: "Title A-Z" },
 ];
 
 const FORMAT_OPTIONS = [
-  "physical",
-  "pdf",
+  { id: "", label: "All Formats" },
+  { id: "PHYSICAL", label: "Physical Book" },
+  { id: "DIGITAL", label: "Digital (PDF)" },
+  { id: "AUDIO", label: "Audiobook" },
 ];
 
-const EMPTY_COVER =
-  "https://placehold.co/400x600?text=No+Image";
+const EMPTY_COVER = "https://placehold.co/400x600?text=No+Cover";
 
-
-export const search_results = [
-// { searchId: "1", name: "harry-potter", category: 'novel', price: "60", since: "2020", imgUrl: pic9 },
-// { searchId: "2", name: "sara life", category: 'trip-geo', price: "33", since: "1990", imgUrl: "https://di-uploads-pod11.dealerinspire.com/stevelanderschryslerdodgejeepram/uploads/2017/07/DG018_036CLul7gbtg3iqneobqm1lk3178ng4__mid.jpg" },
-// { searchId: "3", name: "KING naser", category: 'history', price: "50", since: "2021", imgUrl: "https://cdn.motor1.com/images/mgl/ZXN9K/s3/ford-mustang-shelby-gt500.jpg" },
-// { searchId: "4", name: "new way", category: 'trip-geo', price: "30", since: "2021", imgUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn&s" },
-// { searchId: "5", name: "citizen art", category: 'psychology', price: "29", since: "2019", imgUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn&s" },
-// { searchId: "6", name: "Quran", category: 'religious', price: "15.09", since: "2002", imgUrl: "https://www.usnews.com/object/image/00000195-1985-dae4-a7d5-d9c784cf0000/p90541178-highres-rolls-royce-arcadia-1.jpg?update-time=1739889995584&size=responsive640" },
-// { searchId: "7", name: "AI king", category: 'tech', price: "16", since: "2004", imgUrl: "https://www.mad4wheels.com/img/free-car-images/mobile/22103/jas-motorsport-tensei-by-pininfarina-2026-thumb.jpg" },
-// { searchId: "8", name: "IOT", category: 'tech', price: "17", since: "2007", imgUrl: "https://image-cdn.beforward.jp/large/202603/12708974/CA622571_1d16adb9.jpg" },
-// { searchId: "9", name: "police limitations", category: 'science-education', price: "80", since: "2018", imgUrl: "https://www.bmw-m.com/content/dam/bmw/marketBMW_M/www_bmw-m_com/topics/magazine-article-pool/2021/e46-gtr-street/bmw-m3-gtr-street-gallery-01.jpg" },
-// { searchId: "10", name: "society engineering", category: 'psychology', price: "65", since: "2006", imgUrl: "https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg" },
-// { searchId: "11", name: "money honey", category: 'financial', price: "65", since: "2006", imgUrl: "https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg" },
-// { searchId: "12", name: "humanization people", category: 'psychology', price: "31", since: "2000", imgUrl: "https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg" },
-// { searchId: "13", name: "utility personality", category: 'psychology', price: "22", since: "1989", imgUrl: "https://sureshdrives.com/blog/wp-content/uploads/2024/12/c200-car-w204.jpg" },
-
-]
-
-
-// ============================================
-// Helpers
-// ============================================
+export const search_results = [];
 
 function mapBookToSearchCard(book) {
   return {
     searchId: String(book.id),
     name: book.title,
-    category: book.genre || "general",
+    author_name: book.author_name || "Unknown Author",
+    author_id: book.author_id,
+    category: book.genre || "General",
     price: book.price || "0",
     original_price: book.original_price || book.price || "0",
     discount_percent: book.discount_percent || 0,
     has_discount: Boolean(book.has_discount),
-    since: book.created_at
-      ? new Date(book.created_at).getFullYear()
-      : "",
+    since: book.created_at ? new Date(book.created_at).getFullYear() : "",
     imgUrl: book.cover_image_url || EMPTY_COVER,
+    is_digital: Boolean(book.is_digital),
+    is_audio: Boolean(book.is_audio),
   };
 }
 
-
-// ============================================
-// Main
-// ============================================
-
 export default function Search() {
-
+  const navigate = useNavigate();
   const { searchTerm } = useParams();
+  const [searchParams] = useSearchParams();
 
-  // --- Refs ---
+  // Initial values from URL
+  const initialQuery =
+    searchTerm && searchTerm !== "all"
+      ? searchTerm
+      : searchParams.get("q") || searchParams.get("search") || "";
+  const initialGenre = searchParams.get("genre") || "";
+  const initialFormat = searchParams.get("format") || "";
 
-  const containerRef = useRef(null);
-  const loadMoreRef = useRef(null);
+  // Search input state
+  const [searchInput, setSearchInput] = useState(initialQuery);
+  const [activeQuery, setActiveQuery] = useState(initialQuery);
 
+  // Metadata dropdowns
+  const [genresList, setGenresList] = useState([]);
+  const [publishersList, setPublishersList] = useState([]);
+  const [authorsList, setAuthorsList] = useState([]);
 
-  // --- Results ---
-
-  const [searchValue, setSearchValue] = useState([]);
-
+  // Results & Pagination
+  const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
+  // Sorting
+  const [selectedSort, setSelectedSort] = useState("latest");
+  const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
 
-  // --- Sorting ---
-
-  const [selectedSort, setSelectedSort] = useState("");
-  const [isSortSheetOpen, setIsSortSheetOpen] =
-    useState(false);
-
-
-  // --- Filters ---
-
-  const [isFilterSheetOpen, setIsFilterSheetOpen] =
-    useState(false);
-
-  const [filterFormat, setFilterFormat] = useState("");
+  // Filters
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [filterFormat, setFilterFormat] = useState(initialFormat);
+  const [filterGenre, setFilterGenre] = useState(initialGenre);
   const [filterPublisher, setFilterPublisher] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
   const [filterAuthor, setFilterAuthor] = useState("");
+  const [minValue, setMinValue] = useState(MIN_PRICE);
+  const [maxValue, setMaxValue] = useState(MAX_PRICE);
 
-
-  // --- Price Range ---
-
-  const [minValue, setMinValue] =
-    useState(MIN_PRICE);
-
-  const [maxValue, setMaxValue] =
-    useState(MAX_PRICE);
-
+  // Refs
+  const loadMoreRef = useRef(null);
 
   // ============================================
-  // Load Page
+  // Load Filter Metadata (Genres, Publishers, Authors)
   // ============================================
-
-  const loadPage = useCallback(
-    async (pageNumber, replace = false) => {
-
-      let response;
-
-      if (searchTerm === "new") {
-
-        response = await BookService.getNewBooks({
-          page: pageNumber,
-        });
-
-      } else if (searchTerm) {
-
-        response = await BookService.searchBooks(
-          searchTerm,
-          {
-            page: pageNumber,
-          }
-        );
-
-      } else {
-
-        response = await BookService.getBooks({
-          page: pageNumber,
-        });
-
-      }
-
-
-      const books = response.results || [];
-
-      const mappedBooks = books.map(
-        mapBookToSearchCard
-      );
-
-
-      if (replace) {
-
-        setSearchValue(mappedBooks);
-
-      } else {
-
-        setSearchValue((previous) => [
-          ...previous,
-          ...mappedBooks,
+  useEffect(() => {
+    let isMounted = true;
+    const loadMetadata = async () => {
+      try {
+        const [genresData, pubsData, authorsData] = await Promise.allSettled([
+          BookService.getGenres(),
+          PublisherService.getPublicPublishers(),
+          BookService.getAuthors({ page_size: 50 }),
         ]);
 
+        if (!isMounted) return;
+
+        if (genresData.status === "fulfilled") {
+          const list = genresData.value?.results || genresData.value || [];
+          setGenresList(Array.isArray(list) ? list : []);
+        }
+
+        if (pubsData.status === "fulfilled") {
+          const list = pubsData.value?.results || pubsData.value || [];
+          setPublishersList(Array.isArray(list) ? list : []);
+        }
+
+        if (authorsData.status === "fulfilled") {
+          const list = authorsData.value?.results || authorsData.value || [];
+          setAuthorsList(Array.isArray(list) ? list : []);
+        }
+      } catch (err) {
+        console.error("Failed loading search filters metadata:", err);
+      }
+    };
+
+    loadMetadata();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // ============================================
+  // Fetch Books from Backend
+  // ============================================
+  const fetchBooks = useCallback(
+    async (pageNumber, replace = false) => {
+      const params = {
+        page: pageNumber,
+      };
+
+      if (activeQuery && activeQuery.trim()) {
+        params.search = activeQuery.trim();
       }
 
+      if (filterGenre) {
+        params.genre = filterGenre;
+      }
+
+      if (filterFormat) {
+        params.format = filterFormat;
+      }
+
+      if (filterPublisher) {
+        params.publisher = filterPublisher;
+      }
+
+      if (filterAuthor) {
+        params.author = filterAuthor;
+      }
+
+      const response = await BookService.getBooks(params);
+      const rawBooks = response.results || [];
+      const mapped = rawBooks.map(mapBookToSearchCard);
+
+      if (replace) {
+        setBooks(mapped);
+      } else {
+        setBooks((prev) => [...prev, ...mapped]);
+      }
 
       setPage(pageNumber);
-
       setHasMore(Boolean(response.next));
-
+      setTotalCount(response.count || mapped.length);
     },
-    [searchTerm]
+    [activeQuery, filterGenre, filterFormat, filterPublisher, filterAuthor]
   );
 
-
-  // ============================================
-  // Initial Load
-  // ============================================
-
+  // Trigger initial or filter change fetch
   useEffect(() => {
-
     let cancelled = false;
 
-
-    const loadInitialPage = async () => {
-
+    const loadInitial = async () => {
       setIsLoading(true);
       setIsLoadingMore(false);
       setPage(1);
       setHasMore(false);
-      setSearchValue([]);
-
 
       try {
-
-        await loadPage(1, true);
-
+        await fetchBooks(1, true);
       } catch (err) {
-
         if (!cancelled) {
-
-          console.error(
-            "Failed to load search results:",
-            err
-          );
-
-          setSearchValue([]);
+          console.error("Failed to load search results:", err);
+          setBooks([]);
           setHasMore(false);
-
+          setTotalCount(0);
         }
-
       } finally {
-
         if (!cancelled) {
           setIsLoading(false);
         }
-
       }
-
     };
 
-
-    loadInitialPage();
-
+    loadInitial();
 
     return () => {
       cancelled = true;
     };
-
-  }, [loadPage]);
-
+  }, [fetchBooks]);
 
   // ============================================
-  // Load More
+  // Load More (Pagination)
   // ============================================
-
   const loadMoreBooks = useCallback(async () => {
-
-    if (
-      !hasMore ||
-      isLoading ||
-      isLoadingMore
-    ) {
-      return;
-    }
-
+    if (!hasMore || isLoading || isLoadingMore) return;
 
     setIsLoadingMore(true);
-
-
     try {
-
-      await loadPage(page + 1, false);
-
+      await fetchBooks(page + 1, false);
     } catch (err) {
-
-      console.error(
-        "Failed to load more books:",
-        err
-      );
-
+      console.error("Failed to load more books:", err);
     } finally {
-
       setIsLoadingMore(false);
-
     }
+  }, [hasMore, isLoading, isLoadingMore, page, fetchBooks]);
 
-  }, [
-    hasMore,
-    isLoading,
-    isLoadingMore,
-    page,
-    loadPage,
-  ]);
-
-
-  // ============================================
-  // Infinite Scroll
-  // ============================================
-
+  // Infinite scroll observer
   useEffect(() => {
-
     const target = loadMoreRef.current;
-
-    if (!target || !hasMore) {
-      return;
-    }
-
+    if (!target || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-
         if (entries[0]?.isIntersecting) {
           loadMoreBooks();
         }
-
       },
-      {
-        threshold: 0.1,
-      }
+      { threshold: 0.1 }
     );
-
 
     observer.observe(target);
-
-
-    return () => {
-      observer.disconnect();
-    };
-
-  }, [
-    hasMore,
-    loadMoreBooks,
-  ]);
-
+    return () => observer.disconnect();
+  }, [hasMore, loadMoreBooks]);
 
   // ============================================
-  // Filter Container Scroll Styling
+  // Client-Side Price & Sort Filtering
   // ============================================
-
-  useEffect(() => {
-
-    const container = containerRef.current;
-
-    if (!container) {
-      return;
-    }
-
-
-    let timeout;
-
-
-    const handleScroll = () => {
-
-      container.classList.add("scrolling");
-
-      clearTimeout(timeout);
-
-      timeout = setTimeout(() => {
-
-        container.classList.remove("scrolling");
-
-      }, 500);
-
-    };
-
-
-    container.addEventListener(
-      "scroll",
-      handleScroll
-    );
-
-
-    return () => {
-
-      container.removeEventListener(
-        "scroll",
-        handleScroll
-      );
-
-      clearTimeout(timeout);
-
-    };
-
-  }, []);
-
-
-  // ============================================
-  // Handlers
-  // ============================================
-
-  const handleSortSelect = (sortId) => {
-
-    setSelectedSort(sortId);
-    setIsSortSheetOpen(false);
-
-  };
-
-
-  const handleFilterApply = () => {
-
-    setIsFilterSheetOpen(false);
-
-    // Backend filtering can be connected here.
-    // Keeping the UI behavior unchanged for now.
-
-  };
-
-
-  // ============================================
-  // Price Handlers
-  // ============================================
-
-  const handleMinChange = (event) => {
-
-    const value = Math.min(
-      Number(event.target.value),
-      maxValue - PRICE_STEP
-    );
-
-    setMinValue(value);
-
-  };
-
-
-  const handleMaxChange = (event) => {
-
-    const value = Math.max(
-      Number(event.target.value),
-      minValue + PRICE_STEP
-    );
-
-    setMaxValue(value);
-
-  };
-
-
-  // ============================================
-  // Price Range Calculations
-  // ============================================
-
-  const percent1 =
-    ((minValue - MIN_PRICE) /
-      (MAX_PRICE - MIN_PRICE)) * 83;
-
-  const percent2 =
-    ((maxValue - MIN_PRICE) /
-      (MAX_PRICE - MIN_PRICE)) * 88;
-
-
-  const percent3 =
-    ((minValue - MIN_PRICE) /
-      (MAX_PRICE - MIN_PRICE)) * 95;
-
-  const percent4 =
-    ((maxValue - MIN_PRICE) /
-      (MAX_PRICE - MIN_PRICE)) * 95;
-
-
-  const thumbRadius = 15;
-
-  const progressLeft = percent1;
-
-  const progressWidth =
-    percent2 - percent1;
-
-
-  const thumbRadius2 = 12;
-
-  const progressLeft2 = percent3;
-
-  const progressWidth2 =
-    percent4 - percent3;
-
-
-  // ============================================
-  // Filter & Sort
-  // ============================================
-
   const displayedBooks = useMemo(() => {
-    return searchValue
+    return books
       .filter((item) => {
         const priceNum = Number(item.price);
         if (!isNaN(priceNum)) {
           if (priceNum < minValue || priceNum > maxValue) return false;
-        }
-        if (
-          filterCategory &&
-          !item.category?.toLowerCase().includes(filterCategory.toLowerCase())
-        ) {
-          return false;
         }
         return true;
       })
@@ -494,291 +271,273 @@ export default function Search() {
         const priceB = Number(b.price) || 0;
         if (selectedSort === "cheap") return priceA - priceB;
         if (selectedSort === "expensive") return priceB - priceA;
-        if (selectedSort === "latest") return (b.since || 0) - (a.since || 0);
+        if (selectedSort === "title") return a.name.localeCompare(b.name);
         return 0;
       });
-  }, [searchValue, minValue, maxValue, filterCategory, selectedSort]);
-
-
-  // ============================================
-  // Loading
-  // ============================================
-
-  if (isLoading) {
-
-    return (
-      <div>
-        Loading ...
-      </div>
-    );
-
-  }
-
+  }, [books, minValue, maxValue, selectedSort]);
 
   // ============================================
-  // Render
+  // Handlers
   // ============================================
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    setActiveQuery(searchInput.trim());
+    if (searchInput.trim()) {
+      navigate(`/search/${encodeURIComponent(searchInput.trim())}`, { replace: true });
+    } else {
+      navigate("/search", { replace: true });
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setActiveQuery("");
+    navigate("/search", { replace: true });
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchInput("");
+    setActiveQuery("");
+    setFilterFormat("");
+    setFilterGenre("");
+    setFilterPublisher("");
+    setFilterAuthor("");
+    setMinValue(MIN_PRICE);
+    setMaxValue(MAX_PRICE);
+    setSelectedSort("latest");
+    navigate("/search", { replace: true });
+  };
+
+  const handleMinChange = (e) => {
+    const val = Math.min(Number(e.target.value), maxValue - PRICE_STEP);
+    setMinValue(val);
+  };
+
+  const handleMaxChange = (e) => {
+    const val = Math.max(Number(e.target.value), minValue + PRICE_STEP);
+    setMaxValue(val);
+  };
+
+  const hasActiveFilters = Boolean(
+    activeQuery ||
+      filterFormat ||
+      filterGenre ||
+      filterPublisher ||
+      filterAuthor ||
+      minValue > MIN_PRICE ||
+      maxValue < MAX_PRICE
+  );
 
   return (
-
-    <div>
-
-      {/* Navigation */}
-
+    <div className="search-page-wrapper">
       <div className="search-nav-res">
         <SimpleNav />
       </div>
+      <div className="search-nav-full">
+        <Navbar />
+      </div>
 
+      <main className="search-full-container">
+        {/* TOP SEARCH BAR & ACTIONS */}
+        <section className="search-top-header">
+          <div className="search-top-row">
+            <button
+              className="search-back-btn"
+              onClick={() => navigate(-1)}
+              title="Go Back"
+            >
+              <i className="fas fa-arrow-left"></i>
+              <span>Back</span>
+            </button>
 
-      <div className="search-full-container">
-
-        <div className="search-nav-full">
-          <Navbar />
-        </div>
-
-
-        {/* Main Content */}
-
-        <div className="main-search-container">
-
-          <div className="main-search">
-
-            {/* Sort Row */}
-
-            <div className="sort-row">
-
-              <p>
-                sort by :
-              </p>
-
-              <ul>
-
-                {SORT_OPTIONS.map((option) => (
-
-                  <li
-                    key={option.id}
-                    onClick={() =>
-                      handleSortSelect(option.id)
-                    }
-                    style={{
-                      color:
-                        selectedSort === option.id
-                          ? "#309700"
-                          : "",
-                    }}
-                  >
-                    {option.label}
-                  </li>
-
-                ))}
-
-              </ul>
-
-            </div>
-
-
-            {/* Mobile Sort / Filter */}
-
-            <div className="mobile-sort-filter-row">
-
-              <button
-                className="mobile-sort-btn"
-                onClick={() =>
-                  setIsSortSheetOpen(true)
-                }
-              >
-                <i className="fas fa-sort"></i>
-                {" "}Sort
-              </button>
-
-
-              <button
-                className="mobile-filter-btn"
-                onClick={() =>
-                  setIsFilterSheetOpen(true)
-                }
-              >
-                <i className="fas fa-filter"></i>
-                {" "}Filter
-              </button>
-
-            </div>
-
-
-            {/* Results */}
-
-            <div className="search-cards-row">
-
-              {displayedBooks.length === 0 ? (
-
-                <p className="search-result-empty-error">
-                  No Result found
-                </p>
-
-              ) : (
-
-                displayedBooks.map((item) => (
-
-                  <Link
-                    key={item.searchId}
-                    to={`/book/${item.searchId}`}
-                    className="search-cards"
-                  >
-
-                    <div className="search-card-pic" style={{ position: "relative" }}>
-                      {item.has_discount && item.discount_percent > 0 && (
-                        <span className="search-card-floating-badge">
-                          -{item.discount_percent}%
-                        </span>
-                      )}
-                      <img
-                        src={item.imgUrl}
-                        alt={item.name}
-                        loading="lazy"
-                      />
-                    </div>
-
-                    <div className="search-card-info">
-                      <span className="search-card-field-name">
-                        {item.name}
-                      </span>
-
-                      <div className="search-card-pricing">
-                        {item.has_discount && item.discount_percent > 0 ? (
-                          <>
-                            <span className="search-card-original-price">
-                              {formatPrice(item.original_price)}
-                            </span>
-                            <span className="search-card-field-price search-card-discounted">
-                              {formatPrice(item.price)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="search-card-field-price">
-                            {formatPrice(item.price)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                  </Link>
-
-                ))
-
-              )}
-
-            </div>
-
-
-            {/* Infinite Scroll Sentinel */}
-
-            {hasMore && (
-
-              <div
-                ref={loadMoreRef}
-                style={{
-                  height: "40px",
-                  width: "100%",
-                }}
+            <form className="search-input-form" onSubmit={handleSearchSubmit}>
+              <i className="fas fa-search search-input-icon"></i>
+              <input
+                type="text"
+                className="search-input-field"
+                placeholder="Search catalog by title, author, description, or ISBN..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
+              {searchInput && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={handleClearSearch}
+                  title="Clear search"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+              <button type="submit" className="search-submit-btn">
+                Search
+              </button>
+            </form>
 
-            )}
-
-
-            {isLoadingMore && (
-
-              <p
-                style={{
-                  textAlign: "center",
-                }}
+            <div className="search-mobile-actions">
+              <button
+                className="mobile-sort-trigger-btn"
+                onClick={() => setIsSortSheetOpen(true)}
               >
-                Loading more books...
-              </p>
-
-            )}
-
+                <i className="fas fa-sort"></i> Sort
+              </button>
+              <button
+                className="mobile-filter-trigger-btn"
+                onClick={() => setIsFilterSheetOpen(true)}
+              >
+                <i className="fas fa-filter"></i> Filter
+                {hasActiveFilters && <span className="active-dot"></span>}
+              </button>
+            </div>
           </div>
 
-
-          {/* Desktop Filters */}
-
-          <div className="side-card-filter">
-
-            <div className="search-filter-container">
-
-              <label className="search-filters-title">
-                Filters
-              </label>
-
-
-              <div
-                ref={containerRef}
-                className="search-filter-small-container"
-              >
-
-                {/* Format */}
-
-                <label className="filters-label">
-                  Format:
-                </label>
-
-                <select
-                  value={filterFormat}
-                  onChange={(event) =>
-                    setFilterFormat(
-                      event.target.value
-                    )
-                  }
-                  name="book-format"
-                  id="book-format"
-                >
-
-                  <option
-                    value=""
-                    disabled
-                    hidden
+          {/* ACTIVE FILTER CHIPS */}
+          {hasActiveFilters && (
+            <div className="active-filter-chips-bar">
+              <span className="chips-title">Active Filters:</span>
+              {activeQuery && (
+                <span className="filter-chip">
+                  Keyword: "{activeQuery}"
+                  <button onClick={handleClearSearch}>✕</button>
+                </span>
+              )}
+              {filterFormat && (
+                <span className="filter-chip">
+                  Format: {filterFormat}
+                  <button onClick={() => setFilterFormat("")}>✕</button>
+                </span>
+              )}
+              {filterGenre && (
+                <span className="filter-chip">
+                  Genre: {filterGenre}
+                  <button onClick={() => setFilterGenre("")}>✕</button>
+                </span>
+              )}
+              {filterPublisher && (
+                <span className="filter-chip">
+                  Publisher
+                  <button onClick={() => setFilterPublisher("")}>✕</button>
+                </span>
+              )}
+              {filterAuthor && (
+                <span className="filter-chip">
+                  Author
+                  <button onClick={() => setFilterAuthor("")}>✕</button>
+                </span>
+              )}
+              {(minValue > MIN_PRICE || maxValue < MAX_PRICE) && (
+                <span className="filter-chip">
+                  {formatPrice(minValue)} - {formatPrice(maxValue)}
+                  <button
+                    onClick={() => {
+                      setMinValue(MIN_PRICE);
+                      setMaxValue(MAX_PRICE);
+                    }}
                   >
-                    choose one
-                  </option>
+                    ✕
+                  </button>
+                </span>
+              )}
+              <button className="clear-all-chips-btn" onClick={handleClearAllFilters}>
+                Clear All
+              </button>
+            </div>
+          )}
+        </section>
 
-                  {FORMAT_OPTIONS.map((option) => (
+        {/* MAIN 2-COLUMN LAYOUT */}
+        <div className="main-search-container">
+          {/* LEFT SIDEBAR: DESKTOP FILTERS */}
+          <aside className="side-card-filter">
+            <div className="filter-sidebar-header">
+              <h3>
+                <i className="fas fa-sliders-h" style={{ marginRight: 8 }}></i>
+                Filters
+              </h3>
+              {hasActiveFilters && (
+                <button
+                  className="filter-reset-text-btn"
+                  onClick={handleClearAllFilters}
+                >
+                  Reset
+                </button>
+              )}
+            </div>
 
-                    <option
-                      key={option}
-                      value={option}
+            <div className="filter-sidebar-content">
+              {/* Format Filter */}
+              <div className="filter-widget">
+                <label className="filter-widget-label">Book Format</label>
+                <div className="format-pills-selector">
+                  {FORMAT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`format-pill-btn ${filterFormat === opt.id ? "active" : ""}`}
+                      onClick={() => setFilterFormat(opt.id)}
                     >
-                      {option}
-                    </option>
-
+                      {opt.label}
+                    </button>
                   ))}
+                </div>
+              </div>
 
+              {/* Genre / Category Filter */}
+              <div className="filter-widget">
+                <label className="filter-widget-label">Genre</label>
+                <select
+                  className="filter-select-input"
+                  value={filterGenre}
+                  onChange={(e) => setFilterGenre(e.target.value)}
+                >
+                  <option value="">All Genres</option>
+                  {genresList.map((genre) => (
+                    <option key={genre.id || genre.name || genre} value={genre.name || genre}>
+                      {genre.name || genre}
+                    </option>
+                  ))}
                 </select>
+              </div>
 
+              {/* Publisher Filter */}
+              <div className="filter-widget">
+                <label className="filter-widget-label">Publisher</label>
+                <select
+                  className="filter-select-input"
+                  value={filterPublisher}
+                  onChange={(e) => setFilterPublisher(e.target.value)}
+                >
+                  <option value="">All Publishers</option>
+                  {publishersList.map((pub) => (
+                    <option key={pub.id} value={pub.id}>
+                      {pub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                {/* Price */}
+              {/* Author Filter */}
+              <div className="filter-widget">
+                <label className="filter-widget-label">Author</label>
+                <select
+                  className="filter-select-input"
+                  value={filterAuthor}
+                  onChange={(e) => setFilterAuthor(e.target.value)}
+                >
+                  <option value="">All Authors</option>
+                  {authorsList.map((auth) => (
+                    <option key={auth.id} value={auth.id}>
+                      {auth.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                <label className="filters-label">
-                  Price:
-                </label>
-
-
-                <div className="price-range-container">
-
-                  <div className="price-range-slider-container">
-
-                    <div
-                      className="price-range-progress"
-                      style={{
-                        left:
-                          `calc(${progressLeft}% + ${thumbRadius}px)`,
-                        width:
-                          `calc(${progressWidth}% - ${thumbRadius * 0.72}px)`,
-                        transform:
-                          "translateY(-85%)",
-                      }}
-                    />
-
-
+              {/* Price Range */}
+              <div className="filter-widget">
+                <label className="filter-widget-label">Price Range</label>
+                <div className="price-inputs-range">
+                  <div className="price-range-slider-box">
                     <input
                       type="range"
                       min={MIN_PRICE}
@@ -786,10 +545,8 @@ export default function Search() {
                       step={PRICE_STEP}
                       value={minValue}
                       onChange={handleMinChange}
-                      className="price-range-slider slider-left"
+                      className="slider-min"
                     />
-
-
                     <input
                       type="range"
                       min={MIN_PRICE}
@@ -797,438 +554,270 @@ export default function Search() {
                       step={PRICE_STEP}
                       value={maxValue}
                       onChange={handleMaxChange}
-                      className="price-range-slider slider-right"
+                      className="slider-max"
                     />
-
                   </div>
-
-
-                  <div className="price-range-display">
-
-                    <span>
-                      {formatPrice(minValue)}
-                    </span>
-
-                    <span>
-                      {formatPrice(maxValue)}
-                    </span>
-
+                  <div className="price-range-labels">
+                    <span>{formatPrice(minValue)}</span>
+                    <span>{formatPrice(maxValue)}</span>
                   </div>
-
                 </div>
+              </div>
+            </div>
+          </aside>
 
-
-                {/* Publisher */}
-
-                <label className="filters-label">
-                  Publisher:
-                </label>
-
-                <input
-                  type="text"
-                  value={filterPublisher}
-                  onChange={(event) =>
-                    setFilterPublisher(
-                      event.target.value
-                    )
-                  }
-                />
-
-
-                {/* Category */}
-
-                <label className="filters-label">
-                  Category:
-                </label>
-
-                <input
-                  type="text"
-                  value={filterCategory}
-                  onChange={(event) =>
-                    setFilterCategory(
-                      event.target.value
-                    )
-                  }
-                />
-
-
-                {/* Author */}
-
-                <label className="filters-label">
-                  Author:
-                </label>
-
-                <input
-                  type="text"
-                  value={filterAuthor}
-                  onChange={(event) =>
-                    setFilterAuthor(
-                      event.target.value
-                    )
-                  }
-                />
-
+          {/* RIGHT COLUMN: RESULTS & SORT */}
+          <section className="main-search">
+            {/* Sort & Count Row */}
+            <div className="search-results-meta-bar">
+              <div className="results-count-text">
+                {isLoading ? (
+                  <span>Loading books...</span>
+                ) : (
+                  <span>
+                    Showing <strong>{displayedBooks.length}</strong> of {totalCount} books
+                  </span>
+                )}
               </div>
 
+              <div className="desktop-sort-bar">
+                <span className="sort-bar-label">Sort by:</span>
+                <div className="sort-chips">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      className={`sort-chip-btn ${selectedSort === opt.id ? "active" : ""}`}
+                      onClick={() => setSelectedSort(opt.id)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
+            {/* Book Cards Grid */}
+            {isLoading ? (
+              <div className="search-status-box">
+                <div className="search-spinner"></div>
+                <p>Searching bookstore catalog...</p>
+              </div>
+            ) : displayedBooks.length === 0 ? (
+              <div className="search-empty-state">
+                <i className="fas fa-book-open empty-icon"></i>
+                <h3>No Books Found</h3>
+                <p>
+                  No titles match your active search and filter criteria. Try adjusting or clearing your filters.
+                </p>
+                {hasActiveFilters && (
+                  <button
+                    className="reset-filters-cta-btn"
+                    onClick={handleClearAllFilters}
+                  >
+                    Clear All Filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="search-cards-grid">
+                {displayedBooks.map((item) => (
+                  <Link
+                    key={item.searchId}
+                    to={`/book/${item.searchId}`}
+                    className="search-catalog-card"
+                  >
+                    <div className="catalog-card-image-wrap">
+                      {item.has_discount && item.discount_percent > 0 && (
+                        <span className="catalog-card-discount-badge">
+                          -{item.discount_percent}%
+                        </span>
+                      )}
+                      <img
+                        src={item.imgUrl}
+                        alt={item.name}
+                        loading="lazy"
+                        className="catalog-card-cover"
+                      />
+                      <div className="card-format-icons">
+                        {item.is_digital && <span title="Digital PDF available">📱</span>}
+                        {item.is_audio && <span title="Audiobook available">🎧</span>}
+                      </div>
+                    </div>
 
+                    <div className="catalog-card-details">
+                      <span className="catalog-card-genre">{item.category}</span>
+                      <h4 className="catalog-card-title">{item.name}</h4>
+                      <p className="catalog-card-author">{item.author_name}</p>
+
+                      <div className="catalog-card-price-row">
+                        {item.has_discount && item.discount_percent > 0 ? (
+                          <div className="price-with-discount">
+                            <span className="price-orig">
+                              {formatPrice(item.original_price)}
+                            </span>
+                            <span className="price-final discounted">
+                              {formatPrice(item.price)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="price-final">
+                            {formatPrice(item.price)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Sentinel for Infinite Scroll */}
+            {hasMore && <div ref={loadMoreRef} className="search-scroll-sentinel" />}
+
+            {isLoadingMore && (
+              <div className="search-loading-more-box">
+                <div className="search-spinner-sm"></div>
+                <span>Loading more books...</span>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+
+      <Footer />
+
+      {/* MOBILE SORT BOTTOM SHEET */}
+      <div
+        className={`bottom-sheet-overlay ${isSortSheetOpen ? "active" : ""}`}
+        onClick={() => setIsSortSheetOpen(false)}
+      >
+        <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="bottom-sheet-handle" />
+          <div className="bottom-sheet-title">Sort By</div>
+          <div className="bottom-sheet-body">
+            {SORT_OPTIONS.map((opt) => (
+              <div
+                key={opt.id}
+                className={`sort-option-item ${selectedSort === opt.id ? "selected" : ""}`}
+                onClick={() => {
+                  setSelectedSort(opt.id);
+                  setIsSortSheetOpen(false);
+                }}
+              >
+                <span className="sort-label">{opt.label}</span>
+                {selectedSort === opt.id && <span className="check-icon">✓</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* MOBILE FILTER BOTTOM SHEET */}
+      <div
+        className={`bottom-sheet-overlay ${isFilterSheetOpen ? "active" : ""}`}
+        onClick={() => setIsFilterSheetOpen(false)}
+      >
+        <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="bottom-sheet-handle" />
+          <div className="bottom-sheet-title">Filter Catalog</div>
+          <div className="bottom-sheet-body">
+            {/* Format */}
+            <div className="filter-group">
+              <label className="filter-group-label">Format</label>
+              <select
+                className="filter-select-input"
+                value={filterFormat}
+                onChange={(e) => setFilterFormat(e.target.value)}
+              >
+                {FORMAT_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Genre */}
+            <div className="filter-group">
+              <label className="filter-group-label">Genre</label>
+              <select
+                className="filter-select-input"
+                value={filterGenre}
+                onChange={(e) => setFilterGenre(e.target.value)}
+              >
+                <option value="">All Genres</option>
+                {genresList.map((genre) => (
+                  <option key={genre.id || genre.name || genre} value={genre.name || genre}>
+                    {genre.name || genre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Publisher */}
+            <div className="filter-group">
+              <label className="filter-group-label">Publisher</label>
+              <select
+                className="filter-select-input"
+                value={filterPublisher}
+                onChange={(e) => setFilterPublisher(e.target.value)}
+              >
+                <option value="">All Publishers</option>
+                {publishersList.map((pub) => (
+                  <option key={pub.id} value={pub.id}>
+                    {pub.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Price Range */}
+            <div className="filter-group">
+              <label className="filter-group-label">Price Range</label>
+              <div className="price-range-labels">
+                <span>{formatPrice(minValue)}</span>
+                <span>{formatPrice(maxValue)}</span>
+              </div>
+              <div className="price-range-slider-box">
+                <input
+                  type="range"
+                  min={MIN_PRICE}
+                  max={MAX_PRICE}
+                  step={PRICE_STEP}
+                  value={minValue}
+                  onChange={handleMinChange}
+                />
+                <input
+                  type="range"
+                  min={MIN_PRICE}
+                  max={MAX_PRICE}
+                  step={PRICE_STEP}
+                  value={maxValue}
+                  onChange={handleMaxChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bottom-sheet-actions">
             <button
-              onClick={handleFilterApply}
-              className="search-apply-btn"
+              className="bottom-sheet-reset-btn"
+              onClick={() => {
+                handleClearAllFilters();
+                setIsFilterSheetOpen(false);
+              }}
+            >
+              Reset All
+            </button>
+            <button
+              className="bottom-sheet-apply-btn"
+              onClick={() => setIsFilterSheetOpen(false)}
             >
               Apply
             </button>
-
           </div>
-
         </div>
-
-
-        <Footer />
-
-
-        {/* Mobile Bottom Navigation */}
-
-        <div className="BottomNavbar">
-
-          <nav className="bottom-nav">
-
-            <Link
-              to="/"
-              className="nav-item"
-            >
-              <i className="fas fa-home"></i>
-              <span>Home</span>
-            </Link>
-
-
-            <Link
-              to="/favorites"
-              className="nav-item"
-            >
-              <i className="fa-solid fa-heart"></i>
-              <span>favorite</span>
-            </Link>
-
-
-            <Link
-              to="/basket"
-              className="nav-item"
-            >
-              <svg
-                className="cart-icon"
-                viewBox="0 -960 960 960"
-              >
-                <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z" />
-              </svg>
-
-              <span>
-                Cart
-              </span>
-            </Link>
-
-
-            <Link
-              to="/library"
-              className="nav-item"
-            >
-              <i className="fas fa-book"></i>
-              <span>
-                Library
-              </span>
-            </Link>
-
-
-            <Link
-              to="/Dashboard"
-              className="nav-item"
-            >
-              <i className="fas fa-user"></i>
-              <span>
-                Dashboard
-              </span>
-            </Link>
-
-          </nav>
-
-        </div>
-
       </div>
-
-
-      {/* Sort Bottom Sheet */}
-
-      <div
-        className={`bottom-sheet-overlay ${isSortSheetOpen
-            ? "active"
-            : ""
-          }`}
-        onClick={() =>
-          setIsSortSheetOpen(false)
-        }
-      >
-
-        <div
-          className="bottom-sheet"
-          onClick={(event) =>
-            event.stopPropagation()
-          }
-        >
-
-          <div className="bottom-sheet-handle" />
-
-          <div className="bottom-sheet-title">
-            Sort By
-          </div>
-
-
-          <div className="bottom-sheet-body">
-
-            {SORT_OPTIONS.map((option) => (
-
-              <div
-                key={option.id}
-                className={`sort-option-item ${selectedSort === option.id
-                    ? "selected"
-                    : ""
-                  }`}
-                onClick={() =>
-                  handleSortSelect(option.id)
-                }
-              >
-
-                <span className="sort-label">
-                  {option.label}
-                </span>
-
-                <span className="check-icon">
-                  ✓
-                </span>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* Filter Bottom Sheet */}
-
-      <div
-        className={`bottom-sheet-overlay ${isFilterSheetOpen
-            ? "active"
-            : ""
-          }`}
-        onClick={() =>
-          setIsFilterSheetOpen(false)
-        }
-      >
-
-        <div
-          className="bottom-sheet"
-          onClick={(event) =>
-            event.stopPropagation()
-          }
-        >
-
-          <div className="bottom-sheet-handle" />
-
-          <div className="bottom-sheet-title">
-            Filters
-          </div>
-
-
-          <div className="bottom-sheet-body">
-
-            {/* Format */}
-
-            <div className="filter-group">
-
-              <label className="filter-group-label">
-                Format
-              </label>
-
-              <select
-                value={filterFormat}
-                onChange={(event) =>
-                  setFilterFormat(
-                    event.target.value
-                  )
-                }
-              >
-
-                <option value="">
-                  choose one
-                </option>
-
-                {FORMAT_OPTIONS.map((option) => (
-
-                  <option
-                    key={option}
-                    value={option}
-                  >
-                    {option}
-                  </option>
-
-                ))}
-
-              </select>
-
-            </div>
-
-
-            {/* Price */}
-
-            <div className="filter-group mobile-price-range">
-
-              <label className="filter-group-label">
-                Price
-              </label>
-
-
-              <div className="price-range-container">
-
-                <div className="price-range-slider-container">
-
-                  <div
-                    className="price-range-progress"
-                    style={{
-                      left:
-                        `calc(${progressLeft2}% + ${thumbRadius2}px)`,
-                      width:
-                        `calc(${progressWidth2}% - ${thumbRadius2 * 0.01}px)`,
-                      transform:
-                        "translateY(-50%)",
-                    }}
-                  />
-
-
-                  <input
-                    type="range"
-                    min={MIN_PRICE}
-                    max={MAX_PRICE}
-                    step={PRICE_STEP}
-                    value={minValue}
-                    onChange={handleMinChange}
-                    className="price-range-slider slider-left"
-                  />
-
-
-                  <input
-                    type="range"
-                    min={MIN_PRICE}
-                    max={MAX_PRICE}
-                    step={PRICE_STEP}
-                    value={maxValue}
-                    onChange={handleMaxChange}
-                    className="price-range-slider slider-right"
-                  />
-
-                </div>
-
-
-                <div className="price-range-display">
-
-                  <span>
-                    {formatPrice(minValue)}
-                  </span>
-
-                  <span>
-                    {formatPrice(maxValue)}
-                  </span>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            {/* Publisher */}
-
-            <div className="filter-group">
-
-              <label className="filter-group-label">
-                Publisher
-              </label>
-
-              <input
-                type="text"
-                placeholder="Enter publisher..."
-                value={filterPublisher}
-                onChange={(event) =>
-                  setFilterPublisher(
-                    event.target.value
-                  )
-                }
-              />
-
-            </div>
-
-
-            {/* Category */}
-
-            <div className="filter-group">
-
-              <label className="filter-group-label">
-                Category
-              </label>
-
-              <input
-                type="text"
-                placeholder="Enter category..."
-                value={filterCategory}
-                onChange={(event) =>
-                  setFilterCategory(
-                    event.target.value
-                  )
-                }
-              />
-
-            </div>
-
-
-            {/* Author */}
-
-            <div className="filter-group">
-
-              <label className="filter-group-label">
-                Author
-              </label>
-
-              <input
-                type="text"
-                placeholder="Enter author..."
-                value={filterAuthor}
-                onChange={(event) =>
-                  setFilterAuthor(
-                    event.target.value
-                  )
-                }
-              />
-
-            </div>
-
-          </div>
-
-
-          <button
-            className="bottom-sheet-apply-btn"
-            onClick={handleFilterApply}
-          >
-            Apply Filters
-          </button>
-
-        </div>
-
-      </div>
-
     </div>
-
   );
 }

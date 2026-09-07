@@ -18,17 +18,19 @@ const BookService = {
     return response.data;
   },
 
-  getNewBooks: async () => {
+  getNewBooks: async (params = {}) => {
     const response = await ApiClient.get(
-      "/books/new/"
+      "/books/new/",
+      { params }
     );
 
     return response.data;
   },
 
-  searchBooks: async (term) => {
+  searchBooks: async (term, params = {}) => {
     const response = await ApiClient.get(
-      `/books/?search=${encodeURIComponent(term)}`
+      "/books/",
+      { params: { search: term, ...params } }
     );
 
     return response.data;
@@ -37,6 +39,23 @@ const BookService = {
   getGenres: async () => {
     const response = await ApiClient.get(
       "/books/genres/"
+    );
+
+    return response.data;
+  },
+
+  getAuthors: async (params = {}) => {
+    const response = await ApiClient.get(
+      "/authors/",
+      { params }
+    );
+
+    return response.data;
+  },
+
+  getAuthorById: async (id) => {
+    const response = await ApiClient.get(
+      `/authors/${id}/`
     );
 
     return response.data;

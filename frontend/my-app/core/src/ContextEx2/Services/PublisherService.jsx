@@ -2,6 +2,27 @@ import ApiClient from "./ApiClient";
 
 const PublisherService = {
   /**
+   * Fetches all active public publishers for the storefront.
+   */
+  getPublicPublishers: async () => {
+    try {
+      const response = await ApiClient.get("/publishing/public/publishers/");
+      return Array.isArray(response.data) ? response.data : (response.data?.results || []);
+    } catch (err) {
+      console.error("Failed to load public publishers:", err);
+      return [];
+    }
+  },
+
+  /**
+   * Fetches public detail for a publisher by ID or slug.
+   */
+  getPublicPublisher: async (idOrSlug) => {
+    const response = await ApiClient.get(`/publishing/public/publishers/${idOrSlug}/`);
+    return response.data;
+  },
+
+  /**
    * Fetches the publishers that the authenticated user belongs to.
    */
   getMyPublishers: async () => {

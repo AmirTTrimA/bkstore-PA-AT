@@ -1,149 +1,216 @@
-// ✅
-import React,{useState,useEffect} from 'react'
-import SimpleNav from '../../Components/SimpleNav'
-import { useNavigate, useParams } from 'react-router-dom'
-
-// ---Styles---
-import "../../Styles/components/Author.css"
-
-import { 
-  ppic3,pic4,pic8,
-  pic5,pic6,pic7,
-  ppic4,pic9,pic10,
-  pic11,pic13,pic14
-} from '../../Constants'
-
-// ---Mock Date---
-export const mockAuthor=[
-{ id: 1, name: 'J.R.R. Tolkien', bio: 'Author of The Lord of the Rings. Known for his detailed world-building.', 
-    profile_image:ppic3,
-    books: [
-        {id:1,imageUrl:pic9},
-        {id:2,imageUrl:pic10}, 
-        {id:3,imageUrl:pic11},
-    ] 
-},
-{ id: 2, name: 'Jane Austen', bio: 'English novelist2 known for her six major novels, which interpret, critique and comment upon the British landed gentry at the end of the 18th century.',
-        profile_image:ppic3,
-        books: [
-            {id:1,imageUrl:pic6},
-            {id:2,imageUrl:pic7},
-            {id:3,imageUrl:pic5},
-            {id:4,imageUrl:pic4},
-        ]
-},
-    
-{ id: 3, name: 'George Orwell', bio: 'English novelist, essayist, journalist and critic. His work has been largely popular in the form of a wide-circulation magazine',
-        profile_image:ppic4,
-        books: [
-            {id:4,imageUrl:pic14},
-            {id:5,imageUrl:pic13},
-            {id:6,imageUrl:pic8}
-        ]
-}
-
-]
-
-
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import SimpleNav from "../../Components/SimpleNav";
+import BookService from "../../Services/BookService";
+import { formatPrice } from "../../utils/formatPrice";
+import { ppic1 } from "../../Constants";
+import "../../Styles/components/Author.css";
 
 export default function Author() {
+  const navigate = useNavigate();
+  const { authorId } = useParams();
 
-    const navigate=useNavigate()
-    const {authorId}=useParams();
+  const [authorData, setAuthorData] = useState(null);
+  const [books, setBooks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-   // --State---
-   const [authorData,setAuthorData]= useState(null)
-   const [isLoading,setIsLoading]=useState(true);
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    setError("");
 
-   // ---Fetch Author Data---
-   useEffect(() => {
-    const foundAuthor = mockAuthor.find(author => author.id === parseInt(authorId));
-    setAuthorData(foundAuthor || null);
-    setIsLoading(false)
+    const fetchAuthor = async () => {
+      try {
+        const data = await BookService.getAuthorById(authorId);
+        if (!isMounted) return;
+        setAuthorData(data);
 
-  }, [authorId]); 
+        // If serializer includes books, use them; otherwise fetch books by author
+        if (data.books && Array.isArray(data.books)) {
+          setBooks(data.books);
+        } else {
+          const booksRes = await BookService.getBooks({ author: authorId });
+          const bookList = booksRes.results || booksRes || [];
+          if (isMounted) setBooks(bookList);
+        }
+      } catch (err) {
+        console.error("Failed to load author:", err);
+        if (isMounted) {
+          setError(
+            err.response?.status === 404
+              ? "Author not found."
+              : "Failed to load author information."
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
 
+    fetchAuthor();
 
-// --- Loading State ---
-  if(isLoading){
-    return <div>loading author details</div>
-  }
-// --- Not Found State ---
-  if (!authorData) {
+    return () => {
+      isMounted = false;
+    };
+  }, [authorId]);
+
+  if (isLoading) {
     return (
-        <div>
-            <div>
-                Author not found for ID: {authorId}
-            </div>
-            <div>
-                Available author IDs: {mockAuthor.map(a => a.id).join(', ')}
-            </div>
-            <button 
-                onClick={() => navigate('/home')}
-            >
-                Home
-            </button>
+      <div className="author-page-wrapper">
+        <SimpleNav />
+        <div className="author-container author-loading-box">
+          <div className="author-spinner"></div>
+          <p>Loading author details...</p>
         </div>
-    )
+      </div>
+    );
   }
 
+  if (error || !authorData) {
+    return (
+      <div className="author-page-wrapper">
+        <SimpleNav />
+        <div className="author-container author-not-found-box">
+          <h2>{error || "Author Not Found"}</h2>
+          <p>We couldn't locate this author in our catalog.</p>
+          <button className="author-action-btn" onClick={() => navigate("/library")}>
+            Explore Book Catalog
+          </button>
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="author-page-wrapper">
+      <div className="auth-nav">
+        <SimpleNav />
+      </div>
 
-return (
-<>
-    <div className="auth-nav">
-            <SimpleNav/>
-    </div>
-
-    <div className='author-container'>
+      <div className="author-container">
         {/* Back Button */}
-        <button 
+        <div className="author-header-actions">
+          <button
             className="big-back-btn"
-            onClick={()=>navigate(-1)}
-        >
-            <i className="fas fa-angle-left"></i>            
-        </button>
+            onClick={() => navigate(-1)}
+            title="Go Back"
+          >
+            <i className="fas fa-angle-left"></i>
+          </button>
+          <Link to="/library" className="author-browse-link">
+            ← Catalog
+          </Link>
+        </div>
+
         {/* Author Profile Section */}
         <div className="up-side">
-            <div className="profile">
-                <img 
-                    src={authorData.profile_image}
-                    alt="no-prof"
-                    loading='lazy'
-                 />
-            </div>
-            <div className="auth-desc">
-                <span className='auth-des'>
-                    <h2>{authorData.name}</h2>
-                    <p>{authorData.bio}</p>
+          <div className="profile">
+            <img
+              src={authorData.profile_image || ppic1}
+              alt={authorData.name}
+              loading="lazy"
+            />
+          </div>
+          <div className="auth-desc">
+            <span className="auth-des">
+              <h2>{authorData.name}</h2>
+              {authorData.books_count !== undefined && (
+                <span className="author-meta-count">
+                  {authorData.books_count} Published Books
                 </span>
-            </div>
+              )}
+              <p className="author-biography">
+                {authorData.biography || "No biography available for this author."}
+              </p>
+            </span>
+          </div>
         </div>
-        {/* Book Section */}
+
+        {/* Books by Author Section */}
         <div className="down-side">
-                <div className="product">
-                    {authorData.books && authorData.books.length > 0 ? (
-                        authorData.books.map((book)=>(
-                            <div
-                                key={book.id} 
-                                className="auth-cards" 
-                                onClick={() => {navigate(`/book/${book.id}`);
-                              }}
-                            >
-                                <img 
-                                    src={book.imageUrl}
-                                    className='auth-pic'
-                                    alt='no book'
-                                    loading='lazy'
-                                 />
-                            </div>
-                        ))
-                    ):(
-                        <p>No book found</p>
-                    )}
-                </div>
-            </div>
-    </div> 
-</>
-  )
+          <div className="author-section-heading">
+            <h3>Books by {authorData.name}</h3>
+            <span className="author-book-count-tag">
+              {books.length} {books.length === 1 ? "Book" : "Books"}
+            </span>
+          </div>
+
+          <div className="product">
+            {books && books.length > 0 ? (
+              books.map((book) => {
+                const bookCover =
+                  book.cover_image_url ||
+                  book.cover_image ||
+                  "https://placehold.co/400x600?text=No+Cover";
+
+                return (
+                  <div
+                    key={book.id}
+                    className="auth-cards"
+                    onClick={() => navigate(`/book/${book.id}`)}
+                  >
+                    <div className="auth-pic">
+                      <img
+                        src={bookCover}
+                        className="auth-book-img"
+                        alt={book.title}
+                        loading="lazy"
+                      />
+                      {book.has_discount && book.discount_percent > 0 && (
+                        <span className="author-discount-badge">
+                          -{book.discount_percent}%
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="author-card-content">
+                      <h4 className="author-card-title" title={book.title}>
+                        {book.title}
+                      </h4>
+
+                      {/* Format Badges */}
+                      <div className="author-card-formats">
+                        {book.formats && book.formats.length > 0 ? (
+                          book.formats.map((f) => (
+                            <span key={f.id} className="author-format-pill">
+                              {f.type}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="author-format-pill">Available</span>
+                        )}
+                      </div>
+
+                      {/* Price Block */}
+                      <div className="author-card-price-row">
+                        {book.has_discount && book.original_price ? (
+                          <>
+                            <span className="author-card-original-price">
+                              {formatPrice(book.original_price)}
+                            </span>
+                            <span className="author-card-final-price">
+                              {formatPrice(book.price)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="author-card-final-price">
+                            {book.price ? formatPrice(book.price) : "N/A"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="no-books-box">
+                <p>No published books available for this author yet.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

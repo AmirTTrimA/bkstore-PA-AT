@@ -1,123 +1,49 @@
-import { motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 // ---Components---
-import Footer from '../../Components/Footer';
-import Navbar from '../../Components/Navbar';
-import ReusableSlider from '../../Components/common/ReusableSlider';
-import { ThemeToggle } from '../../Components/common/ThemeToggle';
-import Notification from '../../Components/feature/Notification';
-import { useAuth } from '../../Context/AuthContext';
+import Footer from "../../Components/Footer";
+import Navbar from "../../Components/Navbar";
+import ReusableSlider from "../../Components/common/ReusableSlider";
+import { ThemeToggle } from "../../Components/common/ThemeToggle";
+import Notification from "../../Components/feature/Notification";
+import { useAuth } from "../../Context/AuthContext";
 
 // --- Styles ---
 import "../../Styles/components/Home.css";
 
-// --- Animations ---
-import {
-  cardVariants,
-  containerVariants,
-  numberVariants,
-  ux_TitleVariants,
-} from "../../../animations";
-
 // --- Services ---
 import BookService from "../../Services/BookService";
+import PublisherService from "../../Services/PublisherService";
 import { formatPrice } from "../../utils/formatPrice";
 
 // --- Constants ---
 import { ppic1 } from "../../Constants";
-
-
-// ============================================
-// Presentation Data
-// ============================================
-
-
-// These remain presentation data until the backend
-// exposes real platform statistics.
-const INTRODUCE = [
-  {
-    id: 1,
-    value: "+500",
-    label: "online-user",
-    color: "purple",
-  },
-  {
-    id: 2,
-    value: "+50",
-    label: "author",
-    color: "#00a859",
-  },
-  {
-    id: 3,
-    value: "+1000",
-    label: "satisfy-customer",
-    color: "#003ee9",
-  },
-  {
-    id: 4,
-    value: "+4",
-    label: "years experience",
-    color: "red",
-  },
-];
-
-
-const USER_EXPERIENCE = [
-  {
-    username: "mohsen",
-    experience: "thanks pn for access millions book",
-  },
-  {
-    username: "hosein",
-    experience: "fantastic quality in pdf-reading",
-  },
-  {
-    username: "ehsan",
-    experience: "the subscription pay is satisfying",
-  },
-];
-
 
 // ============================================
 // Helpers
 // ============================================
 
 function extractBooks(data) {
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  if (Array.isArray(data?.results)) {
-    return data.results;
-  }
-
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.results)) return data.results;
   return [];
 }
-
 
 function getBookImage(book) {
   return (
     book.cover_image_url ||
     book.cover_image ||
-    "https://placehold.co/400x600?text=No+Image"
+    "https://placehold.co/400x600?text=No+Cover"
   );
 }
 
-
 function getBookPrice(book) {
-  if (
-    book.price === null ||
-    book.price === undefined ||
-    book.price === ""
-  ) {
+  if (book.price === null || book.price === undefined || book.price === "") {
     return "N/A";
   }
-
   return formatPrice(book.price);
 }
-
 
 function mapBookForSlider(book) {
   return {
@@ -137,828 +63,483 @@ function mapBookForSlider(book) {
   };
 }
 
+const GENRE_ICONS = {
+  HISTORY: "/icons/cat-history.svg",
+  SCI_FI: "/icons/cat-science.svg",
+  ART_DESIGN: "/icons/cat-art.svg",
+  PSYCHOLOGY: "/icons/cat-psychology.svg",
+  TECH: "/icons/cat-tech.svg",
+  TRIP_GEO: "/icons/cat-trip.svg",
+  FINANCIAL: "/icons/cat-finance.svg",
+  RELIGIOUS: "/icons/cat-religious.svg",
+  NOVEL: "/icons/cat-novel.svg",
+};
+
+const getGenreIcon = (genre) => GENRE_ICONS[genre] || "/icons/cat-default.svg";
 
 // ============================================
 // Main Component
 // ============================================
 
 export default function Home() {
-
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const notificationRef = useRef();
+  const { isLoggedIn } = useAuth();
 
   // ----------------------------------------
-  // Book State
+  // Book & Catalog State
   // ----------------------------------------
-
   const [heroBooks, setHeroBooks] = useState([]);
   const [newBooks, setNewBooks] = useState([]);
-  const [latestBooks, setLatestBooks] = useState([]);
+  const [discountBooks, setDiscountBooks] = useState([]);
+  const [digitalBooks, setDigitalBooks] = useState([]);
+  const [audioBooks, setAudioBooks] = useState([]);
+  const [publishers, setPublishers] = useState([]);
   const [genres, setGenres] = useState([]);
-  const { isLoggedIn } = useAuth();
-  const notificationRef = useRef();
-
 
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [bookError, setBookError] = useState("");
 
-
-  // ----------------------------------------
-  // Search State
-  // ----------------------------------------
-
+  // Search input
   const [searchInputValue, setSearchInputValue] = useState("");
 
-
-  // ----------------------------------------
-  // Hero Carousel State
-  // ----------------------------------------
-
+  // Hero carousel
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-
-  // ----------------------------------------
-  // Static Presentation Data
-  // ----------------------------------------
-
-
-  const introduce = INTRODUCE;
-  const user_experience = USER_EXPERIENCE;
-
-
   // ============================================
-  // Load Home Books
+  // Load Dynamic Home Data
   // ============================================
-
   useEffect(() => {
-
     let cancelled = false;
 
-    const loadBooks = async () => {
-
+    const loadHomeData = async () => {
       try {
-
         setLoadingBooks(true);
         setBookError("");
 
+        const [
+          newBooksRes,
+          allBooksRes,
+          digitalBooksRes,
+          audioBooksRes,
+          publishersRes,
+          genresRes,
+        ] = await Promise.allSettled([
+          BookService.getNewBooks({ page_size: 10 }),
+          BookService.getBooks({ page_size: 20 }),
+          BookService.getBooks({ format: "DIGITAL", page_size: 10 }),
+          BookService.getBooks({ format: "AUDIO", page_size: 10 }),
+          PublisherService.getPublicPublishers({ page_size: 8 }),
+          BookService.getGenres(),
+        ]);
 
+        if (cancelled) return;
 
-        const [newBooksResponse, allBooksResponse, genresResponse,] =
-          await Promise.all([
-            BookService.getNewBooks(),
-            BookService.getBooks(),
-            BookService.getGenres(),
-          ]);
-
-        if (cancelled) {
-          return;
+        // 1. New Arrivals & Hero
+        if (newBooksRes.status === "fulfilled") {
+          const rawNew = extractBooks(newBooksRes.value);
+          const mappedNew = rawNew.map(mapBookForSlider);
+          setNewBooks(mappedNew);
+          setHeroBooks(mappedNew.slice(0, 5));
         }
 
-        const newBooksData =
-          extractBooks(newBooksResponse);
+        // 2. Best Offers / Discounted Editions
+        if (allBooksRes.status === "fulfilled") {
+          const rawAll = extractBooks(allBooksRes.value);
+          const discounts = rawAll.filter((b) => b.has_discount && b.discount_percent > 0);
+          // If few explicit discounts in first page, take all books with format discounts
+          setDiscountBooks((discounts.length > 0 ? discounts : rawAll.slice(0, 10)).map(mapBookForSlider));
+        }
 
-        const allBooksData =
-          extractBooks(allBooksResponse);
+        // 3. Digital Editions (PDFs)
+        if (digitalBooksRes.status === "fulfilled") {
+          const rawDigital = extractBooks(digitalBooksRes.value);
+          setDigitalBooks(rawDigital.map(mapBookForSlider));
+        }
 
-        setGenres(genresResponse.results || genresResponse);
+        // 4. Audiobooks
+        if (audioBooksRes.status === "fulfilled") {
+          const rawAudio = extractBooks(audioBooksRes.value);
+          setAudioBooks(rawAudio.map(mapBookForSlider));
+        }
 
+        // 5. Iranian Publishers
+        if (publishersRes.status === "fulfilled") {
+          const rawPubs = publishersRes.value?.results || publishersRes.value || [];
+          setPublishers(Array.isArray(rawPubs) ? rawPubs : []);
+        }
 
-        // --------------------------------
-        // New Arrivals
-        // --------------------------------
-
-        const mappedNewBooks =
-          newBooksData
-            .map(mapBookForSlider)
-            .slice(0, 10);
-
-        setNewBooks(mappedNewBooks);
-
-
-        // --------------------------------
-        // Latest Books
-        //
-        // The backend currently does not
-        // expose popularity statistics, so
-        // don't pretend newest books are
-        // "popular".
-        // --------------------------------
-
-        const sortedBooks =
-          [...allBooksData]
-            .sort(
-              (a, b) =>
-                Number(b.id) - Number(a.id)
-            );
-
-        const latest =
-          sortedBooks
-            .map(mapBookForSlider)
-            .slice(0, 10);
-
-        setLatestBooks(latest);
-
-
-        // --------------------------------
-        // Hero
-        //
-        // Use the newest books for the
-        // hero carousel.
-        // --------------------------------
-
-        setHeroBooks(
-          mappedNewBooks.slice(0, 5)
-        );
-
+        // 6. Genres
+        if (genresRes.status === "fulfilled") {
+          const rawGenres = genresRes.value?.results || genresRes.value || [];
+          setGenres(Array.isArray(rawGenres) ? rawGenres : []);
+        }
       } catch (err) {
-
-        console.error(
-          "Failed to load home books:",
-          err
-        );
-
+        console.error("Failed loading home data:", err);
         if (!cancelled) {
-
-          setBookError(
-            err.response?.data?.detail ||
-            "Failed to load books."
-          );
-
+          setBookError("Failed to load catalog data.");
         }
-
       } finally {
-
         if (!cancelled) {
           setLoadingBooks(false);
         }
-
       }
-
     };
 
-
-    loadBooks();
-
+    loadHomeData();
 
     return () => {
       cancelled = true;
     };
-
   }, []);
 
-
   // ============================================
-  // Search
+  // Search Submission
   // ============================================
-
-  const handleSearch = (event) => {
-
-    setSearchInputValue(
-      event.target.value
-    );
-
-  };
-
-
-  const handleSearchNavigate = (term) => {
-
-    const trimmed =
-      term.trim();
-
-    if (trimmed.length < 2) {
-      return;
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = searchInputValue.trim();
+    if (!trimmed) {
+      navigate("/search");
+    } else {
+      navigate(`/search/${encodeURIComponent(trimmed)}`);
     }
-
-    navigate(
-      `/search/${encodeURIComponent(trimmed)}`
-    );
-
   };
 
-
-  const handleKeyPress = (event) => {
-
-    if (
-      event.key === "Enter" &&
-      searchInputValue.trim().length >= 2
-    ) {
-
-      handleSearchNavigate(
-        searchInputValue
-      );
-
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearchSubmit(e);
     }
-
   };
 
+  // ============================================
+  // Category Pill Navigation
+  // ============================================
+  const handleCategoryClick = (genreItem) => {
+    const genreParam = genreItem.value || genreItem.name || genreItem.title || genreItem;
+    navigate(`/search?genre=${encodeURIComponent(genreParam)}`);
+  };
 
   // ============================================
-  // Hero Slide Navigation
+  // Hero Carousel Navigation
   // ============================================
-
   const totalSlides = heroBooks.length;
 
-
   const nextSlide = useCallback(() => {
-
-    if (totalSlides === 0) {
-      return;
-    }
-
-    setCurrentSlide(
-      previous =>
-        (previous + 1) % totalSlides
-    );
-
+    if (totalSlides === 0) return;
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
   }, [totalSlides]);
 
-
-  const previousSlide = useCallback(() => {
-
-    if (totalSlides === 0) {
-      return;
-    }
-
-    setCurrentSlide(
-      previous =>
-        (previous - 1 + totalSlides) %
-        totalSlides
-    );
-
+  const prevSlide = useCallback(() => {
+    if (totalSlides === 0) return;
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   }, [totalSlides]);
 
-
-  // ============================================
-  // Auto Slide
-  // ============================================
+  useEffect(() => {
+    if (isHovered || totalSlides <= 1) return;
+    const interval = setInterval(nextSlide, 4000);
+    return () => clearInterval(interval);
+  }, [nextSlide, isHovered, totalSlides]);
 
   useEffect(() => {
-
-    if (
-      isHovered ||
-      totalSlides <= 1
-    ) {
-      return;
-    }
-
-    const interval =
-      setInterval(
-        nextSlide,
-        3000
-      );
-
-    return () =>
-      clearInterval(interval);
-
-  }, [
-    nextSlide,
-    isHovered,
-    totalSlides,
-  ]);
-
-
-  // ============================================
-  // Keep Slide Index Valid
-  // ============================================
-
-  useEffect(() => {
-
-    if (
-      totalSlides > 0 &&
-      currentSlide >= totalSlides
-    ) {
-
+    if (totalSlides > 0 && currentSlide >= totalSlides) {
       setCurrentSlide(0);
-
     }
+  }, [currentSlide, totalSlides]);
 
-  }, [
-    currentSlide,
-    totalSlides,
-  ]);
+  const slide = heroBooks.length > 0 ? heroBooks[currentSlide] : null;
 
-
-  // ============================================
-  // Category Navigation
-  // ============================================
-
-  const handleCategoryClick = (
-    categoryTitle
-  ) => {
-
-    const categoryItem =
-      genres.find(
-        item =>
-          item.title === categoryTitle
-      );
-
-    const searchValue =
-      categoryItem?.titlemap?.[0] ||
-      categoryTitle;
-
-    navigate(
-      `/search/${encodeURIComponent(searchValue)}`
-    );
-
-  };
-
-  const GENRE_ICONS = {
-    HISTORY: "/icons/cat-history.svg",
-    SCI_FI: "/icons/cat-science.svg",
-    ART_DESIGN: "/icons/cat-art.svg",
-    PSYCHOLOGY: "/icons/cat-psychology.svg",
-    TECH: "/icons/cat-tech.svg",
-    TRIP_GEO: "/icons/cat-trip.svg",
-    FINANCIAL: "/icons/cat-finance.svg",
-    RELIGIOUS: "/icons/cat-religious.svg",
-    NOVEL: "/icons/cat-novel.svg",
-  };
-
-  const getGenreIcon = (genre) =>
-    GENRE_ICONS[genre] || "/icons/cat-default.svg";
-  // ---Handle isLoggedin---
-  const handleLoginCheck = useCallback((e) => {
-    if (!isLoggedIn) {
-      e.preventDefault();
-      if (notificationRef.current) {
-        notificationRef.current.showNotif(' require', 'error', {
+  // Login check for bottom nav
+  const handleLoginCheck = useCallback(
+    (e) => {
+      if (!isLoggedIn) {
+        e.preventDefault();
+        notificationRef.current?.showNotif("Login required", "error", {
           linkText: "login",
-          linkHref: "/login"
-        })
+          linkHref: "/login",
+        });
+        return false;
       }
-      return false;
-    }
-    return true;
-
-  }, [isLoggedIn])
-
-
-  // ---Derived State---
-  const slide = heroBooks.length > 0
-    ? heroBooks[currentSlide]
-    : null;
-
-
-  // ============================================
-  // Derived Hero Book
-  // ===========================================
-
-
-  // ============================================
-  // Loading State
-  // ============================================
+      return true;
+    },
+    [isLoggedIn]
+  );
 
   if (loadingBooks) {
-
     return (
-      <div className="p-5 text-center">
-        Loading home page...
+      <div className="home-loading-screen">
+        <div className="home-spinner"></div>
+        <p>Loading Bookstore Catalog...</p>
       </div>
     );
-
   }
 
-
-  // ============================================
-  // Render
-  // ============================================
-
   return (
+    <div className="home-page-wrapper">
+      <Navbar />
 
-    <>
-
-      <div>
-
-        <main className="Container_home">
-
-          {/* Navigation */}
-
-          <Navbar />
-
-
-          {/* Mobile Top Navigation */}
-
-          <div className="TopRes">
-
-            <nav className="top-res">
-
-              <div className="up">
-
-                <Link
-                  to="/home"
-                  className="logo-res"
-                >
-                  PageNet
-                </Link>
-
-              </div>
-
-
-              <div className="down">
-
-                <ThemeToggle page="home" />
-
-
-                <input
-                  ref={inputRef}
-                  type="search"
-                  placeholder="type..."
-                  className="search-res"
-                  value={searchInputValue}
-                  onChange={handleSearch}
-                  onKeyDown={handleKeyPress}
-                />
-
-
-                <button
-                  onClick={() =>
-                    navigate(
-                      "/subscription"
-                    )
-                  }
-                  className="sub-list"
-                  type="button"
-                >
-
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="20px"
-                    viewBox="0 -960 960 960"
-                    width="24px"
-                  >
-
-                    <path
-                      d="M160-240q-50 0-85-35t-35-85v-240q0-50 35-85t85-35h540q50 0 85 35t35 85v240q0 50-35 85t-85 35H160Zm0-80h540q17 0 28.5-11.5T740-360v-240q0-17-11.5-28.5T700-640H160q-17 0-28.5 11.5T120-600v240q0 17 11.5 28.5T160-320Zm700-60v-200h20q17 0 28.5 11.5T920-540v120q0 17-11.5 28.5T880-380h-20Zm-700 20v-240h540v240H160Z"
-                    />
-
-                  </svg>
-
-                </button>
-
-              </div>
-
-            </nav>
-
+      {/* Mobile Top Header */}
+      <div className="TopRes">
+        <nav className="top-res">
+          <div className="up">
+            <Link to="/home" className="logo-res">
+              PageNet
+            </Link>
           </div>
-
-
-          {/* Categories */}
-
-          <section className="categories-section">
-
-            <div
-              className="categories-grid"
-              id="home-categories"
+          <div className="down">
+            <ThemeToggle page="home" />
+            <div className="search-res-wrapper">
+              <input
+                ref={inputRef}
+                type="search"
+                placeholder="Search catalog..."
+                className="search-res"
+                value={searchInputValue}
+                onChange={(e) => setSearchInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+              />
+              <button
+                type="button"
+                className="search-res-btn"
+                onClick={handleSearchSubmit}
+              >
+                <i className="fas fa-search"></i>
+              </button>
+            </div>
+            <button
+              onClick={() => navigate("/subscription")}
+              className="sub-list"
+              type="button"
+              title="Subscriptions"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="24px">
+                <path d="M160-240q-50 0-85-35t-35-85v-240q0-50 35-85t85-35h540q50 0 85 35t35 85v240q0 50-35 85t-85 35H160Zm0-80h540q17 0 28.5-11.5T740-360v-240q0-17-11.5-28.5T700-640H160q-17 0-28.5 11.5T120-600v240q0 17 11.5 28.5T160-320Zm700-60v-200h20q17 0 28.5 11.5T920-540v120q0 17-11.5 28.5T880-380h-20Zm-700 20v-240h540v240H160Z" />
+              </svg>
+            </button>
+          </div>
+        </nav>
+      </div>
 
+      <main className="Container_home">
+        {/* HERO SEARCH BAR */}
+        <section className="home-hero-search-section">
+          <form className="home-hero-search-form" onSubmit={handleSearchSubmit}>
+            <i className="fas fa-search hero-search-icon"></i>
+            <input
+              type="text"
+              placeholder="Search thousands of Iranian and world books, authors, ISBNs..."
+              value={searchInputValue}
+              onChange={(e) => setSearchInputValue(e.target.value)}
+              className="hero-search-input"
+            />
+            <button type="submit" className="hero-search-btn">
+              Search Catalog
+            </button>
+          </form>
+        </section>
+
+        {/* GENRE / CATEGORIES PILLS */}
+        {genres.length > 0 && (
+          <section className="categories-section">
+            <div className="section-meta-header">
+              <h3>Browse by Subject</h3>
+              <button
+                onClick={() => navigate("/search")}
+                className="home-meta-link"
+                type="button"
+              >
+                All Genres →
+              </button>
+            </div>
+            <div className="categories-grid" id="home-categories">
               {genres.map((genre) => (
                 <div
-                  key={genre.value}
+                  key={genre.value || genre.id || genre}
                   className="category-card"
-                  onClick={() => handleCategoryClick(genre.value)}
+                  onClick={() => handleCategoryClick(genre)}
                   role="button"
                   tabIndex={0}
                 >
                   <div className="category-icon">
                     <img
-                      src={getGenreIcon(genre.value)}
-                      alt={`${genre.label} icon`}
+                      src={getGenreIcon(genre.value || genre)}
+                      alt={`${genre.label || genre} icon`}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
                     />
                   </div>
+                  <div className="category-title">{genre.label || genre.name || genre}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-                  <div className="category-title">
-                    {genre.label}
+        {/* HERO FEATURED CAROUSEL */}
+        <div
+          className="carousel-container"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {bookError && <p className="subscription-state">{bookError}</p>}
+
+          {slide ? (
+            <div
+              className="carousel-card"
+              onClick={() => navigate(`/book/${slide.id}`)}
+              role="button"
+            >
+              <img className="slide-image" src={slide.img} alt={slide.title} />
+              <div className="slide-overlay">
+                <span className="slide-featured-pill">Featured Book</span>
+                <h3 className="slide-title">{slide.title}</h3>
+                <span className="slide-price-pill">{slide.price}</span>
+              </div>
+            </div>
+          ) : (
+            <p>No featured books available.</p>
+          )}
+
+          {totalSlides > 1 && (
+            <div className="hero-carousel-nav-arrows">
+              <button className="carousel-arrow left" onClick={prevSlide} type="button">
+                ‹
+              </button>
+              <button className="carousel-arrow right" onClick={nextSlide} type="button">
+                ›
+              </button>
+            </div>
+          )}
+
+          <div className="indicators">
+            {heroBooks.map((_, index) => (
+              <span
+                key={index}
+                className={index === currentSlide ? "dot active" : "dot"}
+                onClick={() => setCurrentSlide(index)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* DYNAMIC SECTION 1: NEW ARRIVALS */}
+        <ReusableSlider
+          items={newBooks}
+          title="New Arrivals"
+          viewAllLink="/search/new"
+          customClass="home-popular"
+          cardWidth="280px"
+        />
+
+        {/* DYNAMIC SECTION 2: BEST OFFERS & SPECIAL DISCOUNTS */}
+        {discountBooks.length > 0 && (
+          <ReusableSlider
+            items={discountBooks}
+            title="Special Offers & Discounts"
+            viewAllLink="/search"
+            customClass="home-popular"
+            cardWidth="280px"
+          />
+        )}
+
+        {/* DYNAMIC SECTION 3: DIGITAL EDITIONS (PDFs) */}
+        {digitalBooks.length > 0 && (
+          <ReusableSlider
+            items={digitalBooks}
+            title="Digital Editions (PDF)"
+            viewAllLink="/search?format=DIGITAL"
+            customClass="home-popular"
+            cardWidth="280px"
+          />
+        )}
+
+        {/* DYNAMIC SECTION 4: AUDIOBOOKS COLLECTION */}
+        {audioBooks.length > 0 && (
+          <ReusableSlider
+            items={audioBooks}
+            title="Audiobooks & Spoken Audio"
+            viewAllLink="/search?format=AUDIO"
+            customClass="home-popular"
+            cardWidth="280px"
+          />
+        )}
+
+        {/* DYNAMIC SECTION 5: IRANIAN PUBLISHING HOUSES */}
+        {publishers.length > 0 && (
+          <section className="publishers-showcase-section">
+            <div className="section-meta-header">
+              <h3>Featured Iranian Publishers</h3>
+              <button
+                onClick={() => navigate("/all-publisher")}
+                className="home-meta-link"
+                type="button"
+              >
+                View All Publishers →
+              </button>
+            </div>
+
+            <div className="publishers-grid">
+              {publishers.map((pub) => (
+                <div
+                  key={pub.id}
+                  className="publisher-card"
+                  onClick={() => navigate(`/publisher/${pub.id}`)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="publisher-avatar">
+                    <i className="fas fa-landmark"></i>
+                  </div>
+                  <div className="publisher-meta">
+                    <h4>{pub.name}</h4>
+                    <p className="pub-desc-line">
+                      {pub.description ? pub.description.slice(0, 90) + "..." : "Authorized Publisher"}
+                    </p>
+                    <span className="publisher-explore-badge">
+                      Browse Catalog <i className="fas fa-angle-right"></i>
+                    </span>
                   </div>
                 </div>
               ))}
-
             </div>
-
           </section>
-
-
-          {/* Main Hero Carousel */}
-
-          <div
-            className="carousel-container"
-            onMouseEnter={() =>
-              setIsHovered(true)
-            }
-            onMouseLeave={() =>
-              setIsHovered(false)
-            }
-          >
-
-            {bookError && (
-
-              <p className="subscription-state">
-                {bookError}
-              </p>
-
-            )}
-
-
-            {slide ? (
-
-              <div
-                className="carousel-card"
-                onClick={() =>
-                  navigate(
-                    `/book/${slide.id}`
-                  )
-                }
-                role="button"
-              >
-
-                <img
-                  className="slide-image"
-                  src={slide.img}
-                  alt={slide.title}
-                />
-
-
-                <h3 className="slide-title">
-
-                  {slide.title}
-
-                </h3>
-
-              </div>
-
-            ) : (
-
-              <p>
-                No books available.
-              </p>
-
-            )}
-
-
-            <div className="indicators">
-
-              {heroBooks.map(
-                (_, index) => (
-
-                  <span
-                    key={index}
-                    className={
-                      index ===
-                        currentSlide
-                        ? "dot active"
-                        : "dot"
-                    }
-                    onClick={() =>
-                      setCurrentSlide(
-                        index
-                      )
-                    }
-                  />
-
-                )
-              )}
-
-            </div>
-
-          </div>
-
-
-          {/* Introduction Stats */}
-
-          <motion.div
-            className="introduce-container"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{
-              once: true,
-              amount: 0.3,
-            }}
-            variants={containerVariants}
-          >
-
-            {introduce.map(int => (
-
-              <motion.div
-                key={int.id}
-                className="int-card"
-                variants={cardVariants}
-                whileHover={{
-                  scale: 1.05,
-                }}
-              >
-
-                <motion.h2
-                  className="int-value"
-                  style={{
-                    color: int.color,
-                  }}
-                  variants={numberVariants}
-                >
-
-                  {int.value}
-
-                </motion.h2>
-
-
-                <motion.p className="int-label">
-
-                  {int.label}
-
-                </motion.p>
-
-              </motion.div>
-
-            ))}
-
-          </motion.div>
-
-
-          {/* New Arrivals */}
-
-          <ReusableSlider
-            items={newBooks}
-            title="New Arrivals"
-            viewAllLink="/search/new"
-            customClass="home-popular"
-            cardWidth="300px"
-          />
-
-
-          {/* Latest Books */}
-
-          <ReusableSlider
-            items={latestBooks}
-            title="Latest Books"
-            viewAllLink="/library"
-            customClass="home-popular"
-            cardWidth="300px"
-          />
-
-
-          {/* User Experience */}
-
-          <motion.div
-            className="ux-container-main"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{
-              once: true,
-              amount: 0.3,
-            }}
-            variants={containerVariants}
-          >
-
-            <motion.div
-              className="ux-container1"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{
-                once: true,
-                amount: 0.3,
-              }}
-            >
-
-              <motion.h2
-                className="ux-value"
-                variants={ux_TitleVariants}
-              >
-                User-Experience
-              </motion.h2>
-
-            </motion.div>
-
-
-            <motion.div
-              className="ux-container2"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{
-                once: true,
-                amount: 0.3,
-              }}
-            >
-
-              {user_experience.map(ux => (
-
-                <motion.div
-                  key={ux.username}
-                  className="ux-card"
-                  variants={cardVariants}
-                  whileHover={{
-                    scale: 1.05,
-                  }}
-                >
-
-                  <h3>
-                    {ux.username}
-                  </h3>
-
-                  <p>
-                    {ux.experience}
-                  </p>
-
-                </motion.div>
-
-              ))}
-
-            </motion.div>
-
-          </motion.div>
-
-
-          {/* Footer */}
-
-          <Footer />
-
-        </main>
-
-
-        {/* Bottom Navigation */}
-
-        <div className="BottomNav">
-
-          <nav className="bottom-navbar">
-
-            <Link
-              to="/"
-              className="nav-item"
-            >
-
-              <i className="fas fa-home"></i>
-
-              <span>
-                Home
-              </span>
-
-            </Link>
-
-
-            <Link
-              to="/favorites"
-              onClick={handleLoginCheck}
-              className="nav-item"
-            >
-
-              <i className="fa-solid fa-heart"></i>
-
-              <span>
-                favorite
-              </span>
-
-            </Link>
-
-
-            <Link
-              to="/basket"
-              className="nav-item"
-            >
-
-              <svg
-                className="cart-icon"
-                viewBox="0 -960 960 960"
-              >
-
-                <path
-                  d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z"
-                />
-
-              </svg>
-
-              <span>
-                Cart
-              </span>
-
-            </Link>
-
-
-            <Link
-              to="/library"
-              className="nav-item"
-            >
-
-              <i className="fas fa-book"></i>
-
-              <span>
-                Library
-              </span>
-
-            </Link>
-
-            <Link to="/dashboard"
-              onClick={handleLoginCheck}
-              className="nav-item"
-            >
-              <i className="fas fa-user"></i>
-              <span>Dashboard</span>
-            </Link>
-          </nav>
-
-        </div>
-
-        <Notification ref={notificationRef} />
+        )}
+
+        <Footer />
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="BottomNav">
+        <nav className="bottom-navbar">
+          <Link to="/" className="nav-item">
+            <i className="fas fa-home"></i>
+            <span>Home</span>
+          </Link>
+          <Link to="/favorites" onClick={handleLoginCheck} className="nav-item">
+            <i className="fa-solid fa-heart"></i>
+            <span>Favorites</span>
+          </Link>
+          <Link to="/basket" className="nav-item">
+            <svg className="cart-icon" viewBox="0 -960 960 960">
+              <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z" />
+            </svg>
+            <span>Cart</span>
+          </Link>
+          <Link to="/library" className="nav-item">
+            <i className="fas fa-book"></i>
+            <span>Library</span>
+          </Link>
+          <Link to="/dashboard" onClick={handleLoginCheck} className="nav-item">
+            <i className="fas fa-user"></i>
+            <span>Dashboard</span>
+          </Link>
+        </nav>
       </div>
-    </>
 
+      <Notification ref={notificationRef} />
+    </div>
   );
-
 }

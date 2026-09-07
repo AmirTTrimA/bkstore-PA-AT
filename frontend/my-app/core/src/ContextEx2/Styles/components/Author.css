@@ -138,13 +138,198 @@
     overflow: hidden;
 }
 
-.auth-pic >img{
+.auth-pic > img{
     width: 100%;
+    height: 100%;
     display: block;
-    object-fit:cover;  
+    object-fit: cover;  
     object-position: center;
-
 }
+
+/* Header actions */
+.author-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px 0;
+}
+
+.author-browse-link {
+    color: var(--clr, #d17842);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(209, 120, 66, 0.12);
+    transition: all 0.2s ease;
+}
+
+.author-browse-link:hover {
+    background: rgba(209, 120, 66, 0.25);
+}
+
+.author-meta-count {
+    display: inline-block;
+    color: var(--clr, #d17842);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    background: rgba(209, 120, 66, 0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.author-biography {
+    color: var(--text-primarys, #cbd5e1);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-top: 10px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.author-section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+}
+
+.author-section-heading h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--text-primarys, #fff);
+}
+
+.author-book-count-tag {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primarys, #94a3b8);
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* Card Content & Pricing */
+.auth-cards {
+    position: relative;
+    background: var(--bg-card, #1e293b);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-cards:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border-color: rgba(209, 120, 66, 0.4);
+}
+
+.author-discount-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 2;
+}
+
+.author-card-content {
+    padding: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.author-card-title {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primarys, #f8fafc);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+.author-card-formats {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.author-format-pill {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(209, 120, 66, 0.15);
+    color: var(--clr, #d17842);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.author-card-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.author-card-original-price {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+.author-card-final-price {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.author-loading-box,
+.author-not-found-box {
+    padding: 60px 20px;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.author-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--clr, #d17842);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: author-spin 0.8s linear infinite;
+}
+
+@keyframes author-spin {
+    to { transform: rotate(360deg); }
+}
+
+.author-action-btn {
+    margin-top: 16px;
+    padding: 10px 24px;
+    background: var(--clr, #d17842);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
 
 /* ============================================
    RESPONSIVE DESIGN

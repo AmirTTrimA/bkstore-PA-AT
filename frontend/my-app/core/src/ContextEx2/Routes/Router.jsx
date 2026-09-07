@@ -103,6 +103,7 @@ export default function Router() {
         <Route path='/home' element={<Home />} />
         <Route path='/book/:bookId' element={<Book />} />
         <Route path='/author/:authorId' element={<Author />} />
+        <Route path='/search' element={<Search />} />
         <Route path='/search/:searchTerm' element={<Search />} />
 
         {/* Library Routes */}

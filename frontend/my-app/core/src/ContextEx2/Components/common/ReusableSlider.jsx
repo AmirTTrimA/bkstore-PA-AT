@@ -72,9 +72,13 @@ return (
     {/* Header */}
     <div className={`section-header ${customClass} `}>
       <h3 className="header-text">{title}</h3>
-      <a href={viewAllLink} className='view-all'>
+      <button
+        onClick={() => navigate(viewAllLink)}
+        className='view-all'
+        type="button"
+      >
         <small>more {'>'}</small>
-      </a>
+      </button>
     </div>
 
     {/* Carousel */}

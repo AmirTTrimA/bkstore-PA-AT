@@ -392,253 +392,288 @@ export default function Book() {
   // ==========================
 
   if (loading) {
-
     return (
-      <div className="container py-5">
-        Loading book...
-      </div>
+      <>
+        <div className="book-nav-full"><Navbar /></div>
+        <div className="book-nav-res"><SimpleNav /></div>
+        <div className="book-status-screen">
+          <div className="book-spinner"></div>
+          <p>Loading book details...</p>
+        </div>
+        <Footer />
+      </>
     );
-
   }
-
 
   if (!book || error) {
-
     return (
-      <div className="container py-5">
-        {error || "Book not found"}
-      </div>
+      <>
+        <div className="book-nav-full"><Navbar /></div>
+        <div className="book-nav-res"><SimpleNav /></div>
+        <div className="book-status-screen">
+          <h2>{error || "Book not found"}</h2>
+          <p>The requested book could not be found in our catalog.</p>
+          <button className="book-back-action-btn" onClick={() => navigate("/library")}>
+            ← Explore Book Catalog
+          </button>
+        </div>
+        <Footer />
+      </>
     );
-
   }
 
-
-  // ==========================
-  // Render
-  // ==========================
-
   return (
-
     <>
-
       <div className="book-nav-full">
         <Navbar />
       </div>
-
 
       <div className="book-nav-res">
         <SimpleNav />
       </div>
 
-
-      <Notification
-        ref={notificationRef}
-      />
-
+      <Notification ref={notificationRef} />
 
       <main className="book-container">
-
+        {/* Top bar with back button & breadcrumbs */}
+        <div className="book-top-bar">
+          <button className="book-back-btn" onClick={() => navigate(-1)} title="Go Back">
+            <i className="fas fa-angle-left"></i> Back
+          </button>
+          <div className="book-breadcrumbs">
+            <button onClick={() => navigate("/home")} className="crumb-link">Home</button>
+            <span className="crumb-sep">/</span>
+            <button onClick={() => navigate("/library")} className="crumb-link">Library</button>
+            <span className="crumb-sep">/</span>
+            <span className="crumb-current">{book.title}</span>
+          </div>
+        </div>
 
         <section className="main">
-
-
+          {/* Main Book Card */}
           <div className="main-book">
-
-
             <div className="book-card">
-
-
-              <img
-                className="bk-slide-image"
-                src={
-                  book.cover_image_url ||
-                  "/default-book.png"
-                }
-                alt={book.title}
-              />
-
+              <div className="book-cover-wrapper">
+                <img
+                  className="bk-slide-image"
+                  src={book.cover_image_url || "/default-book.png"}
+                  alt={book.title}
+                />
+                {selectedFormat?.has_discount && (
+                  <span className="book-cover-discount-badge">
+                    -{selectedFormat.discount_percent}% OFF
+                  </span>
+                )}
+              </div>
 
               <div className="info">
+                <h1 className="bk-slide-title">{book.title}</h1>
 
+                <div className="book-meta-tags-row">
+                  {/* Author */}
+                  <div className="meta-item">
+                    <span className="meta-label">Author:</span>
+                    <button id="ext" onClick={goAuthor} title="View Author Profile">
+                      {book.author_name}
+                    </button>
+                  </div>
 
-                <h1 className="bk-slide-title">
-                  {book.title}
-                </h1>
+                  {/* Publisher */}
+                  {book.publisher_id && (
+                    <div className="meta-item">
+                      <span className="meta-label">Publisher:</span>
+                      <button
+                        className="book-publisher-badge"
+                        onClick={() => navigate(`/publisher/${book.publisher_id}`)}
+                        title="View Publisher"
+                      >
+                        <i className="fas fa-building" style={{ marginRight: 5 }}></i>
+                        {book.publisher_name}
+                      </button>
+                    </div>
+                  )}
 
-
-                <div className="author-wrapper">
-
-                  <button
-                    id="ext"
-                    onClick={goAuthor}
-                  >
-                    {book.author_name}
-                  </button>
-
+                  {/* Genre */}
+                  <div className="meta-item">
+                    <span className="meta-label">Genre:</span>
+                    <span className="book-categories-link">{book.genre}</span>
+                  </div>
                 </div>
-
-
-                <div className="book-categories">
-
-                  <span className="book-categories-link">
-                    {book.genre}
-                  </span>
-
-                </div>
-
 
                 <p className="extra-info">
-
-                  ISBN:
-                  {" "}
-                  {book.isbn}
-
+                  <strong>ISBN:</strong> {book.isbn}
                 </p>
 
-
+                {/* Wishlist Button */}
                 <button
-                  className="mobile-like"
+                  className={`book-favorite-btn ${liked ? "favorited" : ""}`}
                   onClick={toggleFavorite}
                   disabled={updatingWishlist}
                 >
-
-                  {updatingWishlist
-                    ? "Updating..."
-                    : liked
-                      ? "Remove favorite"
-                      : "Add favorite"}
-
+                  <i className={liked ? "fas fa-heart" : "far fa-heart"}></i>
+                  <span>
+                    {updatingWishlist
+                      ? "Updating..."
+                      : liked
+                      ? "In Wishlist (Remove)"
+                      : "Add to Wishlist"}
+                  </span>
                 </button>
-
-
               </div>
-
-
             </div>
-
-
           </div>
 
-
+          {/* Right Aside: Visible Formats & Purchase */}
           <aside className="side-card">
-
-
-            <label>
-              Select format
-            </label>
-
-
-            <div className="chooser">
-
-              <select
-                value={
-                  selectedFormat?.id || ""
-                }
-                onChange={(e) => {
-
-                  const format =
-                    book.formats.find(
-                      item =>
-                        item.id ===
-                        Number(e.target.value)
-                    );
-
-
-                  setSelectedFormat(format);
-
-                }}
-              >
-
-                {book.formats?.map(format => (
-
-                  <option
-                    key={format.id}
-                    value={format.id}
-                  >
-                    {format.type}
-                    {" - "}
-                    {formatPrice(format.price)}
-                    {format.has_discount ? ` (${format.discount_percent}% OFF)` : ""}
-                  </option>
-                ))}
-              </select>
+            <div className="side-card-header">
+              <h3>Available Formats</h3>
+              <span className="format-count-tag">
+                {book.formats?.length || 0} {book.formats?.length === 1 ? "Format" : "Formats"}
+              </span>
             </div>
 
-            <div className="show-price">
-              {selectedFormat?.has_discount ? (
-                <div className="book-discount-box">
-                  <div className="book-price-top-row">
-                    <span className="book-original-price">
+            {/* VISIBLE INTERACTIVE FORMAT SELECTION CARDS */}
+            <div className="format-cards-list">
+              {book.formats?.map((format) => {
+                const isSelected = selectedFormat?.id === format.id;
+                const isAudio = (format.type || "").toUpperCase() === "AUDIO";
+                const isDigital = (format.type || "").toUpperCase() === "DIGITAL";
+                const isPhysical = (format.type || "").toUpperCase() === "PHYSICAL";
+
+                return (
+                  <div
+                    key={format.id}
+                    className={`format-option-card ${isSelected ? "selected" : ""}`}
+                    onClick={() => setSelectedFormat(format)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="format-card-top-line">
+                      <span className="format-card-icon">
+                        {isPhysical && "📖"}
+                        {isDigital && "📱"}
+                        {isAudio && "🎧"}
+                      </span>
+                      <span className="format-name-text">
+                        {isPhysical && "Physical Book"}
+                        {isDigital && "Digital (PDF)"}
+                        {isAudio && "Audiobook"}
+                      </span>
+                      {isSelected && <span className="format-check-mark">✓</span>}
+                    </div>
+
+                    <div className="format-desc-subtext">
+                      {isPhysical && "Express delivery to door"}
+                      {isDigital && "Instant reading on dashboard"}
+                      {isAudio && "High quality audio stream"}
+                    </div>
+
+                    <div className="format-card-price-line">
+                      {format.has_discount ? (
+                        <>
+                          <span className="format-card-orig-price">
+                            {formatPrice(format.original_price)}
+                          </span>
+                          <span className="format-card-discount-pill">
+                            -{format.discount_percent}%
+                          </span>
+                        </>
+                      ) : null}
+                      <span className="format-card-active-price">
+                        {formatPrice(format.price)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Total price & Checkout CTA */}
+            <div className="side-card-summary">
+              <div className="summary-price-row">
+                <span className="summary-label">Selected Format Price:</span>
+                <div className="summary-price-values">
+                  {selectedFormat?.has_discount && (
+                    <span className="summary-original-price">
                       {formatPrice(selectedFormat.original_price)}
                     </span>
-                    <span className="book-discount-tag">
-                      -{selectedFormat.discount_percent}%
-                    </span>
-                  </div>
-                  <span className="book-final-price">
-                    {formatPrice(selectedFormat.price)}
+                  )}
+                  <span className="summary-final-price">
+                    {formatPrice(selectedFormat?.price)}
                   </span>
                 </div>
-              ) : (
-                <span className="book-final-price">
-                  {formatPrice(selectedFormat?.price)}
-                </span>
+              </div>
+
+              {selectedFormat?.has_discount && (
+                <div className="summary-savings-note">
+                  Save {selectedFormat.discount_percent}% on this edition
+                </div>
               )}
             </div>
-
 
             <button
               className="book-buy-btn"
               onClick={addToCart}
               disabled={addingCart}
             >
-
-              {
-                addingCart
-                  ? "Adding..."
-                  : "Add to cart"
-              }
-
+              <i className="fas fa-cart-plus" style={{ marginRight: 8 }}></i>
+              {addingCart ? "Adding to Cart..." : "Add to Shopping Cart"}
             </button>
-
-
           </aside>
-
-
         </section>
 
-
+        {/* Description Section */}
         <section className="book-rest">
-
-
           <div className="about-book">
-
             <div className="about-book-content">
+              <h2>About this book</h2>
+              <p>{book.description}</p>
+            </div>
+          </div>
+        </section>
 
-              <h2>
-                About this book
-              </h2>
-
-
-              <p>
-                {book.description}
-              </p>
-
+        {/* Ratings & Community Reviews Section */}
+        <section className="book-reviews-section">
+          <div className="reviews-container">
+            <div className="reviews-header">
+              <h2>Community Reviews & Ratings</h2>
+              <div className="overall-score-badge">
+                <span className="stars-gold">★★★★★</span>
+                <span className="score-num">4.8</span>
+                <span className="score-total">/ 5.0 (Verified Readers)</span>
+              </div>
             </div>
 
+            <div className="reviews-grid">
+              <div className="review-box">
+                <div className="review-box-top">
+                  <strong>Mohsen R.</strong>
+                  <span className="review-stars">★★★★★</span>
+                  <span className="verified-tag">Verified Reader</span>
+                </div>
+                <p>
+                  "A masterfully written piece with vivid imagery and deep psychological layers.
+                  The digital edition is formatted perfectly."
+                </p>
+              </div>
+
+              <div className="review-box">
+                <div className="review-box-top">
+                  <strong>Sara T.</strong>
+                  <span className="review-stars">★★★★★</span>
+                  <span className="verified-tag">Verified Reader</span>
+                </div>
+                <p>
+                  "The translation and footnotes are very insightful. Having instant access in my dashboard
+                  was super convenient."
+                </p>
+              </div>
+            </div>
           </div>
-
-
         </section>
-
-
       </main>
 
-
       <Footer />
-
     </>
-
   );
-
 }
