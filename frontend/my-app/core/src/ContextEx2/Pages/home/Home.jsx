@@ -154,16 +154,30 @@ export default function Home() {
         }
 
         // 3. Digital Editions (PDFs)
+        let digitalList = [];
         if (digitalBooksRes.status === "fulfilled") {
-          const rawDigital = extractBooks(digitalBooksRes.value);
-          setDigitalBooks(rawDigital.map(mapBookForSlider));
+          digitalList = extractBooks(digitalBooksRes.value);
         }
+        if (digitalList.length === 0 && allBooksRes.status === "fulfilled") {
+          const rawAll = extractBooks(allBooksRes.value);
+          digitalList = rawAll.filter(
+            (b) => b.is_digital || b.formats?.some((f) => f.format === "DIGITAL" || f.is_digital)
+          );
+        }
+        setDigitalBooks(digitalList.map(mapBookForSlider));
 
         // 4. Audiobooks
+        let audioList = [];
         if (audioBooksRes.status === "fulfilled") {
-          const rawAudio = extractBooks(audioBooksRes.value);
-          setAudioBooks(rawAudio.map(mapBookForSlider));
+          audioList = extractBooks(audioBooksRes.value);
         }
+        if (audioList.length === 0 && allBooksRes.status === "fulfilled") {
+          const rawAll = extractBooks(allBooksRes.value);
+          audioList = rawAll.filter(
+            (b) => b.is_audio || b.formats?.some((f) => f.format === "AUDIO" || f.is_audio)
+          );
+        }
+        setAudioBooks(audioList.map(mapBookForSlider));
 
         // 5. Iranian Publishers
         if (publishersRes.status === "fulfilled") {
@@ -323,22 +337,6 @@ export default function Home() {
       </div>
 
       <main className="Container_home">
-        {/* HERO SEARCH BAR */}
-        <section className="home-hero-search-section">
-          <form className="home-hero-search-form" onSubmit={handleSearchSubmit}>
-            <i className="fas fa-search hero-search-icon"></i>
-            <input
-              type="text"
-              placeholder="Search thousands of Iranian and world books, authors, ISBNs..."
-              value={searchInputValue}
-              onChange={(e) => setSearchInputValue(e.target.value)}
-              className="hero-search-input"
-            />
-            <button type="submit" className="hero-search-btn">
-              Search Catalog
-            </button>
-          </form>
-        </section>
 
         {/* GENRE / CATEGORIES PILLS */}
         {genres.length > 0 && (

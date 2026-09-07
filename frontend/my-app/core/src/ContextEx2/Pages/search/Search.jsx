@@ -66,7 +66,7 @@ export default function Search() {
       ? searchTerm
       : searchParams.get("q") || searchParams.get("search") || "";
   const initialGenre = searchParams.get("genre") || "";
-  const initialFormat = searchParams.get("format") || "";
+  const initialFormat = searchParams.get("format") || searchParams.get("book_format") || "";
 
   // Search input state
   const [searchInput, setSearchInput] = useState(initialQuery);
@@ -155,11 +155,12 @@ export default function Search() {
       }
 
       if (filterGenre) {
-        params.genre = filterGenre;
+        params.genre = typeof filterGenre === "object" ? (filterGenre.value || filterGenre.name) : filterGenre;
       }
 
       if (filterFormat) {
         params.format = filterFormat;
+        params.book_format = filterFormat;
       }
 
       if (filterPublisher) {
@@ -409,7 +410,7 @@ export default function Search() {
               )}
               {filterGenre && (
                 <span className="filter-chip">
-                  Genre: {filterGenre}
+                  Genre: {typeof filterGenre === "object" ? (filterGenre.label || filterGenre.value) : String(filterGenre)}
                   <button onClick={() => setFilterGenre("")}>✕</button>
                 </span>
               )}
@@ -491,11 +492,15 @@ export default function Search() {
                   onChange={(e) => setFilterGenre(e.target.value)}
                 >
                   <option value="">All Genres</option>
-                  {genresList.map((genre) => (
-                    <option key={genre.id || genre.name || genre} value={genre.name || genre}>
-                      {genre.name || genre}
-                    </option>
-                  ))}
+                  {genresList.map((genre) => {
+                    const gVal = typeof genre === "object" ? (genre.value || genre.name || genre.label) : String(genre);
+                    const gLabel = typeof genre === "object" ? (genre.label || genre.name || genre.value) : String(genre);
+                    return (
+                      <option key={gVal} value={gVal}>
+                        {gLabel}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -746,11 +751,15 @@ export default function Search() {
                 onChange={(e) => setFilterGenre(e.target.value)}
               >
                 <option value="">All Genres</option>
-                {genresList.map((genre) => (
-                  <option key={genre.id || genre.name || genre} value={genre.name || genre}>
-                    {genre.name || genre}
-                  </option>
-                ))}
+                {genresList.map((genre) => {
+                  const gVal = typeof genre === "object" ? (genre.value || genre.name || genre.label) : String(genre);
+                  const gLabel = typeof genre === "object" ? (genre.label || genre.name || genre.value) : String(genre);
+                  return (
+                    <option key={gVal} value={gVal}>
+                      {gLabel}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
+
+import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
+import Footer from "../../Components/Footer";
+
 import BookService from "../../Services/BookService";
 import { formatPrice } from "../../utils/formatPrice";
 import { ppic1 } from "../../Constants";
@@ -58,11 +62,17 @@ export default function Author() {
   if (isLoading) {
     return (
       <div className="author-page-wrapper">
-        <SimpleNav />
+        <div className="author-nav-full">
+          <Navbar />
+        </div>
+        <div className="author-nav-res">
+          <SimpleNav />
+        </div>
         <div className="author-container author-loading-box">
           <div className="author-spinner"></div>
           <p>Loading author details...</p>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -70,7 +80,12 @@ export default function Author() {
   if (error || !authorData) {
     return (
       <div className="author-page-wrapper">
-        <SimpleNav />
+        <div className="author-nav-full">
+          <Navbar />
+        </div>
+        <div className="author-nav-res">
+          <SimpleNav />
+        </div>
         <div className="author-container author-not-found-box">
           <h2>{error || "Author Not Found"}</h2>
           <p>We couldn't locate this author in our catalog.</p>
@@ -78,29 +93,41 @@ export default function Author() {
             Explore Book Catalog
           </button>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
     <div className="author-page-wrapper">
-      <div className="auth-nav">
+      <div className="author-nav-full">
+        <Navbar />
+      </div>
+      <div className="author-nav-res">
         <SimpleNav />
       </div>
 
-      <div className="author-container">
-        {/* Back Button */}
-        <div className="author-header-actions">
+      <main className="author-container">
+        {/* Top bar with back button & breadcrumbs */}
+        <div className="author-top-bar">
           <button
-            className="big-back-btn"
+            className="author-back-btn"
             onClick={() => navigate(-1)}
             title="Go Back"
           >
-            <i className="fas fa-angle-left"></i>
+            <i className="fas fa-angle-left"></i> Back
           </button>
-          <Link to="/library" className="author-browse-link">
-            ← Catalog
-          </Link>
+          <div className="author-breadcrumbs">
+            <button onClick={() => navigate("/home")} className="crumb-link">
+              Home
+            </button>
+            <span className="crumb-sep">/</span>
+            <button onClick={() => navigate("/library")} className="crumb-link">
+              Authors
+            </button>
+            <span className="crumb-sep">/</span>
+            <span className="crumb-current">{authorData.name}</span>
+          </div>
         </div>
 
         {/* Author Profile Section */}
@@ -113,104 +140,117 @@ export default function Author() {
             />
           </div>
           <div className="auth-desc">
-            <span className="auth-des">
+            <div className="auth-des">
               <h2>{authorData.name}</h2>
-              {authorData.books_count !== undefined && (
-                <span className="author-meta-count">
-                  {authorData.books_count} Published Books
-                </span>
-              )}
+              <div className="author-meta-badges">
+                {authorData.books_count !== undefined && (
+                  <span className="author-meta-count">
+                    <i className="fas fa-book" style={{ marginRight: 6 }}></i>
+                    {authorData.books_count} Published Works
+                  </span>
+                )}
+                {authorData.nationality && (
+                  <span className="author-meta-nationality">
+                    <i className="fas fa-globe" style={{ marginRight: 6 }}></i>
+                    {authorData.nationality}
+                  </span>
+                )}
+              </div>
               <p className="author-biography">
                 {authorData.biography || "No biography available for this author."}
               </p>
-            </span>
+            </div>
           </div>
         </div>
 
         {/* Books by Author Section */}
-        <div className="down-side">
-          <div className="author-section-heading">
+        <div className="author-books-section">
+          <div className="author-books-header">
             <h3>Books by {authorData.name}</h3>
-            <span className="author-book-count-tag">
-              {books.length} {books.length === 1 ? "Book" : "Books"}
+            <span className="author-books-count-tag">
+              {books.length} {books.length === 1 ? "Book" : "Books"} Available
             </span>
           </div>
 
-          <div className="product">
-            {books && books.length > 0 ? (
-              books.map((book) => {
-                const bookCover =
+          {books.length === 0 ? (
+            <div className="author-books-empty">
+              <p>No books currently available for this author.</p>
+            </div>
+          ) : (
+            <div className="author-books-grid">
+              {books.map((book) => {
+                const bookId = book.id || book.searchId;
+                const bookTitle = book.title || book.name;
+                const bookImg =
                   book.cover_image_url ||
                   book.cover_image ||
-                  "https://placehold.co/400x600?text=No+Cover";
+                  book.imgUrl ||
+                  "/default-book.png";
+                const hasDiscount = Boolean(book.has_discount);
+                const discountPercent = book.discount_percent || 0;
+                const price = book.price;
+                const origPrice = book.original_price;
 
                 return (
-                  <div
-                    key={book.id}
-                    className="auth-cards"
-                    onClick={() => navigate(`/book/${book.id}`)}
+                  <Link
+                    key={bookId}
+                    to={`/book/${bookId}`}
+                    className="author-book-card"
                   >
-                    <div className="auth-pic">
-                      <img
-                        src={bookCover}
-                        className="auth-book-img"
-                        alt={book.title}
-                        loading="lazy"
-                      />
-                      {book.has_discount && book.discount_percent > 0 && (
-                        <span className="author-discount-badge">
-                          -{book.discount_percent}%
+                    <div className="author-book-cover-wrap">
+                      {hasDiscount && discountPercent > 0 && (
+                        <span className="author-book-discount-badge">
+                          -{discountPercent}%
                         </span>
                       )}
-                    </div>
-
-                    <div className="author-card-content">
-                      <h4 className="author-card-title" title={book.title}>
-                        {book.title}
-                      </h4>
-
-                      {/* Format Badges */}
-                      <div className="author-card-formats">
-                        {book.formats && book.formats.length > 0 ? (
-                          book.formats.map((f) => (
-                            <span key={f.id} className="author-format-pill">
-                              {f.type}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="author-format-pill">Available</span>
+                      <img
+                        src={bookImg}
+                        alt={bookTitle}
+                        loading="lazy"
+                        className="author-book-cover-img"
+                      />
+                      <div className="author-book-formats-badges">
+                        {book.is_digital && (
+                          <span title="Digital PDF available">📱</span>
+                        )}
+                        {book.is_audio && (
+                          <span title="Audiobook available">🎧</span>
                         )}
                       </div>
+                    </div>
 
-                      {/* Price Block */}
-                      <div className="author-card-price-row">
-                        {book.has_discount && book.original_price ? (
-                          <>
-                            <span className="author-card-original-price">
-                              {formatPrice(book.original_price)}
+                    <div className="author-book-info">
+                      <span className="author-book-genre">
+                        {book.genre || "General"}
+                      </span>
+                      <h4 className="author-book-title">{bookTitle}</h4>
+
+                      <div className="author-book-pricing">
+                        {hasDiscount && origPrice ? (
+                          <div className="author-price-discount-box">
+                            <span className="author-price-orig">
+                              {formatPrice(origPrice)}
                             </span>
-                            <span className="author-card-final-price">
-                              {formatPrice(book.price)}
+                            <span className="author-price-final discounted">
+                              {formatPrice(price)}
                             </span>
-                          </>
+                          </div>
                         ) : (
-                          <span className="author-card-final-price">
-                            {book.price ? formatPrice(book.price) : "N/A"}
+                          <span className="author-price-final">
+                            {formatPrice(price)}
                           </span>
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
-              })
-            ) : (
-              <div className="no-books-box">
-                <p>No published books available for this author yet.</p>
-              </div>
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }

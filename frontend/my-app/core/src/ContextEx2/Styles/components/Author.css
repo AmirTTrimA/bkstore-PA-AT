@@ -2,10 +2,23 @@
 /* ============================================
         NAVIGATION
    ============================================ */
-.auth-nav{
+
+.author-page-wrapper {
+    min-height: 100vh;
+    background-color: var(--bg-body, #111622);
+    color: var(--text-primarys);
+}
+
+.author-nav-res {
     position: sticky;
-    z-index: 1000;
     top: 0;
+    z-index: 1000;
+}
+
+.author-nav-full {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 /* ============================================
@@ -13,21 +26,89 @@
    ============================================ */
 
 .author-container{
-    max-width: 1100px;
-    margin: 0 auto;
+    max-width: 1200px;
+    margin: 20px auto 40px;
     display: flex;
-    justify-content: center;
     flex-direction: column;
-    
-    border-radius: 0 0 10px 10px;
+    border-radius: 16px;
     background-color: var(--bg-primary);
     color: var(--text-primarys);
-    box-shadow: 0 0 15px rgba(113, 113, 113, 0.575);
-    width: 90%;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    width: 95%;
+    overflow: hidden;
+    padding-bottom: 30px;
 }
 
+/* ============================================
+        TOP BAR & BREADCRUMBS
+   ============================================ */
 
+.author-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 16px;
+    flex-wrap: wrap;
+}
 
+.author-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: var(--text-primarys);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.author-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #d17842;
+    color: #d17842;
+}
+
+.author-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #888;
+    overflow: hidden;
+}
+
+.crumb-link {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+.crumb-link:hover {
+    color: #d17842;
+    text-decoration: underline;
+}
+
+.crumb-sep {
+    color: #666;
+}
+
+.crumb-current {
+    color: var(--text-primarys);
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 320px;
+}
 
 /* ============================================
         AUTHOR PROFILE SECTION
@@ -35,43 +116,72 @@
 
 .up-side{
     margin: 0 auto;
-    padding: 30px;
-    border-bottom: 5px solid var(--text-primarys);
-    
+    padding: 36px 30px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .profile{
-    margin-bottom: 0;
+    margin: 0 auto;
     display: flex;
     justify-content: center;
     align-items: center;
 }
+
 .profile img{
     border-radius: 50%;
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     object-fit: cover;
-    
+    border: 3px solid #d17842;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
-
 
 .auth-desc{
-    padding: 20px 200px;
+    padding: 10px 20px;
     margin: 0 auto;
     text-align: center;
-    
-
-}
-.auth-des{
-    font-size: large;
-    font-weight: 700;
+    max-width: 750px;
 }
 
 .auth-des h2{
+    margin: 0 0 10px;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primarys);
+}
+
+.author-meta-badges {
     display: flex;
     justify-content: center;
-    margin-top: 0;
-    
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.author-meta-count,
+.author-meta-nationality {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: rgba(209, 120, 66, 0.12);
+    border: 1px solid rgba(209, 120, 66, 0.3);
+    border-radius: 20px;
+    color: #d17842;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.author-biography {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #cbd5e1;
+    margin: 0;
 }
 
 /* ============================================
