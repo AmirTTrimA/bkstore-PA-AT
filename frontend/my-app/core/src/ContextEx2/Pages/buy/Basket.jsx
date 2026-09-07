@@ -94,10 +94,18 @@ export default function Basket() {
 
   const discountSavings = Math.max(0, originalSubtotal - subtotal);
 
+  // Helper to detect percentage discounts
+  const isPercentDiscount = (coupon) => {
+    if (!coupon) return false;
+    if (coupon.is_percentage === true) return true;
+    const t = String(coupon.discount_type || "").toUpperCase();
+    return t === "PERCENT" || t === "PERCENTAGE" || t === "PERCENT_DISCOUNT";
+  };
+
   // Promo discount calculation
   let couponDiscountAmount = 0;
   if (appliedCoupon) {
-    if (appliedCoupon.discount_type === "PERCENTAGE") {
+    if (isPercentDiscount(appliedCoupon)) {
       couponDiscountAmount = Math.round(
         (subtotal * Number(appliedCoupon.value || 0)) / 100
       );
@@ -227,7 +235,7 @@ export default function Basket() {
         discountCode: appliedCoupon?.code || "",
         couponDiscountAmount,
         hassavedaddress: hasSavedAddress,
-        startAtStep: hasPhysicalBook && !hasSavedAddress ? 1 : 2,
+        startAtStep: hasPhysicalBook ? 1 : 2,
       },
     });
   };
@@ -504,7 +512,8 @@ export default function Basket() {
               {appliedCoupon && couponDiscountAmount > 0 && (
                 <div className="discount-summary-row promo-savings">
                   <span>
-                    Voucher Discount ({appliedCoupon.code}):
+                    Voucher Discount ({appliedCoupon.code}
+                    {isPercentDiscount(appliedCoupon) ? ` - ${appliedCoupon.value}%` : ""}):
                   </span>
                   <span>-{formatPrice(couponDiscountAmount)}</span>
                 </div>

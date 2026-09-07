@@ -1,6 +1,7 @@
 import {
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from "react";
@@ -15,8 +16,24 @@ import BasketService from "../../Services/BasketService";
 import AddressService from "../../Services/AddressService";
 import WalletService from "../../Services/WalletService";
 import { formatPrice } from "../../utils/formatPrice";
+import {
+    IRAN_PROVINCES,
+    IRAN_CITIES_BY_PROVINCE,
+} from "../../utils/iranLocations";
 
 import "../../Styles/components/Checkout.css";
+
+// Helper to reliably detect percentage discounts across all formats
+export const isPercentDiscount = (coupon) => {
+    if (!coupon) return false;
+    if (coupon.is_percentage === true) return true;
+    const type = String(coupon.discount_type || "").toUpperCase();
+    return (
+        type === "PERCENT" ||
+        type === "PERCENTAGE" ||
+        type === "PERCENT_DISCOUNT"
+    );
+};
 
 // ============================================
 // Main Checkout Component
@@ -30,11 +47,19 @@ export default function Checkout() {
 
     const incomingState = location.state || {};
 
+    // Check if initial items have physical books
+    const hasInitialPhysical = (incomingState.cartItems || []).some(
+        (item) => (item.format_type || "").toUpperCase() === "PHYSICAL"
+    );
+
     // ============================================
     // State
     // ============================================
 
-    const [step, setStep] = useState(incomingState.startAtStep || 1);
+    // When physical books are present, always start at Step 1 (Shipping Details)
+    const [step, setStep] = useState(
+        incomingState.startAtStep === 2 && !hasInitialPhysical ? 2 : 1
+    );
     const [cartItems, setCartItems] = useState(incomingState.cartItems || []);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -44,10 +69,12 @@ export default function Checkout() {
     const [shippingInfo, setShippingInfo] = useState({
         title: "Home",
         name: "",
-        address: "",
-        city: "",
-        country: "Iran",
         phone: "",
+        country: "Iran",
+        province: "",
+        city: "",
+        address: "",
+        postal_code: "",
     });
 
     const [wallet, setWallet] = useState(null);
@@ -151,7 +178,7 @@ export default function Checkout() {
     // Coupon discount calculation
     let couponDiscountAmount = 0;
     if (appliedCoupon) {
-        if (appliedCoupon.discount_type === "PERCENTAGE") {
+        if (isPercentDiscount(appliedCoupon)) {
             couponDiscountAmount = Math.round(
                 (subtotal * Number(appliedCoupon.value || 0)) / 100
             );
@@ -168,8 +195,22 @@ export default function Checkout() {
     const hasEnoughBalance = walletBalance >= finalTotal;
 
     // ============================================
-    // Shipping Handlers
+    // Shipping Handlers & Cascading Location
     // ============================================
+
+    const availableCities = useMemo(() => {
+        if (!shippingInfo.province) return [];
+        return IRAN_CITIES_BY_PROVINCE[shippingInfo.province] || [];
+    }, [shippingInfo.province]);
+
+    const handleProvinceChange = (event) => {
+        const selectedProvince = event.target.value;
+        setShippingInfo((prev) => ({
+            ...prev,
+            province: selectedProvince,
+            city: "", // reset city whenever province changes
+        }));
+    };
 
     const handleShippingChange = (event) => {
         const { name, value } = event.target;
@@ -178,6 +219,33 @@ export default function Checkout() {
             [name]: value,
         }));
     };
+
+    // Resolves currently chosen shipping address object for Step 2 display
+    const currentAddress = useMemo(() => {
+        if (!useNewAddress && selectedAddressId) {
+            return addresses.find((a) => a.id === selectedAddressId) || null;
+        }
+        if (useNewAddress || addresses.length === 0) {
+            if (
+                !shippingInfo.name.trim() &&
+                !shippingInfo.city.trim() &&
+                !shippingInfo.address.trim()
+            ) {
+                return null;
+            }
+            return {
+                recipient_name: shippingInfo.name,
+                phone_number: shippingInfo.phone,
+                country: shippingInfo.country || "Iran",
+                province: shippingInfo.province,
+                city: shippingInfo.city,
+                address_line: shippingInfo.address,
+                postal_code: shippingInfo.postal_code,
+                title: shippingInfo.title || "New Address",
+            };
+        }
+        return null;
+    }, [useNewAddress, selectedAddressId, addresses, shippingInfo]);
 
     const validateShipping = () => {
         if (!hasPhysicalItems) {
@@ -190,11 +258,13 @@ export default function Checkout() {
 
         if (
             !shippingInfo.name.trim() ||
-            !shippingInfo.address.trim() ||
-            !shippingInfo.city.trim()
+            !shippingInfo.phone.trim() ||
+            !shippingInfo.province.trim() ||
+            !shippingInfo.city.trim() ||
+            !shippingInfo.address.trim()
         ) {
             notificationRef.current?.showNotif(
-                "Please fill in all required delivery fields (Name, Street Address, City).",
+                "Please fill in all required delivery fields (Recipient Name, Phone, Province, City, and Street Address).",
                 "error"
             );
             return false;
@@ -282,10 +352,12 @@ export default function Checkout() {
                     const addressPayload = {
                         title: shippingInfo.title?.trim() || "Delivery Address",
                         recipient_name: shippingInfo.name.trim(),
-                        city: shippingInfo.city.trim(),
-                        country: shippingInfo.country.trim() || "Iran",
-                        address_line: shippingInfo.address.trim(),
                         phone_number: shippingInfo.phone.trim(),
+                        country: shippingInfo.country.trim() || "Iran",
+                        province: shippingInfo.province.trim(),
+                        city: shippingInfo.city.trim(),
+                        address_line: shippingInfo.address.trim(),
+                        postal_code: shippingInfo.postal_code?.trim() || "",
                     };
 
                     // PROPERLY AWAIT address creation so we get the newly created address ID!
@@ -323,7 +395,9 @@ export default function Checkout() {
                         payload.shipping_name = shippingInfo.name.trim();
                         payload.shipping_address_line1 =
                             shippingInfo.address.trim();
-                        payload.shipping_city = shippingInfo.city.trim();
+                        payload.shipping_city = shippingInfo.province
+                            ? `${shippingInfo.province} - ${shippingInfo.city.trim()}`
+                            : shippingInfo.city.trim();
                         payload.shipping_country =
                             shippingInfo.country.trim() || "Iran";
                     }
@@ -518,16 +592,33 @@ export default function Checkout() {
                                                                     )
                                                                 }
                                                             >
-                                                                <div className="saved-address-title">
-                                                                    <span>
-                                                                        {addr.title ||
-                                                                            "Saved Address"}
-                                                                    </span>
-                                                                    {addr.is_default && (
-                                                                        <span className="default-pill">
-                                                                            Default
+                                                                <div className="saved-address-header">
+                                                                    <div className="saved-address-radio">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name="selectedAddressRadio"
+                                                                            checked={
+                                                                                selectedAddressId ===
+                                                                                addr.id
+                                                                            }
+                                                                            onChange={() =>
+                                                                                setSelectedAddressId(
+                                                                                    addr.id
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                    <div className="saved-address-title">
+                                                                        <span>
+                                                                            {addr.title ||
+                                                                                "Saved Address"}
                                                                         </span>
-                                                                    )}
+                                                                        {addr.is_default && (
+                                                                            <span className="default-pill">
+                                                                                Default
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                                 <div className="saved-address-details">
                                                                     <div>
@@ -536,17 +627,23 @@ export default function Checkout() {
                                                                                 addr.recipient_name
                                                                             }
                                                                         </strong>{" "}
-                                                                        -{" "}
-                                                                        {
-                                                                            addr.phone_number
-                                                                        }
+                                                                        {addr.phone_number && (
+                                                                            <span className="addr-phone">
+                                                                                - {addr.phone_number}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                     <div>
-                                                                        {addr.city},{" "}
-                                                                        {
-                                                                            addr.address_line
-                                                                        }
+                                                                        {addr.province
+                                                                            ? `${addr.province}، `
+                                                                            : ""}
+                                                                        {addr.city} - {addr.address_line}
                                                                     </div>
+                                                                    {addr.postal_code && (
+                                                                        <div className="saved-address-postal">
+                                                                            Postal Code: {addr.postal_code}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -569,6 +666,18 @@ export default function Checkout() {
                                             <div className="new-address-form">
                                                 <div className="form-row">
                                                     <div className="form-group">
+                                                        <label>Address Title / Label</label>
+                                                        <input
+                                                            className="checkout-field"
+                                                            name="title"
+                                                            placeholder="e.g. Home, Office"
+                                                            value={shippingInfo.title}
+                                                            onChange={
+                                                                handleShippingChange
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
                                                         <label>Recipient Name *</label>
                                                         <input
                                                             className="checkout-field"
@@ -580,6 +689,9 @@ export default function Checkout() {
                                                             }
                                                         />
                                                     </div>
+                                                </div>
+
+                                                <div className="form-row">
                                                     <div className="form-group">
                                                         <label>Phone Number *</label>
                                                         <input
@@ -592,6 +704,57 @@ export default function Checkout() {
                                                             }
                                                         />
                                                     </div>
+                                                    <div className="form-group">
+                                                        <label>Country</label>
+                                                        <input
+                                                            className="checkout-field"
+                                                            name="country"
+                                                            placeholder="Iran"
+                                                            value={shippingInfo.country}
+                                                            disabled
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Cascading Province & City Dropdowns */}
+                                                <div className="form-row">
+                                                    <div className="form-group">
+                                                        <label>Province / Ostan *</label>
+                                                        <select
+                                                            className="checkout-field checkout-select"
+                                                            name="province"
+                                                            value={shippingInfo.province || ""}
+                                                            onChange={handleProvinceChange}
+                                                        >
+                                                            <option value="">-- Select Province --</option>
+                                                            {IRAN_PROVINCES.map((prov) => (
+                                                                <option key={prov.id} value={prov.id}>
+                                                                    {prov.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>City / Shahrestan *</label>
+                                                        <select
+                                                            className="checkout-field checkout-select"
+                                                            name="city"
+                                                            value={shippingInfo.city || ""}
+                                                            onChange={handleShippingChange}
+                                                            disabled={!shippingInfo.province}
+                                                        >
+                                                            <option value="">
+                                                                {shippingInfo.province
+                                                                    ? "-- Select City --"
+                                                                    : "-- First Select Province --"}
+                                                            </option>
+                                                            {availableCities.map((cityName) => (
+                                                                <option key={cityName} value={cityName}>
+                                                                    {cityName}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 </div>
 
                                                 <div className="form-group">
@@ -599,7 +762,7 @@ export default function Checkout() {
                                                     <input
                                                         className="checkout-field full-width"
                                                         name="address"
-                                                        placeholder="Street, building, apartment number"
+                                                        placeholder="Street, alley, building, plaque, unit"
                                                         value={shippingInfo.address}
                                                         onChange={
                                                             handleShippingChange
@@ -609,24 +772,12 @@ export default function Checkout() {
 
                                                 <div className="form-row">
                                                     <div className="form-group">
-                                                        <label>City *</label>
+                                                        <label>Postal Code (Optional)</label>
                                                         <input
                                                             className="checkout-field"
-                                                            name="city"
-                                                            placeholder="e.g. Tehran, Isfahan"
-                                                            value={shippingInfo.city}
-                                                            onChange={
-                                                                handleShippingChange
-                                                            }
-                                                        />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>Country</label>
-                                                        <input
-                                                            className="checkout-field"
-                                                            name="country"
-                                                            placeholder="Iran"
-                                                            value={shippingInfo.country}
+                                                            name="postal_code"
+                                                            placeholder="10-digit postal code"
+                                                            value={shippingInfo.postal_code || ""}
                                                             onChange={
                                                                 handleShippingChange
                                                             }
@@ -692,6 +843,92 @@ export default function Checkout() {
                                 <h2 className="title-checkout">
                                     Review & Payment
                                 </h2>
+
+                                {/* Delivery Destination Card for Physical Orders */}
+                                {hasPhysicalItems && (
+                                    <div className="checkout-delivery-summary-card">
+                                        <div className="delivery-summary-header">
+                                            <div className="delivery-summary-title">
+                                                <span className="delivery-icon">📦</span>
+                                                <div>
+                                                    <h4>Delivery Destination</h4>
+                                                    <p className="delivery-subtitle">
+                                                        Physical items will be dispatched to:
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="checkout-edit-address-btn"
+                                                onClick={() => {
+                                                    setStep(1);
+                                                    window.scrollTo({
+                                                        top: 0,
+                                                        behavior: "smooth",
+                                                    });
+                                                }}
+                                                title="Change delivery address"
+                                            >
+                                                ✏️ Change Address
+                                            </button>
+                                        </div>
+                                        {currentAddress ? (
+                                            <div className="delivery-summary-body">
+                                                <div className="delivery-recipient-row">
+                                                    <strong>
+                                                        {currentAddress.recipient_name}
+                                                    </strong>
+                                                    {currentAddress.phone_number && (
+                                                        <span className="delivery-phone">
+                                                            ({currentAddress.phone_number})
+                                                        </span>
+                                                    )}
+                                                    {currentAddress.title && (
+                                                        <span className="delivery-tag">
+                                                            {currentAddress.title}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="delivery-location-row">
+                                                    {currentAddress.province && (
+                                                        <span>
+                                                            {currentAddress.province}،{" "}
+                                                        </span>
+                                                    )}
+                                                    <span>
+                                                        {currentAddress.city} -{" "}
+                                                    </span>
+                                                    <span>
+                                                        {currentAddress.address_line}
+                                                    </span>
+                                                </div>
+                                                {currentAddress.postal_code && (
+                                                    <div className="delivery-postal-row">
+                                                        Postal Code:{" "}
+                                                        {currentAddress.postal_code}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="delivery-summary-empty">
+                                                <p>No delivery address selected.</p>
+                                                <button
+                                                    type="button"
+                                                    className="checkout-edit-address-btn"
+                                                    onClick={() => {
+                                                        setStep(1);
+                                                        window.scrollTo({
+                                                            top: 0,
+                                                            behavior: "smooth",
+                                                        });
+                                                    }}
+                                                >
+                                                    Select an Address
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="checkout-items">
                                     {cartItems.map((item) => {
@@ -844,7 +1081,8 @@ export default function Checkout() {
                                     {appliedCoupon && couponDiscountAmount > 0 && (
                                         <div className="checkout-summary-row promo-savings">
                                             <span>
-                                                Voucher ({appliedCoupon.code}):
+                                                Voucher ({appliedCoupon.code}
+                                                {isPercentDiscount(appliedCoupon) ? ` - ${appliedCoupon.value}%` : ""}):
                                             </span>
                                             <span>
                                                 -{formatPrice(couponDiscountAmount)}

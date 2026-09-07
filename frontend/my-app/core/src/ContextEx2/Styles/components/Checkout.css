@@ -210,13 +210,28 @@
   box-shadow: 0 0 12px rgba(209, 120, 66, 0.2);
 }
 
+.saved-address-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.saved-address-radio input[type="radio"] {
+  accent-color: #d17842;
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  margin: 0;
+}
+
 .saved-address-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: 1;
   font-weight: 700;
   color: var(--text-primarys);
-  margin-bottom: 6px;
 }
 
 .default-pill {
@@ -231,6 +246,20 @@
   font-size: 0.88rem;
   color: var(--text-secondary);
   line-height: 1.4;
+  padding-left: 27px;
+}
+
+.addr-phone {
+  color: var(--text-secondary);
+  font-weight: normal;
+  font-size: 0.85rem;
+}
+
+.saved-address-postal {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  margin-top: 2px;
 }
 
 .toggle-new-address-btn {
@@ -293,6 +322,30 @@
   border-color: #d17842;
 }
 
+select.checkout-field {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23d17842' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+select.checkout-field:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+select.checkout-field option {
+  background-color: #1a1a24;
+  color: #fff;
+  padding: 8px 12px;
+}
+
 .save-address-checkbox-label {
   display: flex;
   align-items: center;
@@ -312,6 +365,122 @@
 /* ============================================
       STEP 2: REVIEW & PAYMENT
    ============================================ */
+
+.checkout-delivery-summary-card {
+  background: rgba(209, 120, 66, 0.07);
+  border: 1px solid rgba(209, 120, 66, 0.28);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+}
+
+.delivery-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.delivery-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.delivery-icon {
+  font-size: 1.6rem;
+}
+
+.delivery-summary-title h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primarys);
+}
+
+.delivery-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.checkout-edit-address-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-primarys);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkout-edit-address-btn:hover {
+  border-color: #d17842;
+  color: #d17842;
+  background: rgba(209, 120, 66, 0.15);
+  transform: translateY(-1px);
+}
+
+.delivery-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 38px;
+}
+
+.delivery-recipient-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--text-primarys);
+  flex-wrap: wrap;
+}
+
+.delivery-phone {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.delivery-tag {
+  background: rgba(209, 120, 66, 0.2);
+  color: #d17842;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  border: 1px solid rgba(209, 120, 66, 0.35);
+}
+
+.delivery-location-row {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.delivery-postal-row {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.delivery-summary-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 38px;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
 
 .checkout-items {
   display: flex;
