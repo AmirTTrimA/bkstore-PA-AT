@@ -265,11 +265,40 @@ class CartItemHandlerView(generics.GenericAPIView):
 
         cart_data = get_storage_manager(request)
 
-        cart_data[cart_key] = cart_data.get(cart_key, 0) + quantity
+        if request.data.get("override") or request.data.get("action") == "set":
+            if quantity <= 0:
+                cart_data.pop(cart_key, None)
+            else:
+                cart_data[cart_key] = quantity
+        else:
+            cart_data[cart_key] = cart_data.get(cart_key, 0) + quantity
 
         save_storage_manager(request, cart_data)
 
         return Response({"detail": _("Item added to cart.")}, status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        """Directly sets the exact quantity of a cart item."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        book_id = serializer.validated_data["book_id"]
+        book_format = serializer.validated_data["book_format"]
+        quantity = serializer.validated_data.get("quantity", 1)
+
+        cart_key = f"{book_id}:{book_format.pk}"
+        cart_data = get_storage_manager(request)
+
+        if quantity <= 0:
+            cart_data.pop(cart_key, None)
+        else:
+            cart_data[cart_key] = quantity
+
+        save_storage_manager(request, cart_data)
+        return Response({"detail": _("Cart item quantity updated.")}, status=status.HTTP_200_OK)
+
+    def patch(self, request, *args, **kwargs):
+        return self.put(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         """Deletes a specific item entirely from the cart."""

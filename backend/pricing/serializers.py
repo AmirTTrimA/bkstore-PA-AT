@@ -18,6 +18,36 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
     Outputs the discount information if the code is valid.
     """
 
+    name = serializers.CharField(source="discount.name", read_only=True)
+    discount_type = serializers.CharField(
+        source="discount.discount_type", read_only=True
+    )
+    value = serializers.DecimalField(
+        source="discount.value", max_digits=15, decimal_places=0, read_only=True
+    )
+    is_valid = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DiscountCode
+        fields = (
+            "id",
+            "code",
+            "name",
+            "discount_type",
+            "value",
+            "is_valid",
+        )
+        read_only_fields = fields
+
+    def get_is_valid(self, obj):
+        if not obj.is_active:
+            return False
+        if obj.max_uses is not None and obj.times_used >= obj.max_uses:
+            return False
+        if not obj.discount or not obj.discount.is_active_now():
+            return False
+        return True
+
 # -------------------------------------------------------------
 # 3. PRICE SERIALIZERS
 # -------------------------------------------------------------
