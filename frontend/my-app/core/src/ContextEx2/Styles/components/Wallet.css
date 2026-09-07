@@ -1,56 +1,93 @@
 /* ============================================
-        WALLET PAGE
+   WALLET STYLES - Modern Glassmorphism
    ============================================ */
 
-   
-/* Cards */
-.wallet-cards{
-    transition: all 0.3s ease;
+.wallet-hub-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 0;
 }
 
-.wallet-cards-content{
-    padding: 16px;
+/* Virtual Wallet Card */
+.virtual-wallet-card {
+  background: linear-gradient(135deg, #1e1e24 0%, #2b1f1a 50%, #1a1715 100%);
+  border: 1px solid rgba(209, 120, 66, 0.3);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* Main Layout */
-.wallet-cards-main{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+.virtual-wallet-card::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(209, 120, 66, 0.25) 0%, transparent 70%);
+  pointer-events: none;
 }
 
-/* Amount */
-.wallet-cards-total-amount{
-    font-weight: bold;
-    font-size: 1.5rem;
+.card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.wallet-card-small-text{
-    font-size: 0.75rem;
-    color: rgba(0,0,0,0.6);
+.card-balance-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* Right Section */
-.wallet-card-right-section{
-    text-align: right;
-    margin-top: 5px;
+.balance-value {
+  color: #fff;
+  font-weight: 800 !important;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, #ffffff 0%, #e0c8b0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-
-/* Icons */
-.icon-withdraw{
-    font-size: 32px;
-    color: #f44336;
+.card-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.icon-deposit{ 
-    margin-top: 5px;
-    font-size: 32px;
-    color:#4caf50;
+/* Deposit Section */
+.wallet-deposit-section {
+  background: rgba(30, 30, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(8px);
 }
 
+.presets-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
 
+.preset-btn {
+  text-transform: none !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  transition: all 0.2s ease !important;
+}
 
-
-
+.preset-btn.selected {
+  box-shadow: 0 4px 14px rgba(209, 120, 66, 0.35);
+}

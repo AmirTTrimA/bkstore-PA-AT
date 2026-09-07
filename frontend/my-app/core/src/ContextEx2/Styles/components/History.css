@@ -1,48 +1,183 @@
 /* ============================================
-        HISTORY PAGE
+   ORDER HISTORY & TRANSACTION LOGS
    ============================================ */
 
-
-
-/* Cards */
-.history-cards{
-    transition: all 0.3s ease;
+/* Orders History List */
+.orders-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* Card Content */
-.history-cards-content{
-    padding: 16px;
+.order-history-card {
+  background: rgba(30, 30, 30, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.25s ease;
 }
 
-/* Main Layout */
-.history-cards-main{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+.order-history-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-/* Amount */
-.history-cards-total-amount{
-    font-weight: bold;
-    font-size: 1.5rem;
+.order-history-card.expanded {
+  border-color: rgba(209, 120, 66, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-.history-card-small-text, .history-cards-status{
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: rgba(0,0,0,0.6);
+/* Card Header */
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 0.2s ease;
 }
 
-/* Right Section */
-.history-card-right-section{
-    text-align: right;
-    margin-top: 5px;
+.order-card-header:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.history-card-items{
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    background-color: orange;
+.order-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.order-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.order-total-price {
+  font-weight: 800 !important;
+  color: #d17842;
+}
+
+/* Details Body */
+.order-details-body {
+  padding: 16px 20px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(18, 18, 20, 0.4);
+}
+
+/* Items List */
+.order-items-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.order-item-thumb {
+  width: 48px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.order-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-item-pricing {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Shipping Card */
+.order-shipping-card {
+  background: rgba(209, 120, 66, 0.08);
+  border: 1px solid rgba(209, 120, 66, 0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+/* Price Breakdown Footer */
+.order-breakdown-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.breakdown-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breakdown-line.grand-total {
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+}
+
+/* ============================================
+   TRANSACTIONS LIST
+   ============================================ */
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaction-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  background: rgba(30, 30, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.transaction-item-card:hover {
+  background: rgba(35, 35, 35, 0.75);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateX(2px);
+}
+
+.tx-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tx-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tx-right {
+  text-align: right;
+  flex-shrink: 0;
 }

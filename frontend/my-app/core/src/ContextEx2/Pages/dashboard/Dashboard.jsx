@@ -1,33 +1,22 @@
-import {
+import React, {
   useCallback,
   useEffect,
   useRef,
   useState
 } from "react";
-
-import {
-  Link,
-  useNavigate
-} from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../Context/AuthContext";
 
-import Basket from "../buy/Basket";
 import Addresses from "./addresses/Addresses";
 import Financial from "./financial/Financial";
 import Profile from "./profile/Profile";
-
 import { ThemeToggle } from "../../Components/common/ThemeToggle";
-
 import { ppic14 } from "../../Constants";
 import ContentService from "../../Services/ContentService";
 import UserService from "../../Services/UserService";
 
 import "../../Styles/components/Dashboard.css";
 
-// ============================================
-// Constants
-// ============================================
 const SEARCH_MIN_LENGTH = 2;
 const HIGHLIGHT_DURATION = 4000;
 
@@ -35,56 +24,71 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // ============================
   // Refs
-  // ============================
   const inputRef = useRef(null);
   const rowRefs = useRef({});
   const asideRef = useRef(null);
 
-  // ============================
   // State
-  // ============================
   const [libraryBooks, setLibraryBooks] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
   const [libraryError, setLibraryError] = useState("");
 
   const [profileData, setProfileData] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState("");
 
-  const [activePage, setActivePage] = useState("home");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [walletModal, setWalletModal] = useState(false);
-  const [isMobileAsideOpen, setIsMobileAsideOpen] = useState(false);
+  // Active view inside dashboard: "library" or "addresses"
+  const [activeView, setActiveView] = useState("library");
 
+  // Modals
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [financialModalOpen, setFinancialModalOpen] = useState(false);
+  const [financialDefaultTab, setFinancialDefaultTab] = useState(0);
+
+  // Mobile drawer
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Search & Highlight
   const [searchInputValue, setSearchInputValue] = useState("");
   const [selectedRowId, setSelectedRowId] = useState(null);
 
-  // ============================
-  // Derived values
-  // ============================
-  const username = user?.username || profileData?.username || "User";
+  // User avatar state (synced with localStorage & custom event)
+  const [currentAvatar, setCurrentAvatar] = useState(
+    localStorage.getItem("user_avatar") || ppic14
+  );
+
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      setCurrentAvatar(localStorage.getItem("user_avatar") || ppic14);
+    };
+    window.addEventListener("avatar_updated", handleAvatarUpdate);
+    return () => window.removeEventListener("avatar_updated", handleAvatarUpdate);
+  }, []);
+
+  const username =
+    profileData?.first_name ||
+    user?.first_name ||
+    profileData?.username ||
+    user?.username ||
+    "Reader";
+
   const formattedDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "numeric",
+    weekday: "short",
+    month: "short",
     day: "numeric",
+    year: "numeric"
   });
 
   // Filtered books based on search input
-  const displayedBooks = searchInputValue.trim().length >= SEARCH_MIN_LENGTH
-    ? libraryBooks.filter((book) => {
-        const query = searchInputValue.trim().toLowerCase();
-        const titleMatch = book.book_title?.toLowerCase().includes(query);
-        const formatMatch = book.format_name?.toLowerCase().includes(query);
-        const typeMatch = book.format_type?.toLowerCase().includes(query);
-        return titleMatch || formatMatch || typeMatch;
-      })
-    : libraryBooks;
-
-  // ============================
-  // Effects
-  // ============================
+  const displayedBooks =
+    searchInputValue.trim().length >= SEARCH_MIN_LENGTH
+      ? libraryBooks.filter((book) => {
+          const query = searchInputValue.trim().toLowerCase();
+          const titleMatch = book.book_title?.toLowerCase().includes(query);
+          const formatMatch = book.format_name?.toLowerCase().includes(query);
+          const typeMatch = book.format_type?.toLowerCase().includes(query);
+          return titleMatch || formatMatch || typeMatch;
+        })
+      : libraryBooks;
 
   // Load Library Data
   useEffect(() => {
@@ -96,7 +100,6 @@ export default function Dashboard() {
         const response = await ContentService.getLicenses();
         const licenses = response.data?.results || response.data || [];
 
-        // Digital and audio format licenses
         setLibraryBooks(
           licenses.filter(
             (license) =>
@@ -107,7 +110,7 @@ export default function Dashboard() {
         );
       } catch (error) {
         console.error("Failed to load user library:", error);
-        setLibraryError("Could not load your library data.");
+        setLibraryError("Could not load your library data. Please try again.");
       } finally {
         setLibraryLoading(false);
       }
@@ -120,16 +123,10 @@ export default function Dashboard() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        setProfileLoading(true);
-        setProfileError("");
-
         const response = await UserService.getProfile();
         setProfileData(response.data);
       } catch (error) {
         console.error("Failed to load profile:", error);
-        setProfileError("Could not load your profile.");
-      } finally {
-        setProfileLoading(false);
       }
     };
 
@@ -147,54 +144,25 @@ export default function Dashboard() {
     }
   }, [selectedRowId]);
 
-  const closeMobileAside = useCallback(() => {
-    setIsMobileAsideOpen(false);
-  }, []);
-
-  // Close aside when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isMobileAsideOpen &&
-        asideRef.current &&
-        !asideRef.current.contains(event.target)
-      ) {
-        if (!event.target.closest(".hamburger-menu")) {
-          closeMobileAside();
-        }
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isMobileAsideOpen, closeMobileAside]);
-
-  // ============================
   // Handlers
-  // ============================
   const handleLogout = useCallback(() => {
     logout();
     navigate("/login");
   }, [logout, navigate]);
 
-  const togglePage = useCallback((page) => {
-    setActivePage((prev) => (prev === page ? "home" : page));
+  const handleOpenFinancial = useCallback((tabIndex = 0) => {
+    setFinancialDefaultTab(tabIndex);
+    setFinancialModalOpen(true);
+    setMobileMenuOpen(false);
   }, []);
 
-  const handleOpenProfile = useCallback(() => setIsModalOpen(true), []);
-  const handleCloseProfile = useCallback(() => setIsModalOpen(false), []);
-  const handleOpenWallet = useCallback(() => setWalletModal(true), []);
-  const handleCloseWallet = useCallback(() => setWalletModal(false), []);
-
-  const toggleMobileAside = useCallback(() => {
-    setIsMobileAsideOpen((prev) => !prev);
+  const handleOpenProfile = useCallback(() => {
+    setProfileModalOpen(true);
+    setMobileMenuOpen(false);
   }, []);
 
   const handleSearch = useCallback((e) => {
-    const value = e.target.value || "";
-    setSearchInputValue(value);
+    setSearchInputValue(e.target.value || "");
     setSelectedRowId(null);
   }, []);
 
@@ -218,7 +186,7 @@ export default function Dashboard() {
             if (rowElement) {
               rowElement.scrollIntoView({
                 behavior: "smooth",
-                block: "center",
+                block: "center"
               });
             }
           }, 100);
@@ -228,7 +196,6 @@ export default function Dashboard() {
     [searchInputValue, libraryBooks]
   );
 
-  // Connect Open buttons to Reader & AudioPlayer
   const openReader = useCallback(
     (book) => {
       navigate("/pdfreader", { state: { book } });
@@ -243,332 +210,464 @@ export default function Dashboard() {
     [navigate]
   );
 
-  // ============================
-  // Aside Navigation Menu
-  // ============================
-  const AsideContent = () => (
-    <aside>
-      <div className="profile-pic">
-        <img src={ppic14} alt="User Profile" loading="lazy" />
-      </div>
-      <ul>
-        <li>
-          <Link to="#" onClick={handleOpenProfile}>
-            Profile
+  return (
+    <div className="dashboard-wrapper">
+      {/* Unified Top Navigation Header */}
+      <header className="dashboard-topbar">
+        {/* User Identity & Avatar */}
+        <div className="topbar-user-section" onClick={handleOpenProfile} title="Edit Profile & Security">
+          <div className="user-avatar-container">
+            <img src={currentAvatar} alt="User Avatar" className="topbar-avatar" />
+            <span className="avatar-edit-badge">✏️</span>
+          </div>
+          <div className="user-info-text">
+            <h2 className="user-greeting">Hi, {username}</h2>
+            <span className="user-date-chip">{formattedDate}</span>
+          </div>
+        </div>
+
+        {/* Central Search Bar */}
+        <div className="topbar-search-section">
+          <div className="search-input-wrapper">
+            <svg
+              className="search-svg-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              height="18"
+              viewBox="0 0 24 24"
+              width="18"
+              fill="currentColor"
+            >
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+            </svg>
+            <input
+              type="text"
+              className="topbar-search-input"
+              placeholder="Search library by title or format..."
+              ref={inputRef}
+              value={searchInputValue}
+              onChange={handleSearch}
+              onKeyDown={handleKeyPress}
+            />
+            {searchInputValue && (
+              <button
+                type="button"
+                className="clear-search-btn"
+                onClick={() => setSearchInputValue("")}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation Actions Bar */}
+        <nav className="topbar-nav-actions">
+          {/* Library View Toggle */}
+          <button
+            type="button"
+            className={`topbar-nav-pill ${activeView === "library" ? "active" : ""}`}
+            onClick={() => setActiveView("library")}
+          >
+            📚 Library
+          </button>
+
+          {/* Addresses View Toggle */}
+          <button
+            type="button"
+            className={`topbar-nav-pill ${activeView === "addresses" ? "active" : ""}`}
+            onClick={() => setActiveView("addresses")}
+          >
+            📍 Addresses
+          </button>
+
+          {/* Financial Hub Button */}
+          <button
+            type="button"
+            className="topbar-nav-pill"
+            onClick={() => handleOpenFinancial(0)}
+            title="Wallet, Orders & Transactions"
+          >
+            💳 Financial
+          </button>
+
+          {/* Subscription Link */}
+          <Link to="/subscription" className="topbar-nav-pill">
+            💎 VIP Plan
           </Link>
-        </li>
-        <li>
-          <Link to="/subscription">Subscription</Link>
-        </li>
-        <li>
-          <Link to="/favorites">Favorites</Link>
-        </li>
-        <li>
-          <Link to="#" onClick={() => togglePage("addresses")}>
-            Addresses
+
+          {/* Favorites Link */}
+          <Link to="/favorites" className="topbar-nav-pill">
+            ⭐️ Favorites
           </Link>
-        </li>
-        <li className="logout">
-          <Link to="#" onClick={handleLogout} title="Logout">
+
+          {/* Cart Direct Route */}
+          <button
+            type="button"
+            className="topbar-icon-btn cart-btn"
+            onClick={() => navigate("/basket")}
+            title="Go to Cart"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              height="24px"
+              height="20px"
               viewBox="0 -960 960 960"
-              width="24px"
+              width="20px"
+              fill="currentColor"
+            >
+              <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z" />
+            </svg>
+          </button>
+
+          {/* Dark Mode Toggle */}
+          <ThemeToggle page="dash" />
+
+          {/* Logout Button */}
+          <button
+            type="button"
+            className="topbar-icon-btn logout-btn"
+            onClick={handleLogout}
+            title="Logout"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="20px"
+              viewBox="0 -960 960 960"
+              width="20px"
+              fill="currentColor"
             >
               <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z" />
             </svg>
-          </Link>
-        </li>
-      </ul>
-    </aside>
-  );
+          </button>
 
-  return (
-    <div>
-      <div className="main-container">
-        {/* Main Content Area */}
-        <div className="main-text">
-          <h2 className="greet">Hi, {username}</h2>
-
-          {/* Search & Actions Bar */}
-          <div className="search-container">
-            <div className="left-icons-group">
-              <li
-                onClick={() => togglePage("basket")}
-                style={{ cursor: "pointer" }}
-                title={activePage === "home" ? "Open Cart" : "Back to Library"}
-              >
-                {activePage === "home" ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="30px"
-                    viewBox="0 -960 960 960"
-                    width="30px"
-                    fill="white"
-                  >
-                    <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z" />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="30px"
-                    viewBox="0 -960 960 960"
-                    width="24px"
-                    fill="white"
-                  >
-                    <path d="M520-600v-240h320v240H520ZM120-440v-400h320v400H120Zm400 320v-400h320v400H520Zm-400 0v-240h320v240H120Zm80-400h160v-240H200v240Zm400 320h160v-240H600v240Zm0-480h160v-80H600v80ZM200-200h160v-80H200v80Zm160-320Zm240-160Zm0 240ZM360-280Z" />
-                  </svg>
-                )}
-              </li>
-
-              <li
-                onClick={handleOpenWallet}
-                style={{ cursor: "pointer" }}
-                title="Wallet & Transactions"
-              >
-                <svg
-                  width="30px"
-                  height="30px"
-                  viewBox="0 0 24 24"
-                  fill="#939393"
-                  stroke="white"
-                  strokeWidth="2"
-                >
-                  <path d="M22 12v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5Z" />
-                  <path d="M20 12h-4a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h4" />
-                  <path d="M18 7V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2" />
-                </svg>
-              </li>
-
-              <li>
-                <ThemeToggle page="dash" />
-              </li>
-            </div>
-
-            {/* Center - Search Bar */}
-            <div className="search-bar">
-              <div className="search-icon">
-                <div className="icon_se">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    width="24"
-                  >
-                    <path d="M0 0h24v24H0z" fill="none"></path>
-                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search your library..."
-                  ref={inputRef}
-                  value={searchInputValue}
-                  onChange={handleSearch}
-                  onKeyDown={handleKeyPress}
-                />
-              </div>
-            </div>
-
-            {/* Right - Date & Mobile Hamburger */}
-            <span className="date">{formattedDate}</span>
-            <div className="right-icons-group">
-              <div className="hamburger-menu" onClick={toggleMobileAside}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  height="24px"
-                  viewBox="0 -960 960 960"
-                  width="24px"
-                  fill="white"
-                >
-                  <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Active View: Library / Home */}
-          {activePage === "home" && (
-            <>
-              <p style={{ margin: "15px 0" }}>
-                back to{" "}
-                <Link to="/home" className="return-login-link">
-                  Home
-                </Link>
-              </p>
-
-              <div className="table-container">
-                {libraryLoading && (
-                  <p className="dashboard-status-text">Loading your library...</p>
-                )}
-
-                {!libraryLoading && libraryError && (
-                  <p className="dashboard-status-text error-text">
-                    {libraryError}
-                  </p>
-                )}
-
-                {!libraryLoading &&
-                  !libraryError &&
-                  displayedBooks.length === 0 && (
-                    <div className="empty-library-container">
-                      <p>
-                        {searchInputValue
-                          ? "No books matched your search."
-                          : "You don't own any digital or audio books yet."}
-                      </p>
-                      <Link to="/library" className="explore-library-link">
-                        Explore Book Catalog →
-                      </Link>
-                    </div>
-                  )}
-
-                {!libraryLoading &&
-                  !libraryError &&
-                  displayedBooks.length > 0 && (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Format</th>
-                          <th>Status</th>
-                          <th>Access</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayedBooks.map((book) => {
-                          const isAudio = book.format_type === "AUDIO";
-                          const isValid = Boolean(
-                            book.is_valid !== false && book.is_active !== false
-                          );
-
-                          return (
-                            <tr
-                              key={book.id}
-                              ref={(el) => {
-                                rowRefs.current[book.id] = el;
-                              }}
-                              className={
-                                selectedRowId === book.id ? "highlight-row" : ""
-                              }
-                            >
-                              <td>
-                                <strong>{book.book_title}</strong>
-                              </td>
-                              <td>
-                                <span
-                                  className={`format-badge ${
-                                    isAudio ? "badge-audio" : "badge-digital"
-                                  }`}
-                                >
-                                  {book.format_name ||
-                                    (isAudio ? "Audiobook" : "Digital (PDF)")}
-                                </span>
-                              </td>
-                              <td>
-                                <span
-                                  className={`status-badge ${
-                                    isValid ? "status-active" : "status-expired"
-                                  }`}
-                                >
-                                  {isValid ? "Available" : "Expired"}
-                                </span>
-                              </td>
-                              <td>
-                                {isValid ? (
-                                  isAudio ? (
-                                    <button
-                                      type="button"
-                                      className="action-btn audio-btn"
-                                      onClick={() => openAudioPlayer(book)}
-                                      title="Listen to Audiobook"
-                                    >
-                                      🎧 LISTEN
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      className="action-btn read-btn"
-                                      onClick={() => openReader(book)}
-                                      title="Read E-Book / PDF"
-                                    >
-                                      📖 READ
-                                    </button>
-                                  )
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="action-btn disabled-btn"
-                                    disabled
-                                    title="License has expired"
-                                  >
-                                    EXPIRED
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
-              </div>
-            </>
-          )}
-
-          {/* Active View: Basket */}
-          {activePage === "basket" && <Basket />}
-
-          {/* Active View: Addresses */}
-          {activePage === "addresses" && <Addresses />}
-        </div>
-
-        {/* Desktop Menu */}
-        <div className="menu-bar">
-          <AsideContent />
-        </div>
-      </div>
-
-      {/* Mobile Slide-out Drawer */}
-      <div
-        className={`mobile-aside-overlay ${isMobileAsideOpen ? "open" : ""}`}
-        onClick={closeMobileAside}
-      >
-        <div
-          className={`mobile-aside-panel ${isMobileAsideOpen ? "open" : ""}`}
-          ref={asideRef}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="close-aside-btn" onClick={closeMobileAside}>
+          {/* Mobile Hamburger Toggle */}
+          <button
+            type="button"
+            className="mobile-hamburger-btn"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open mobile menu"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               height="24px"
               viewBox="0 -960 960 960"
               width="24px"
-              fill="white"
+              fill="currentColor"
             >
-              <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+              <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z" />
             </svg>
+          </button>
+        </nav>
+      </header>
+
+      {/* Main Content Body */}
+      <main className="dashboard-content-area">
+        {/* Navigation Breadcrumb / Store Link */}
+        <div className="dashboard-breadcrumb-row">
+          <Link to="/home" className="store-return-link">
+            ← Return to Storefront
+          </Link>
+          {activeView === "addresses" && (
+            <button
+              type="button"
+              className="breadcrumb-switch-btn"
+              onClick={() => setActiveView("library")}
+            >
+              📚 Back to My Library
+            </button>
+          )}
+        </div>
+
+        {/* View 1: My Licensed Books Library */}
+        {activeView === "library" && (
+          <section className="library-table-section">
+            <div className="section-header-row">
+              <div>
+                <h3 className="section-title">My Owned Books & Content</h3>
+                <p className="section-subtitle">
+                  All digital books, audiobooks, and physical orders linked to your account.
+                </p>
+              </div>
+              <Link to="/library" className="catalog-link-btn">
+                Browse Full Catalog →
+              </Link>
+            </div>
+
+            {libraryLoading && (
+              <div className="dashboard-loading-state">
+                <div className="dash-spinner"></div>
+                <p>Loading your bookshelf...</p>
+              </div>
+            )}
+
+            {!libraryLoading && libraryError && (
+              <div className="dashboard-error-state">
+                <p>{libraryError}</p>
+              </div>
+            )}
+
+            {!libraryLoading && !libraryError && displayedBooks.length === 0 && (
+              <div className="dashboard-empty-state">
+                <p className="empty-title">
+                  {searchInputValue
+                    ? "No books matched your search criteria."
+                    : "Your digital shelf is currently empty."}
+                </p>
+                <p className="empty-sub">
+                  {searchInputValue
+                    ? "Try searching for a different book title or format."
+                    : "Discover thousands of bestselling titles, audiobooks, and e-books."}
+                </p>
+                <Link to="/library" className="explore-catalog-btn">
+                  Explore Book Catalog
+                </Link>
+              </div>
+            )}
+
+            {!libraryLoading && !libraryError && displayedBooks.length > 0 && (
+              <div className="table-responsive-container">
+                <table className="licensed-books-table">
+                  <thead>
+                    <tr>
+                      <th>Book Title</th>
+                      <th>Format</th>
+                      <th>License Status</th>
+                      <th className="th-action">Access</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedBooks.map((book) => {
+                      const isAudio = book.format_type === "AUDIO";
+                      const isPhysical = book.format_type === "PHYSICAL";
+                      const isValid = Boolean(
+                        book.is_valid !== false && book.is_active !== false
+                      );
+
+                      return (
+                        <tr
+                          key={book.id}
+                          ref={(el) => {
+                            rowRefs.current[book.id] = el;
+                          }}
+                          className={selectedRowId === book.id ? "highlighted-row" : ""}
+                        >
+                          <td className="td-book-title">
+                            <strong>{book.book_title}</strong>
+                          </td>
+
+                          <td className="td-book-format">
+                            <span
+                              className={`format-pill ${
+                                isAudio
+                                  ? "pill-audio"
+                                  : isPhysical
+                                  ? "pill-physical"
+                                  : "pill-digital"
+                              }`}
+                            >
+                              {book.format_name ||
+                                (isAudio
+                                  ? "🎧 Audiobook"
+                                  : isPhysical
+                                  ? "📦 Physical Copy"
+                                  : "📄 Digital (PDF)")}
+                            </span>
+                          </td>
+
+                          <td className="td-book-status">
+                            <span
+                              className={`status-pill ${
+                                isValid ? "status-valid" : "status-expired"
+                              }`}
+                            >
+                              {isValid ? "Active" : "Expired"}
+                            </span>
+                          </td>
+
+                          <td className="td-book-action">
+                            {isValid ? (
+                              isAudio ? (
+                                <button
+                                  type="button"
+                                  className="book-action-btn action-audio"
+                                  onClick={() => openAudioPlayer(book)}
+                                  title="Play Audiobook"
+                                >
+                                  🎧 LISTEN
+                                </button>
+                              ) : isPhysical ? (
+                                <button
+                                  type="button"
+                                  className="book-action-btn action-physical"
+                                  onClick={() => handleOpenFinancial(1)}
+                                  title="View Order Details"
+                                >
+                                  📦 VIEW ORDER
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="book-action-btn action-read"
+                                  onClick={() => openReader(book)}
+                                  title="Open PDF Reader"
+                                >
+                                  📖 READ
+                                </button>
+                              )
+                            ) : (
+                              <button
+                                type="button"
+                                className="book-action-btn action-disabled"
+                                disabled
+                              >
+                                EXPIRED
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* View 2: Addresses Management */}
+        {activeView === "addresses" && (
+          <section className="addresses-view-section">
+            <Addresses />
+          </section>
+        )}
+      </main>
+
+      {/* Mobile Slide-out Drawer */}
+      <div
+        className={`mobile-drawer-overlay ${mobileMenuOpen ? "open" : ""}`}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        <div
+          className={`mobile-drawer-panel ${mobileMenuOpen ? "open" : ""}`}
+          ref={asideRef}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="drawer-header">
+            <div className="drawer-user-info" onClick={handleOpenProfile}>
+              <img src={currentAvatar} alt="Profile" className="drawer-avatar" />
+              <div>
+                <h4 className="drawer-username">{username}</h4>
+                <span className="drawer-role">Reader Profile</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="drawer-close-btn"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              ✕
+            </button>
           </div>
-          <AsideContent />
+
+          <ul className="drawer-nav-list">
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeView === "library" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveView("library");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                📚 My Library
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeView === "addresses" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveView("addresses");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                📍 Saved Addresses
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="drawer-link"
+                onClick={() => handleOpenFinancial(0)}
+              >
+                💳 Financial Hub (Wallet & Orders)
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="drawer-link"
+                onClick={handleOpenProfile}
+              >
+                ⚙️ Profile & Security
+              </button>
+            </li>
+            <li>
+              <Link
+                to="/subscription"
+                className="drawer-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                💎 VIP Subscription
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/favorites"
+                className="drawer-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                ⭐️ Saved Favorites
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/basket"
+                className="drawer-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                🛒 Shopping Cart
+              </Link>
+            </li>
+            <li className="drawer-divider"></li>
+            <li>
+              <button
+                type="button"
+                className="drawer-link drawer-logout"
+                onClick={handleLogout}
+              >
+                🚪 Logout
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
 
       {/* Modals */}
-      {isModalOpen && (
+      {profileModalOpen && (
         <Profile
-          open={isModalOpen}
-          onClose={handleCloseProfile}
+          open={profileModalOpen}
+          onClose={() => setProfileModalOpen(false)}
           profileData={profileData}
-          profileLoading={profileLoading}
-          profileError={profileError}
-          onProfileUpdated={setProfileData}
+          onProfileUpdated={(updated) => setProfileData(updated)}
         />
       )}
-      {walletModal && (
-        <Financial open={walletModal} onClose={handleCloseWallet} />
+
+      {financialModalOpen && (
+        <Financial
+          open={financialModalOpen}
+          onClose={() => setFinancialModalOpen(false)}
+          defaultTab={financialDefaultTab}
+        />
       )}
     </div>
   );
