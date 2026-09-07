@@ -12,6 +12,8 @@ from rest_framework import serializers
 
 class PublisherSerializer(serializers.ModelSerializer):
     role = serializers.CharField(read_only=True)
+    books_count = serializers.SerializerMethodField()
+    authors_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Publisher
@@ -22,7 +24,15 @@ class PublisherSerializer(serializers.ModelSerializer):
             "description",
             "website",
             "role",
+            "books_count",
+            "authors_count",
         ]
+
+    def get_books_count(self, obj):
+        return Book.objects.filter(creation_proposal__proposal__publisher=obj).count()
+
+    def get_authors_count(self, obj):
+        return Book.objects.filter(creation_proposal__proposal__publisher=obj).values("author_id").distinct().count()
 
 class ProposalListSerializer(serializers.ModelSerializer):
     proposal_type_display = serializers.CharField(
