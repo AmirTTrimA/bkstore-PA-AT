@@ -1,11 +1,15 @@
 import {
+    useCallback,
     useEffect,
     useRef,
     useState,
 } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import Notification from "../../Components/feature/Notification";
+import Navbar from "../../Components/Navbar";
+import SimpleNav from "../../Components/SimpleNav";
+import Footer from "../../Components/Footer";
 import { useAuth } from "../../Context/AuthContext";
 import BasketService from "../../Services/BasketService";
 import AddressService from "../../Services/AddressService";
@@ -15,26 +19,30 @@ import { formatPrice } from "../../utils/formatPrice";
 import "../../Styles/components/Checkout.css";
 
 // ============================================
-// Main
+// Main Checkout Component
 // ============================================
 
 export default function Checkout() {
     const { isLoggedIn } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const notificationRef = useRef(null);
+
+    const incomingState = location.state || {};
 
     // ============================================
     // State
     // ============================================
 
-    const [step, setStep] = useState(1);
-    const [cartItems, setCartItems] = useState([]);
+    const [step, setStep] = useState(incomingState.startAtStep || 1);
+    const [cartItems, setCartItems] = useState(incomingState.cartItems || []);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState(null);
     const [useNewAddress, setUseNewAddress] = useState(false);
     const [saveNewAddress, setSaveNewAddress] = useState(true);
 
     const [shippingInfo, setShippingInfo] = useState({
+        title: "Home",
         name: "",
         address: "",
         city: "",
@@ -43,70 +51,86 @@ export default function Checkout() {
     });
 
     const [wallet, setWallet] = useState(null);
-    const [discountCode, setDiscountCode] = useState("");
+
+    // Voucher / Promo Code State
+    const [discountCode, setDiscountCode] = useState(
+        incomingState.discountCode || ""
+    );
+    const [appliedCoupon, setAppliedCoupon] = useState(
+        incomingState.appliedCoupon || null
+    );
+    const [validatingPromo, setValidatingPromo] = useState(false);
+    const [promoError, setPromoError] = useState("");
+
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(true);
     const [error, setError] = useState("");
 
     // ============================================
     // Load Data
     // ============================================
 
-    useEffect(() => {
-        let cancelled = false;
+    const loadData = useCallback(async () => {
+        try {
+            setPageLoading(true);
+            const [cartRes, addrRes, walletRes] = await Promise.allSettled([
+                BasketService.getBasket(),
+                AddressService.getAddresses(),
+                WalletService.getWallet(),
+            ]);
 
-        const loadData = async () => {
-            try {
-                const [cartRes, addrRes, walletRes] = await Promise.allSettled([
-                    BasketService.getBasket(),
-                    AddressService.getAddresses(),
-                    WalletService.getWallet(),
-                ]);
+            if (cartRes.status === "fulfilled" && cartRes.value.data) {
+                const items = Array.isArray(cartRes.value.data)
+                    ? cartRes.value.data
+                    : [];
+                setCartItems(items);
+            } else if (cartRes.status === "rejected") {
+                setError("Could not load your shopping basket.");
+            }
 
-                if (cancelled) return;
-
-                if (cartRes.status === "fulfilled" && cartRes.value.data) {
-                    setCartItems(cartRes.value.data);
-                } else if (cartRes.status === "rejected") {
-                    setError("Could not load basket.");
-                }
-
-                if (addrRes.status === "fulfilled" && Array.isArray(addrRes.value.data)) {
-                    setAddresses(addrRes.value.data);
-                    const defaultAddr =
-                        addrRes.value.data.find((a) => a.is_default) ||
-                        addrRes.value.data[0];
-                    if (defaultAddr) {
-                        setSelectedAddressId(defaultAddr.id);
-                        setUseNewAddress(false);
-                    } else {
-                        setUseNewAddress(true);
-                    }
+            if (
+                addrRes.status === "fulfilled" &&
+                Array.isArray(addrRes.value.data)
+            ) {
+                const addrList = addrRes.value.data;
+                setAddresses(addrList);
+                const defaultAddr =
+                    addrList.find((a) => a.is_default) || addrList[0];
+                if (defaultAddr) {
+                    setSelectedAddressId(defaultAddr.id);
+                    setUseNewAddress(false);
                 } else {
                     setUseNewAddress(true);
                 }
-
-                if (walletRes.status === "fulfilled" && walletRes.value.data) {
-                    setWallet(walletRes.value.data);
-                }
-            } catch (err) {
-                console.error("Failed loading checkout data:", err);
+            } else {
+                setUseNewAddress(true);
             }
-        };
 
-        loadData();
-
-        return () => {
-            cancelled = true;
-        };
+            if (walletRes.status === "fulfilled" && walletRes.value.data) {
+                setWallet(walletRes.value.data);
+            }
+        } catch (err) {
+            console.error("Failed loading checkout data:", err);
+            setError("Failed to load checkout dependencies.");
+        } finally {
+            setPageLoading(false);
+        }
     }, []);
 
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
     // ============================================
-    // Helpers
+    // Helpers & Pricing Calculations
     // ============================================
 
     const originalSubtotal = cartItems.reduce(
-        (sum, item) => sum + Number((item.original_price ?? item.unit_price) || 0) * (item.quantity || 1),
+        (sum, item) =>
+            sum +
+            Number((item.original_price ?? item.unit_price) || 0) *
+                (item.quantity || 1),
         0
     );
 
@@ -124,8 +148,24 @@ export default function Checkout() {
         (item) => (item.format_type || "").toUpperCase() === "PHYSICAL"
     );
 
+    // Coupon discount calculation
+    let couponDiscountAmount = 0;
+    if (appliedCoupon) {
+        if (appliedCoupon.discount_type === "PERCENTAGE") {
+            couponDiscountAmount = Math.round(
+                (subtotal * Number(appliedCoupon.value || 0)) / 100
+            );
+        } else {
+            couponDiscountAmount = Math.min(
+                subtotal,
+                Number(appliedCoupon.value || 0)
+            );
+        }
+    }
+
+    const finalTotal = Math.max(0, subtotal - couponDiscountAmount);
     const walletBalance = Number(wallet?.balance || 0);
-    const hasEnoughBalance = walletBalance >= subtotal;
+    const hasEnoughBalance = walletBalance >= finalTotal;
 
     // ============================================
     // Shipping Handlers
@@ -154,7 +194,7 @@ export default function Checkout() {
             !shippingInfo.city.trim()
         ) {
             notificationRef.current?.showNotif(
-                "Please complete all required shipping fields.",
+                "Please fill in all required delivery fields (Name, Street Address, City).",
                 "error"
             );
             return false;
@@ -166,11 +206,55 @@ export default function Checkout() {
     const continueToSummary = () => {
         if (validateShipping()) {
             setStep(2);
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
     };
 
     // ============================================
-    // Submit Order
+    // Voucher / Coupon Handlers
+    // ============================================
+
+    const handleApplyPromo = async (e) => {
+        if (e) e.preventDefault();
+        const code = discountCode.trim();
+        if (!code) return;
+
+        setValidatingPromo(true);
+        setPromoError("");
+
+        try {
+            const res = await BasketService.validateDiscount(code);
+            if (res.data?.is_valid) {
+                setAppliedCoupon(res.data);
+                notificationRef.current?.showNotif(
+                    `Promo code "${res.data.code}" applied!`,
+                    "success"
+                );
+            } else {
+                setPromoError("Invalid or expired promo code.");
+                notificationRef.current?.showNotif(
+                    "Invalid or expired promo code.",
+                    "error"
+                );
+            }
+        } catch (err) {
+            const msg = err.response?.data?.detail || "Invalid promo code.";
+            setPromoError(msg);
+            notificationRef.current?.showNotif(msg, "error");
+        } finally {
+            setValidatingPromo(false);
+        }
+    };
+
+    const handleRemovePromo = () => {
+        setAppliedCoupon(null);
+        setDiscountCode("");
+        setPromoError("");
+        notificationRef.current?.showNotif("Promo code removed", "info");
+    };
+
+    // ============================================
+    // Submit Order (Address Save & Checkout Bug Fix)
     // ============================================
 
     const handlePlaceOrder = async () => {
@@ -186,30 +270,62 @@ export default function Checkout() {
             setLoading(true);
 
             const payload = {
-                discount_code: discountCode.trim(),
+                discount_code: appliedCoupon
+                    ? appliedCoupon.code
+                    : discountCode.trim(),
             };
 
             if (hasPhysicalItems) {
                 if (!useNewAddress && selectedAddressId) {
                     payload.address_id = selectedAddressId;
                 } else {
-                    payload.shipping_name = shippingInfo.name.trim();
-                    payload.shipping_address_line1 = shippingInfo.address.trim();
-                    payload.shipping_city = shippingInfo.city.trim();
-                    payload.shipping_country =
-                        shippingInfo.country.trim() || "Iran";
+                    const addressPayload = {
+                        title: shippingInfo.title?.trim() || "Delivery Address",
+                        recipient_name: shippingInfo.name.trim(),
+                        city: shippingInfo.city.trim(),
+                        country: shippingInfo.country.trim() || "Iran",
+                        address_line: shippingInfo.address.trim(),
+                        phone_number: shippingInfo.phone.trim(),
+                    };
 
+                    // PROPERLY AWAIT address creation so we get the newly created address ID!
                     if (saveNewAddress) {
-                        AddressService.createAddress({
-                            title: "Saved Address",
-                            recipient_name: shippingInfo.name.trim(),
-                            city: shippingInfo.city.trim(),
-                            country: shippingInfo.country.trim() || "Iran",
-                            address_line: shippingInfo.address.trim(),
-                            phone_number: shippingInfo.phone.trim(),
-                        }).catch((e) =>
-                            console.warn("Failed to auto-save address:", e)
-                        );
+                        try {
+                            const createdAddrRes =
+                                await AddressService.createAddress(
+                                    addressPayload
+                                );
+                            const createdAddr = createdAddrRes.data;
+                            if (createdAddr && createdAddr.id) {
+                                payload.address_id = createdAddr.id;
+                                setAddresses((prev) => [...prev, createdAddr]);
+                                setSelectedAddressId(createdAddr.id);
+                            }
+                        } catch (addrErr) {
+                            console.error(
+                                "Address creation failed:",
+                                addrErr.response?.data || addrErr
+                            );
+                            const addrErrMsg =
+                                addrErr.response?.data?.detail ||
+                                Object.values(addrErr.response?.data || {})
+                                    .flat()
+                                    .join(" ") ||
+                                "Failed to save delivery address. Please verify your address details.";
+                            notificationRef.current?.showNotif(
+                                addrErrMsg,
+                                "error"
+                            );
+                            setLoading(false);
+                            return; // Stop checkout so address is not silently lost
+                        }
+                    } else {
+                        payload.shipping_name = shippingInfo.name.trim();
+                        payload.shipping_address_line1 =
+                            shippingInfo.address.trim();
+                        payload.shipping_city = shippingInfo.city.trim();
+                        payload.shipping_country =
+                            shippingInfo.country.trim() || "Iran";
                     }
                 }
             }
@@ -217,13 +333,14 @@ export default function Checkout() {
             const response = await BasketService.checkout(payload);
             setOrder(response.data);
             setStep(3);
+            window.scrollTo({ top: 0, behavior: "smooth" });
         } catch (err) {
             console.error("Checkout failed:", err.response?.data || err);
             const msg =
                 err.response?.data?.wallet?.[0] ||
                 err.response?.data?.shipping_address ||
                 err.response?.data?.detail ||
-                "Failed to complete checkout.";
+                "Failed to complete checkout. Please try again.";
             notificationRef.current?.showNotif(msg, "error");
         } finally {
             setLoading(false);
@@ -238,16 +355,31 @@ export default function Checkout() {
         return <Navigate to="/login" />;
     }
 
-    if (!hasItems && !order) {
+    if (!pageLoading && !hasItems && !order) {
         return (
-            <div className="checkout-form">
-                <h2>Your basket is empty.</h2>
+            <div className="checkout-page-root">
+                <div className="full-checkout-nav">
+                    <Navbar />
+                </div>
+                <div className="checkout-nav">
+                    <SimpleNav />
+                </div>
+                <div className="checkout-container">
+                    <div className="checkout-empty-box">
+                        <h2>Your basket is empty</h2>
+                        <p>There are no items to checkout.</p>
+                        <button
+                            type="button"
+                            className="checkout-action-btn"
+                            onClick={() => navigate("/library")}
+                        >
+                            Explore Catalog
+                        </button>
+                    </div>
+                </div>
+                <Footer />
             </div>
         );
-    }
-
-    if (error) {
-        return <div className="checkout-form">{error}</div>;
     }
 
     // ============================================
@@ -255,391 +387,640 @@ export default function Checkout() {
     // ============================================
 
     return (
-        <div className="checkout-form">
+        <div className="checkout-page-root">
+            {/* Desktop Navigation */}
+            <div className="full-checkout-nav">
+                <Navbar />
+            </div>
+
+            {/* Mobile Navigation */}
+            <div className="checkout-nav">
+                <SimpleNav />
+            </div>
+
             <Notification ref={notificationRef} />
 
-            {/* STEP 1: Shipping or Digital Notice */}
-            {step === 1 && (
-                <div className="step1">
-                    <h2 className="title-checkout">Checkout</h2>
+            <div className="checkout-container">
+                {/* Top Navigation Bar: Back Button, Breadcrumbs, Steps */}
+                <div className="checkout-top-bar">
+                    <button
+                        type="button"
+                        className="checkout-back-btn"
+                        onClick={() => {
+                            if (step === 2 && hasPhysicalItems) {
+                                setStep(1);
+                            } else {
+                                navigate("/basket");
+                            }
+                        }}
+                        title={
+                            step === 2 && hasPhysicalItems
+                                ? "Back to delivery details"
+                                : "Back to Shopping Cart"
+                        }
+                    >
+                        {step === 2 && hasPhysicalItems
+                            ? "← Back to Shipping"
+                            : "← Back to Cart"}
+                    </button>
 
-                    {!hasPhysicalItems ? (
-                        <div className="digital-order-notice">
-                            <p>
-                                <strong>Digital Order</strong>
-                            </p>
-                            <p>
-                                All items in your cart are digital (e-books or
-                                audiobooks). No shipping address is required.
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            <p>Select or enter your delivery address:</p>
+                    <div className="checkout-breadcrumbs">
+                        <Link to="/home">Home</Link>
+                        <span>/</span>
+                        <Link to="/basket">Cart</Link>
+                        <span>/</span>
+                        <span className="current">Checkout</span>
+                    </div>
 
-                            {addresses.length > 0 && !useNewAddress && (
-                                <>
-                                    <div className="address-selection-list">
-                                        {addresses.map((addr) => (
-                                            <div
-                                                key={addr.id}
-                                                className={`saved-address-card ${
-                                                    selectedAddressId === addr.id
-                                                        ? "selected"
-                                                        : ""
-                                                }`}
-                                                onClick={() =>
-                                                    setSelectedAddressId(addr.id)
-                                                }
-                                            >
-                                                <div className="saved-address-title">
-                                                    {addr.title || "Address"}{" "}
-                                                    {addr.is_default &&
-                                                        "(Default)"}
-                                                </div>
-                                                <div className="saved-address-details">
-                                                    <div>
-                                                        <strong>
-                                                            {addr.recipient_name}
-                                                        </strong>{" "}
-                                                        - {addr.phone_number}
-                                                    </div>
-                                                    <div>
-                                                        {addr.city},{" "}
-                                                        {addr.address_line}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                    <div className="checkout-steps-indicator">
+                        <span className={`step-pill ${step >= 1 ? "active" : ""}`}>
+                            1. Details
+                        </span>
+                        <span className="step-arrow">→</span>
+                        <span className={`step-pill ${step >= 2 ? "active" : ""}`}>
+                            2. Review & Pay
+                        </span>
+                        <span className="step-arrow">→</span>
+                        <span className={`step-pill ${step >= 3 ? "active" : ""}`}>
+                            3. Success
+                        </span>
+                    </div>
+                </div>
+
+                {/* Page Loading or Error */}
+                {pageLoading && (
+                    <div className="checkout-state-box">
+                        <div className="checkout-spinner" />
+                        <p>Loading checkout details...</p>
+                    </div>
+                )}
+
+                {!pageLoading && error && (
+                    <div className="checkout-state-box checkout-error">
+                        <p>{error}</p>
+                        <button
+                            type="button"
+                            className="checkout-action-btn"
+                            onClick={loadData}
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
+                {/* Main Step Flow */}
+                {!pageLoading && !error && (
+                    <div className="checkout-content-wrap">
+                        {/* STEP 1: Shipping or Digital Notice */}
+                        {step === 1 && (
+                            <div className="checkout-step-card step1">
+                                <h2 className="title-checkout">
+                                    Delivery Details
+                                </h2>
+
+                                {!hasPhysicalItems ? (
+                                    <div className="digital-order-notice">
+                                        <div className="digital-notice-icon">
+                                            📱
+                                        </div>
+                                        <div>
+                                            <h4>Digital Order</h4>
+                                            <p>
+                                                All items in your cart are digital
+                                                (e-books or audiobooks). No physical
+                                                shipping address is required.
+                                            </p>
+                                        </div>
                                     </div>
+                                ) : (
+                                    <div className="shipping-form-section">
+                                        <p className="shipping-intro-text">
+                                            Select a saved address or enter a
+                                            new shipping destination:
+                                        </p>
+
+                                        {addresses.length > 0 &&
+                                            !useNewAddress && (
+                                                <div className="saved-addresses-block">
+                                                    <div className="address-selection-list">
+                                                        {addresses.map((addr) => (
+                                                            <div
+                                                                key={addr.id}
+                                                                className={`saved-address-card ${
+                                                                    selectedAddressId ===
+                                                                    addr.id
+                                                                        ? "selected"
+                                                                        : ""
+                                                                }`}
+                                                                onClick={() =>
+                                                                    setSelectedAddressId(
+                                                                        addr.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <div className="saved-address-title">
+                                                                    <span>
+                                                                        {addr.title ||
+                                                                            "Saved Address"}
+                                                                    </span>
+                                                                    {addr.is_default && (
+                                                                        <span className="default-pill">
+                                                                            Default
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="saved-address-details">
+                                                                    <div>
+                                                                        <strong>
+                                                                            {
+                                                                                addr.recipient_name
+                                                                            }
+                                                                        </strong>{" "}
+                                                                        -{" "}
+                                                                        {
+                                                                            addr.phone_number
+                                                                        }
+                                                                    </div>
+                                                                    <div>
+                                                                        {addr.city},{" "}
+                                                                        {
+                                                                            addr.address_line
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        className="toggle-new-address-btn"
+                                                        onClick={() =>
+                                                            setUseNewAddress(true)
+                                                        }
+                                                    >
+                                                        + Enter a new address
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                        {(useNewAddress ||
+                                            addresses.length === 0) && (
+                                            <div className="new-address-form">
+                                                <div className="form-row">
+                                                    <div className="form-group">
+                                                        <label>Recipient Name *</label>
+                                                        <input
+                                                            className="checkout-field"
+                                                            name="name"
+                                                            placeholder="Full recipient name"
+                                                            value={shippingInfo.name}
+                                                            onChange={
+                                                                handleShippingChange
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Phone Number *</label>
+                                                        <input
+                                                            className="checkout-field"
+                                                            name="phone"
+                                                            placeholder="e.g. 09123456789"
+                                                            value={shippingInfo.phone}
+                                                            onChange={
+                                                                handleShippingChange
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Street Address *</label>
+                                                    <input
+                                                        className="checkout-field full-width"
+                                                        name="address"
+                                                        placeholder="Street, building, apartment number"
+                                                        value={shippingInfo.address}
+                                                        onChange={
+                                                            handleShippingChange
+                                                        }
+                                                    />
+                                                </div>
+
+                                                <div className="form-row">
+                                                    <div className="form-group">
+                                                        <label>City *</label>
+                                                        <input
+                                                            className="checkout-field"
+                                                            name="city"
+                                                            placeholder="e.g. Tehran, Isfahan"
+                                                            value={shippingInfo.city}
+                                                            onChange={
+                                                                handleShippingChange
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Country</label>
+                                                        <input
+                                                            className="checkout-field"
+                                                            name="country"
+                                                            placeholder="Iran"
+                                                            value={shippingInfo.country}
+                                                            onChange={
+                                                                handleShippingChange
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <label className="save-address-checkbox-label">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={saveNewAddress}
+                                                        onChange={(e) =>
+                                                            setSaveNewAddress(
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                    />
+                                                    <span>
+                                                        Save this address to my profile
+                                                        for future purchases
+                                                    </span>
+                                                </label>
+
+                                                {addresses.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        className="toggle-new-address-btn back-toggle"
+                                                        onClick={() =>
+                                                            setUseNewAddress(false)
+                                                        }
+                                                    >
+                                                        ← Choose from saved addresses
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="step-actions-row">
+                                    <button
+                                        type="button"
+                                        className="checkout-secondary-btn"
+                                        onClick={() => navigate("/basket")}
+                                    >
+                                        ← Back to Cart
+                                    </button>
 
                                     <button
                                         type="button"
-                                        className="toggle-new-address-btn"
-                                        onClick={() => setUseNewAddress(true)}
+                                        className="checkout-continue-btn"
+                                        onClick={continueToSummary}
                                     >
-                                        + Enter a new address
+                                        Continue to Review & Pay →
                                     </button>
-                                </>
-                            )}
-
-                            {(useNewAddress || addresses.length === 0) && (
-                                <>
-                                    <input
-                                        className="checkout-field"
-                                        name="name"
-                                        placeholder="Receiver Name *"
-                                        value={shippingInfo.name}
-                                        onChange={handleShippingChange}
-                                    />
-
-                                    <input
-                                        className="checkout-field"
-                                        name="address"
-                                        placeholder="Street Address *"
-                                        value={shippingInfo.address}
-                                        onChange={handleShippingChange}
-                                    />
-
-                                    <input
-                                        className="checkout-field"
-                                        name="city"
-                                        placeholder="City *"
-                                        value={shippingInfo.city}
-                                        onChange={handleShippingChange}
-                                    />
-
-                                    <input
-                                        className="checkout-field"
-                                        name="country"
-                                        placeholder="Country"
-                                        value={shippingInfo.country}
-                                        onChange={handleShippingChange}
-                                    />
-
-                                    <input
-                                        className="checkout-field"
-                                        name="phone"
-                                        placeholder="Phone Number"
-                                        value={shippingInfo.phone}
-                                        onChange={handleShippingChange}
-                                    />
-
-                                    <label
-                                        style={{
-                                            fontSize: "0.85rem",
-                                            marginTop: "6px",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={saveNewAddress}
-                                            onChange={(e) =>
-                                                setSaveNewAddress(
-                                                    e.target.checked
-                                                )
-                                            }
-                                            style={{ marginRight: "6px" }}
-                                        />
-                                        Save address to profile
-                                    </label>
-
-                                    {addresses.length > 0 && (
-                                        <button
-                                            type="button"
-                                            className="toggle-new-address-btn"
-                                            onClick={() =>
-                                                setUseNewAddress(false)
-                                            }
-                                        >
-                                            ← Back to saved addresses
-                                        </button>
-                                    )}
-                                </>
-                            )}
-                        </>
-                    )}
-
-                    <button
-                        className="checkout-continue-btn"
-                        onClick={continueToSummary}
-                        style={{ marginTop: "15px" }}
-                    >
-                        Continue to Summary
-                    </button>
-                </div>
-            )}
-
-            {/* STEP 2: Order Summary & Wallet Payment */}
-            {step === 2 && (
-                <div className="step2">
-                    <h2 className="title-checkout">Order Summary</h2>
-
-                    <div className="checkout-items">
-                        {cartItems.map((item) => {
-                            const unitOriginal = Number(item.original_price ?? item.unit_price);
-                            const hasItemDiscount = Boolean(
-                                item.has_discount ||
-                                (item.original_price && Number(item.original_price) > Number(item.unit_price))
-                            );
-                            const discountPercent =
-                                item.discount_percent ||
-                                (hasItemDiscount && item.original_price
-                                    ? Math.round(
-                                          ((Number(item.original_price) - Number(item.unit_price)) /
-                                              Number(item.original_price)) *
-                                              100
-                                      )
-                                    : 0);
-
-                            return (
-                                <div
-                                    key={`${item.book_id}-${item.format_id}`}
-                                    className="checkout-item"
-                                >
-                                    <div className="checkout-item-info">
-                                        <span className="checkout-item-title">
-                                            {item.title} x {item.quantity} ({item.format_type})
-                                        </span>
-                                        {hasItemDiscount && discountPercent > 0 && (
-                                            <span className="checkout-item-badge">
-                                                -{discountPercent}%
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="checkout-item-prices">
-                                        {hasItemDiscount && (
-                                            <span className="checkout-item-original">
-                                                {formatPrice(unitOriginal * item.quantity)}
-                                            </span>
-                                        )}
-                                        <span className="checkout-item-final">
-                                            {formatPrice(item.subtotal)}
-                                        </span>
-                                    </div>
                                 </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="checkout-summary">
-                        {hasDiscount && (
-                            <>
-                                <div className="checkout-summary-row original">
-                                    <span>Original Subtotal:</span>
-                                    <span className="checkout-summary-strikethrough">
-                                        {formatPrice(originalSubtotal)}
-                                    </span>
-                                </div>
-                                <div className="checkout-summary-row savings">
-                                    <span>Discount Savings:</span>
-                                    <span className="checkout-summary-savings-val">
-                                        -{formatPrice(discountSavings)}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                        <div className="checkout-summary-row total">
-                            <span>Total:</span>
-                            <span className="checkout-summary-total-val">
-                                {formatPrice(subtotal)}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Optional Discount Code */}
-                    <div className="discount-input-box" style={{ margin: "15px 0" }}>
-                        <label style={{ display: "block", marginBottom: "6px", fontSize: "0.9rem", color: "#555" }}>
-                            Discount Voucher (optional):
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="Enter discount code..."
-                            value={discountCode}
-                            onChange={(e) => setDiscountCode(e.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: "8px 12px",
-                                border: "1px solid #ccc",
-                                borderRadius: "6px",
-                                fontSize: "0.95rem",
-                                boxSizing: "border-box"
-                            }}
-                        />
-                    </div>
-
-                    {/* Wallet Balance Verification */}
-                    <div className="wallet-balance-box">
-                        <div className="wallet-balance-row">
-                            <span>Wallet Balance:</span>
-                            <span
-                                className={`wallet-balance-val ${
-                                    !hasEnoughBalance
-                                        ? "wallet-balance-insufficient"
-                                        : ""
-                                }`}
-                            >
-                                {formatPrice(walletBalance)}
-                            </span>
-                        </div>
-
-                        {!hasEnoughBalance && (
-                            <>
-                                <div className="wallet-warning-banner">
-                                    Insufficient funds. You need{" "}
-                                    {formatPrice(subtotal - walletBalance)} more.
-                                </div>
-                                <button
-                                    type="button"
-                                    className="wallet-topup-link-btn"
-                                    onClick={() => navigate("/dashboard")}
-                                >
-                                    Top Up Wallet in Dashboard →
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: "10px",
-                            marginTop: "10px",
-                        }}
-                    >
-                        <button
-                            type="button"
-                            className="checkout-continue-btn"
-                            style={{ background: "#444" }}
-                            onClick={() => setStep(1)}
-                        >
-                            Back
-                        </button>
-
-                        <button
-                            className="checkout-btn"
-                            disabled={loading || !hasEnoughBalance}
-                            onClick={handlePlaceOrder}
-                            style={{ opacity: !hasEnoughBalance ? 0.5 : 1 }}
-                        >
-                            {loading
-                                ? "Processing..."
-                                : !hasEnoughBalance
-                                ? "Insufficient Balance"
-                                : "Pay from Wallet & Place Order"}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* STEP 3: Order Completed */}
-            {step === 3 && order && (
-                <div className="step3">
-                    <h2 style={{ color: "#00e384" }}>✓ Order Completed!</h2>
-
-                    <p style={{ fontSize: "1.2rem", margin: "12px 0" }}>
-                        Order ID: <strong>#{order.id}</strong>
-                    </p>
-
-                    <p>
-                        Status:{" "}
-                        <strong>{order.status_display || order.status}</strong>
-                    </p>
-
-                    <div style={{ margin: "14px 0", padding: "12px 16px", background: "rgba(255,255,255,0.05)", borderRadius: "8px", textAlign: "left", width: "100%", maxWidth: "380px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                            <span style={{ color: "#aaa" }}>Subtotal:</span>
-                            <span>{formatPrice(order.subtotal)}</span>
-                        </div>
-                        {Number(order.discount_amount) > 0 && (
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", color: "#00e384" }}>
-                                <span>Discount Saved:</span>
-                                <span>-{formatPrice(order.discount_amount)}</span>
                             </div>
                         )}
-                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "700", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "6px" }}>
-                            <span>Total Paid:</span>
-                            <span style={{ color: "#00e384" }}>{formatPrice(order.total_amount)}</span>
-                        </div>
-                    </div>
 
-                    <p
-                        style={{
-                            fontSize: "0.9rem",
-                            color: "#aaa",
-                            maxWidth: "380px",
-                        }}
-                    >
-                        Your order has been paid and confirmed. Digital items
-                        are now active in your library.
-                    </p>
+                        {/* STEP 2: Order Summary & Wallet Payment */}
+                        {step === 2 && (
+                            <div className="checkout-step-card step2">
+                                <h2 className="title-checkout">
+                                    Review & Payment
+                                </h2>
 
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: "10px",
-                            marginTop: "20px",
-                        }}
-                    >
-                        <button
-                            type="button"
-                            className="checkout-continue-btn"
-                            onClick={() => navigate("/library")}
-                        >
-                            Go to Library
-                        </button>
-                        <button
-                            type="button"
-                            className="checkout-continue-btn"
-                            style={{ background: "#333" }}
-                            onClick={() => navigate("/dashboard")}
-                        >
-                            View in Dashboard
-                        </button>
+                                <div className="checkout-items">
+                                    {cartItems.map((item) => {
+                                        const unitOriginal = Number(
+                                            item.original_price ?? item.unit_price
+                                        );
+                                        const hasItemDiscount = Boolean(
+                                            item.has_discount ||
+                                                (item.original_price &&
+                                                    Number(item.original_price) >
+                                                        Number(item.unit_price))
+                                        );
+                                        const discountPercent =
+                                            item.discount_percent ||
+                                            (hasItemDiscount && item.original_price
+                                                ? Math.round(
+                                                      ((Number(item.original_price) -
+                                                          Number(item.unit_price)) /
+                                                          Number(item.original_price)) *
+                                                          100
+                                                  )
+                                                : 0);
+
+                                        return (
+                                            <div
+                                                key={`${item.book_id}-${item.format_id}`}
+                                                className="checkout-item"
+                                            >
+                                                <div className="checkout-item-info">
+                                                    <span className="checkout-item-title">
+                                                        {item.title} x{" "}
+                                                        {item.quantity} (
+                                                        {item.format_type})
+                                                    </span>
+                                                    {hasItemDiscount &&
+                                                        discountPercent > 0 && (
+                                                            <span className="checkout-item-badge">
+                                                                -{discountPercent}%
+                                                            </span>
+                                                        )}
+                                                </div>
+
+                                                <div className="checkout-item-prices">
+                                                    {hasItemDiscount && (
+                                                        <span className="checkout-item-original">
+                                                            {formatPrice(
+                                                                unitOriginal *
+                                                                    item.quantity
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                    <span className="checkout-item-final">
+                                                        {formatPrice(item.subtotal)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Voucher / Promo Code Box with Real-Time Validation */}
+                                <div className="checkout-promo-box">
+                                    <label className="checkout-promo-label">
+                                        Discount Voucher / Coupon:
+                                    </label>
+
+                                    {appliedCoupon ? (
+                                        <div className="checkout-applied-promo">
+                                            <div className="applied-promo-details">
+                                                <span className="promo-badge-chip">
+                                                    {appliedCoupon.code}
+                                                </span>
+                                                <span className="promo-discount-text">
+                                                    {appliedCoupon.name} (
+                                                    {appliedCoupon.discount_type ===
+                                                    "PERCENTAGE"
+                                                        ? `${appliedCoupon.value}% OFF`
+                                                        : `${formatPrice(
+                                                              appliedCoupon.value
+                                                          )} OFF`}
+                                                    )
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="promo-clear-link"
+                                                onClick={handleRemovePromo}
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="checkout-promo-input-wrap">
+                                            <input
+                                                type="text"
+                                                placeholder="Enter coupon code (e.g. WELCOME20)"
+                                                value={discountCode}
+                                                onChange={(e) =>
+                                                    setDiscountCode(e.target.value)
+                                                }
+                                                className="checkout-promo-input"
+                                            />
+                                            <button
+                                                type="button"
+                                                className="checkout-promo-btn"
+                                                onClick={handleApplyPromo}
+                                                disabled={
+                                                    validatingPromo ||
+                                                    !discountCode.trim()
+                                                }
+                                            >
+                                                {validatingPromo
+                                                    ? "Checking..."
+                                                    : "Apply"}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {promoError && (
+                                        <p className="checkout-promo-error">
+                                            {promoError}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Summary Breakdown */}
+                                <div className="checkout-summary">
+                                    {hasDiscount && (
+                                        <>
+                                            <div className="checkout-summary-row original">
+                                                <span>Original Catalog Subtotal:</span>
+                                                <span className="checkout-summary-strikethrough">
+                                                    {formatPrice(originalSubtotal)}
+                                                </span>
+                                            </div>
+                                            <div className="checkout-summary-row savings">
+                                                <span>Catalog Discounts:</span>
+                                                <span className="checkout-summary-savings-val">
+                                                    -{formatPrice(discountSavings)}
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className="checkout-summary-row">
+                                        <span>Subtotal:</span>
+                                        <span>{formatPrice(subtotal)}</span>
+                                    </div>
+
+                                    {appliedCoupon && couponDiscountAmount > 0 && (
+                                        <div className="checkout-summary-row promo-savings">
+                                            <span>
+                                                Voucher ({appliedCoupon.code}):
+                                            </span>
+                                            <span>
+                                                -{formatPrice(couponDiscountAmount)}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="checkout-summary-row total">
+                                        <span>Final Total:</span>
+                                        <span className="checkout-summary-total-val">
+                                            {formatPrice(finalTotal)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Wallet Balance Verification */}
+                                <div className="wallet-balance-box">
+                                    <div className="wallet-balance-row">
+                                        <span>Your Wallet Balance:</span>
+                                        <span
+                                            className={`wallet-balance-val ${
+                                                !hasEnoughBalance
+                                                    ? "wallet-balance-insufficient"
+                                                    : ""
+                                            }`}
+                                        >
+                                            {formatPrice(walletBalance)}
+                                        </span>
+                                    </div>
+
+                                    {!hasEnoughBalance && (
+                                        <>
+                                            <div className="wallet-warning-banner">
+                                                Insufficient wallet balance. You need{" "}
+                                                <strong>
+                                                    {formatPrice(
+                                                        finalTotal - walletBalance
+                                                    )}
+                                                </strong>{" "}
+                                                more to complete this order.
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="wallet-topup-link-btn"
+                                                onClick={() =>
+                                                    navigate("/dashboard")
+                                                }
+                                            >
+                                                Top Up Wallet in Dashboard →
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="step-actions-row">
+                                    <button
+                                        type="button"
+                                        className="checkout-secondary-btn"
+                                        onClick={() => {
+                                            if (hasPhysicalItems) {
+                                                setStep(1);
+                                            } else {
+                                                navigate("/basket");
+                                            }
+                                        }}
+                                    >
+                                        {hasPhysicalItems
+                                            ? "← Back to Shipping"
+                                            : "← Back to Cart"}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="checkout-btn"
+                                        disabled={loading || !hasEnoughBalance}
+                                        onClick={handlePlaceOrder}
+                                    >
+                                        {loading
+                                            ? "Processing Payment..."
+                                            : !hasEnoughBalance
+                                            ? "Insufficient Balance"
+                                            : "Pay from Wallet & Place Order"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 3: Order Completed */}
+                        {step === 3 && order && (
+                            <div className="checkout-step-card step3">
+                                <div className="checkout-success-icon">✓</div>
+                                <h2 className="success-title">Order Placed Successfully!</h2>
+
+                                <p className="success-order-id">
+                                    Order ID: <strong>#{order.id}</strong>
+                                </p>
+
+                                <span className="success-status-pill">
+                                    {order.status_display || order.status}
+                                </span>
+
+                                <div className="order-receipt-box">
+                                    <div className="receipt-row">
+                                        <span>Subtotal:</span>
+                                        <span>{formatPrice(order.subtotal)}</span>
+                                    </div>
+                                    {Number(order.discount_amount) > 0 && (
+                                        <div className="receipt-row discount">
+                                            <span>Discount Saved:</span>
+                                            <span>
+                                                -{formatPrice(order.discount_amount)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="receipt-row total">
+                                        <span>Total Paid:</span>
+                                        <span className="paid-val">
+                                            {formatPrice(order.total_amount)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p className="success-hint">
+                                    Your order has been paid from your wallet and confirmed.
+                                    Digital items and audiobooks are now immediately available in your library.
+                                </p>
+
+                                <div className="success-actions-row">
+                                    <button
+                                        type="button"
+                                        className="checkout-continue-btn"
+                                        onClick={() => navigate("/dashboard")}
+                                    >
+                                        View in Dashboard
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="checkout-secondary-btn"
+                                        onClick={() => navigate("/library")}
+                                    >
+                                        Continue Browsing
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                </div>
-            )}
+                )}
+            </div>
+
+            <Footer />
+
+            {/* Mobile Bottom Navigation */}
+            <div className="BottomNav">
+                <nav className="bottom-navbar">
+                    <Link to="/" className="nav-item">
+                        <i className="fas fa-home"></i>
+                        <span>Home</span>
+                    </Link>
+                    <Link to="/favorites" className="nav-item">
+                        <i className="fa-solid fa-heart"></i>
+                        <span>Favorites</span>
+                    </Link>
+                    <Link to="/library" className="nav-item">
+                        <i className="fa-solid fa-book"></i>
+                        <span>Catalog</span>
+                    </Link>
+                    <Link to="/subscription" className="nav-item">
+                        <i className="fa-solid fa-bolt"></i>
+                        <span>Plans</span>
+                    </Link>
+                    <Link to="/basket" className="nav-item active">
+                        <i className="fa-solid fa-cart-shopping"></i>
+                        <span>Cart</span>
+                    </Link>
+                </nav>
+            </div>
         </div>
     );
 }
