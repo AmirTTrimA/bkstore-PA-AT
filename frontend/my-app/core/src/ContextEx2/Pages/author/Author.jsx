@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
 import Navbar from "../../Components/Navbar";
@@ -18,6 +18,8 @@ export default function Author() {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formatFilter, setFormatFilter] = useState("ALL");
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -59,6 +61,31 @@ export default function Author() {
     };
   }, [authorId]);
 
+  const filteredBooks = useMemo(() => {
+    if (formatFilter === "PHYSICAL") {
+      return books.filter(
+        (b) =>
+          b.formats?.some((f) => f.format === "PHYSICAL") ||
+          (!b.is_digital && !b.is_audio)
+      );
+    }
+    if (formatFilter === "DIGITAL") {
+      return books.filter(
+        (b) =>
+          b.is_digital ||
+          b.formats?.some((f) => f.format === "DIGITAL" || f.is_digital)
+      );
+    }
+    if (formatFilter === "AUDIO") {
+      return books.filter(
+        (b) =>
+          b.is_audio ||
+          b.formats?.some((f) => f.format === "AUDIO" || f.is_audio)
+      );
+    }
+    return books;
+  }, [books, formatFilter]);
+
   if (isLoading) {
     return (
       <div className="author-page-wrapper">
@@ -89,7 +116,10 @@ export default function Author() {
         <div className="author-container author-not-found-box">
           <h2>{error || "Author Not Found"}</h2>
           <p>We couldn't locate this author in our catalog.</p>
-          <button className="author-action-btn" onClick={() => navigate("/library")}>
+          <button
+            className="author-action-btn"
+            onClick={() => navigate("/library")}
+          >
             Explore Book Catalog
           </button>
         </div>
@@ -97,6 +127,9 @@ export default function Author() {
       </div>
     );
   }
+
+  const biography = authorData.biography || "";
+  const isBioLong = biography.length > 220;
 
   return (
     <div className="author-page-wrapper">
@@ -114,71 +147,147 @@ export default function Author() {
             className="author-back-btn"
             onClick={() => navigate(-1)}
             title="Go Back"
+            type="button"
           >
-            <i className="fas fa-angle-left"></i> Back
+            ← Back
           </button>
           <div className="author-breadcrumbs">
-            <button onClick={() => navigate("/home")} className="crumb-link">
-              Home
-            </button>
-            <span className="crumb-sep">/</span>
-            <button onClick={() => navigate("/library")} className="crumb-link">
-              Authors
-            </button>
-            <span className="crumb-sep">/</span>
-            <span className="crumb-current">{authorData.name}</span>
+            <Link to="/home">Home</Link>
+            <span>/</span>
+            <Link to="/library">Authors</Link>
+            <span>/</span>
+            <span className="current">{authorData.name}</span>
           </div>
         </div>
 
-        {/* Author Profile Section */}
-        <div className="up-side">
-          <div className="profile">
+        {/* Author Hero Profile */}
+        <div className="author-hero-card">
+          <div className="author-avatar-wrap">
             <img
               src={authorData.profile_image || ppic1}
               alt={authorData.name}
+              className="author-profile-img"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = ppic1;
+              }}
               loading="lazy"
             />
           </div>
-          <div className="auth-desc">
-            <div className="auth-des">
-              <h2>{authorData.name}</h2>
-              <div className="author-meta-badges">
-                {authorData.books_count !== undefined && (
-                  <span className="author-meta-count">
-                    <i className="fas fa-book" style={{ marginRight: 6 }}></i>
-                    {authorData.books_count} Published Works
-                  </span>
-                )}
-                {authorData.nationality && (
-                  <span className="author-meta-nationality">
-                    <i className="fas fa-globe" style={{ marginRight: 6 }}></i>
-                    {authorData.nationality}
-                  </span>
+          <div className="author-hero-content">
+            <div className="author-hero-header">
+              <span className="author-verified-pill">
+                <i className="fas fa-check-circle"></i> Verified Author
+              </span>
+              <h2 className="author-hero-name">{authorData.name}</h2>
+            </div>
+
+            <div className="author-stats-row">
+              {authorData.books_count !== undefined && (
+                <span className="author-stat-chip">
+                  <i className="fas fa-book"></i>
+                  <strong>{authorData.books_count}</strong> Published Works
+                </span>
+              )}
+              {authorData.nationality && (
+                <span className="author-stat-chip">
+                  <i className="fas fa-globe"></i>
+                  <strong>{authorData.nationality}</strong>
+                </span>
+              )}
+            </div>
+
+            {biography ? (
+              <div className="author-biography-wrap">
+                <p className="author-biography">
+                  {isBioLong && !isBioExpanded
+                    ? biography.slice(0, 220) + "..."
+                    : biography}
+                </p>
+                {isBioLong && (
+                  <button
+                    type="button"
+                    className="author-bio-toggle-btn"
+                    onClick={() => setIsBioExpanded(!isBioExpanded)}
+                  >
+                    {isBioExpanded ? "Show Less ↑" : "Read More ↓"}
+                  </button>
                 )}
               </div>
+            ) : (
               <p className="author-biography">
-                {authorData.biography || "No biography available for this author."}
+                No biography available for this author.
               </p>
-            </div>
+            )}
           </div>
         </div>
 
         {/* Books by Author Section */}
         <div className="author-books-section">
           <div className="author-books-header">
-            <h3>Books by {authorData.name}</h3>
-            <span className="author-books-count-tag">
-              {books.length} {books.length === 1 ? "Book" : "Books"} Available
-            </span>
+            <div className="author-books-header-left">
+              <h3>Published Books</h3>
+              <span className="author-books-count-tag">
+                {filteredBooks.length}{" "}
+                {filteredBooks.length === 1 ? "Book" : "Books"} Available
+              </span>
+            </div>
+
+            {/* Format Filter Tabs */}
+            <div className="author-format-tabs">
+              <button
+                type="button"
+                className={`author-format-tab ${formatFilter === "ALL" ? "active" : ""}`}
+                onClick={() => setFormatFilter("ALL")}
+              >
+                All ({books.length})
+              </button>
+              <button
+                type="button"
+                className={`author-format-tab ${formatFilter === "PHYSICAL" ? "active" : ""}`}
+                onClick={() => setFormatFilter("PHYSICAL")}
+              >
+                Physical
+              </button>
+              <button
+                type="button"
+                className={`author-format-tab ${formatFilter === "DIGITAL" ? "active" : ""}`}
+                onClick={() => setFormatFilter("DIGITAL")}
+              >
+                📱 Digital
+              </button>
+              <button
+                type="button"
+                className={`author-format-tab ${formatFilter === "AUDIO" ? "active" : ""}`}
+                onClick={() => setFormatFilter("AUDIO")}
+              >
+                🎧 Audio
+              </button>
+            </div>
           </div>
 
-          {books.length === 0 ? (
+          {filteredBooks.length === 0 ? (
             <div className="author-books-empty">
-              <p>No books currently available for this author.</p>
+              <i className="fas fa-book-open author-empty-icon"></i>
+              <h4>No books found</h4>
+              <p>
+                {books.length === 0
+                  ? "No published books available for this author yet."
+                  : "No books matching the selected format filter."}
+              </p>
+              {formatFilter !== "ALL" && (
+                <button
+                  type="button"
+                  className="author-reset-filter-btn"
+                  onClick={() => setFormatFilter("ALL")}
+                >
+                  Show All Formats
+                </button>
+              )}
             </div>
           ) : (
             <div className="author-books-grid">
-              {books.map((book) => {
+              {filteredBooks.map((book) => {
                 const bookId = book.id || book.searchId;
                 const bookTitle = book.title || book.name;
                 const bookImg =
@@ -208,14 +317,20 @@ export default function Author() {
                         alt={bookTitle}
                         loading="lazy"
                         className="author-book-cover-img"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/default-book.png";
+                        }}
                       />
                       <div className="author-book-formats-badges">
-                        {book.is_digital && (
-                          <span title="Digital PDF available">📱</span>
-                        )}
-                        {book.is_audio && (
-                          <span title="Audiobook available">🎧</span>
-                        )}
+                        {(book.is_digital ||
+                          book.formats?.some(
+                            (f) => f.format === "DIGITAL" || f.is_digital
+                          )) && <span title="Digital PDF available">📱</span>}
+                        {(book.is_audio ||
+                          book.formats?.some(
+                            (f) => f.format === "AUDIO" || f.is_audio
+                          )) && <span title="Audiobook available">🎧</span>}
                       </div>
                     </div>
 
@@ -223,7 +338,9 @@ export default function Author() {
                       <span className="author-book-genre">
                         {book.genre || "General"}
                       </span>
-                      <h4 className="author-book-title">{bookTitle}</h4>
+                      <h4 className="author-book-title" title={bookTitle}>
+                        {bookTitle}
+                      </h4>
 
                       <div className="author-book-pricing">
                         {hasDiscount && origPrice ? (
@@ -241,6 +358,10 @@ export default function Author() {
                           </span>
                         )}
                       </div>
+
+                      <span className="author-book-action-btn">
+                        View Details →
+                      </span>
                     </div>
                   </Link>
                 );

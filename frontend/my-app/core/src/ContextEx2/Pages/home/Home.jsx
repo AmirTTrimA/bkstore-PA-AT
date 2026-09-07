@@ -19,6 +19,7 @@ import { formatPrice } from "../../utils/formatPrice";
 
 // --- Constants ---
 import { ppic1 } from "../../Constants";
+import { getPublisherLogo } from "../publisher/Allpublisher";
 
 // ============================================
 // Helpers
@@ -489,7 +490,14 @@ export default function Home() {
                   tabIndex={0}
                 >
                   <div className="publisher-avatar">
-                    <i className="fas fa-landmark"></i>
+                    <img
+                      src={getPublisherLogo(pub.slug)}
+                      alt={pub.name}
+                      className="publisher-avatar-img"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
                   </div>
                   <div className="publisher-meta">
                     <h4>{pub.name}</h4>
