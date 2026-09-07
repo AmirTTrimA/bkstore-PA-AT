@@ -2076,3 +2076,84 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
             result.subscription_discount_amount,
             Decimal("2"),
         )
+
+
+class SubscriptionCancelTests(TestCase):
+    def setUp(self):
+        from accounts.models import User
+        from wallet.models import Wallet
+        from rest_framework.test import APIClient
+        from django.urls import reverse
+        from rest_framework import status
+
+        self.user = User.objects.create_user(
+            username="cancel_user",
+            email="cancel@example.com",
+            password="testpassword123",
+        )
+        self.wallet, _ = Wallet.objects.get_or_create(user=self.user)
+        self.wallet.balance = Decimal("500000")
+        self.wallet.save(update_fields=["balance"])
+        self.plan = SubscriptionPlan.objects.create(
+            name="Pro Tier",
+            slug="pro-tier-cancel",
+            tier=99,
+            monthly_price=Decimal("100000"),
+            digital_discount_percent=20,
+            is_active=True,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_cancel_active_subscription_with_prorated_refund(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        now = timezone.now()
+        sub = UserSubscription.objects.create(
+            user=self.user,
+            plan=self.plan,
+            status=UserSubscription.Status.ACTIVE,
+            start_date=now - timedelta(days=15),
+            end_date=now + timedelta(days=15),
+            auto_renew=True,
+        )
+        initial_balance = self.wallet.balance
+        url = reverse("subscription-cancel")
+        response = self.client.post(url, {"subscription_id": sub.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, UserSubscription.Status.CANCELLED)
+        self.assertFalse(sub.auto_renew)
+        self.wallet.refresh_from_db()
+        self.assertGreater(self.wallet.balance, initial_balance)
+
+    def test_cancel_reserved_subscription_with_full_refund(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        now = timezone.now()
+        sub = UserSubscription.objects.create(
+            user=self.user,
+            plan=self.plan,
+            status=UserSubscription.Status.RESERVED,
+            start_date=now + timedelta(days=10),
+            end_date=now + timedelta(days=40),
+            auto_renew=True,
+        )
+        initial_balance = self.wallet.balance
+        url = reverse("subscription-cancel")
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, UserSubscription.Status.CANCELLED)
+        self.wallet.refresh_from_db()
+        self.assertEqual(self.wallet.balance, initial_balance + Decimal("100000"))
+
+    def test_cancel_without_active_subscription_returns_400(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        url = reverse("subscription-cancel")
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

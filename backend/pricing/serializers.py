@@ -125,3 +125,14 @@ class SubscriptionPurchaseSerializer(serializers.Serializer):
 
 class SubscriptionUpgradeSerializer(serializers.Serializer):
     plan_id = serializers.IntegerField()
+
+
+class SubscriptionCancelSerializer(serializers.Serializer):
+    subscription_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
+    refund = serializers.BooleanField(
+        required=False,
+        default=True,
+    )
