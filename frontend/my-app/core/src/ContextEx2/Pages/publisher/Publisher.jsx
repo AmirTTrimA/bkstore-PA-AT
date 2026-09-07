@@ -1,302 +1,426 @@
 // ✅
-import React, { useState, useEffect, useMemo } from 'react'
-import { useNavigate,useParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Button,
-  Box,
-  Typography
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import Navbar from '../../Components/Navbar';
 import SimpleNav from '../../Components/SimpleNav';
 import Footer from '../../Components/Footer';
-import ReusableSlider from '../../Components/common/ReusableSlider';
-import ReusableSliderPortrait from '../../Components/common/ReusableSliderPortrait';
+import PublisherService from '../../Services/PublisherService';
+import BookService from '../../Services/BookService';
+import { formatPrice } from '../../utils/formatPrice';
+import { getPublisherLogo } from './Allpublisher';
+import "../../Styles/components/Publisher.css";
 
-
-import { allPublishers } from './Allpublisher';
-
-import "../../Styles/components/Publisher.css"
-import { 
-  pic10, pic11,pic12,
-  pic13, pic14, pic15,
-  pic3, pic9, port1, port2, ppic1,
-  ppic11, ppic12, ppic3,
-  ppic5, ppic8
-} from '../../Constants';
-
-// ============================================
-//    Constants
-// ============================================
-const SAVE_PORTRAIT =port2
-const SAVE_PORTRAIT2 =port1
-
-const CONTENT = `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Egestas purus viverra accumsan in nisl nisi. Arcu cursus vitae congue mauris rhoncus aenean vel elit scelerisque. In egestas erat imperdiet sed euismod nisi porta lorem mollis. Morbi tristique senectus et netus. Mattis pellentesque id nibh tortor id aliquet lectus proin. Sapien faucibus et molestie ac feugiat sed lectus vestibulum. Ullamcorper velit sed ullamcorper morbi tincidunt ornare massa eget. Dictum varius duis at consectetur lorem. Nisi vitae suscipit tellus mauris a diam maecenas sed enim. Velit ut tortor pretium viverra suspendisse potenti nullam. Et molestie ac feugiat sed lectus. Non nisi est sit amet facilisis magna. Dignissim diam quis enim lobortis scelerisque fermentum. Odio ut enim blandit volutpat maecenas volutpat. Ornare lectus sit amet est placerat in egestas erat. Nisi vitae suscipit tellus mauris a diam maecenas sed. Placerat duis ultricies lacus sed turpis tincidunt id aliquet. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Egestas purus viverra accumsan in nisl nisi. Arcu cursus vitae congue mauris rhoncus aenean vel elit scelerisque. In egestas erat imperdiet sed euismod nisi porta lorem mollis. Morbi tristique senectus et netus. Mattis pellentesque id nibh tortor id aliquet lectus proin. Sapien faucibus et molestie ac feugiat sed lectus vestibulum. Ullamcorper velit sed ullamcorper morbi tincidunt ornare massa eget. Dictum varius duis at consectetur lorem. Nisi vitae suscipit tellus mauris a diam maecenas sed enim. Velit ut tortor pretium viverra suspendisse potenti nullam. Et molestie ac feugiat sed lectus. Non nisi est sit amet facilisis magna. Dignissim diam quis enim lobortis scelerisque fermentum. Odio ut enim blandit volutpat maecenas volutpat. Ornare lectus sit amet est placerat in egestas erat. Nisi vitae suscipit tellus mauris a diam maecenas sed. Placerat duis ultricies lacus sed turpis tincidunt id aliquet.`;
-
-
-// ============================================
-//    Mock Data
-// ============================================
-const slider_items_same_vibe = [
-  { id:1, title: "jules and nothing",
-    price: "400,000 IRR",link: "2",authorId:1,
-    img:pic14,author_profile:ppic12
-  },
-  { id:2, title: "harry potter",
-    price: "500,000 IRR",link:"3",authorId:3,
-    img: pic15,author_profile:ppic3
-  },
-  { id:3, title: "operation os",
-    price: "300,000 IRR",link:"7",authorId:2,
-    img: pic10,author_profile:ppic1
-  },
-  { id:4, title: "dsa", 
-    price: "250,000 IRR",link: "6",authorId:1,
-    img:pic9,author_profile:ppic8
-  },
-  { id:5, title: "gfsd",
-    price: "600,000 IRR",link: "5",authorId:3,
-    img:pic10,author_profile:ppic5
-  },
-  { id:6, title: "dsafa",
-    price: "200,000 IRR",link: "4",authorId:2,
-    img:pic15,author_profile:ppic3
-  },
-  { id:7, title: "dada",
-    price: "550,000 IRR",link: "1",authorId:2,
-    img:pic13,author_profile:ppic11
-},
-];
-
-
-const slider_items_same_vibe3 = [
-
-
-{ id:1, title: "operation os",
-  price: "300,000 IRR",link:"2",
-  authorId:1,img: pic3
-},
-{ id:2, title: "dsa",
-  price: "250,000 IRR",link: "3",
-  authorId:2,img:pic11
-},
-{ id:3, title: "gfsd",
-  price: "600,000 IRR",link: "5",
-  authorId:3,img:pic12
-},
-{ id:4, title: "dsafa",
- price: "200,000 IRR",link: "6",
- authorId:3,img:pic13
-}
-
-];
-
-
-// ============================================
-//    Main
-// ============================================
 export default function Publisher() {
-
-
   const navigate = useNavigate();
-  const {pubId}=useParams();
-  
-  
-  
-  // ---State---
-  const [publisher,setPublisher] = useState(null);
-  const [expanded, setExpanded] = useState(false);
-  
+  const { pubId } = useParams();
 
-  // ---Memoized Data---
-  const sliderItems = useMemo(() => slider_items_same_vibe, []);
-  const sliderItems3 = useMemo(() => slider_items_same_vibe3, []);
+  // --- State ---
+  const [publisher, setPublisher] = useState(null);
+  const [books, setBooks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [formatFilter, setFormatFilter] = useState('ALL');
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
-
-  // ---Effects---
   useEffect(() => {
-      
-    // Simulate fetch book 
-    const foundPublisher = allPublishers.find(p => p.id === parseInt(pubId));
-    
-    if (foundPublisher) {
-      setPublisher(foundPublisher || '')
-    } else {
-      setPublisher(null); 
-    }
+    let isMounted = true;
 
+    const fetchPublisherAndBooks = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch Publisher Details
+        const pubData = await PublisherService.getPublicPublisher(pubId);
+        if (!isMounted) return;
+        setPublisher(pubData);
+
+        // Fetch Publisher's Books from Catalog
+        const booksRes = await BookService.getBooks({
+          publisher: pubId,
+          page_size: 50,
+        });
+
+        if (!isMounted) return;
+        const bookList = booksRes.results || (Array.isArray(booksRes) ? booksRes : []);
+        setBooks(bookList);
+      } catch (err) {
+        console.error("Failed to load publisher details:", err);
+        if (isMounted) {
+          setError(
+            err.response?.status === 404
+              ? "Publishing house not found."
+              : "Failed to load publishing house details."
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchPublisherAndBooks();
+
+    return () => {
+      isMounted = false;
+    };
   }, [pubId]);
 
+  // Counts for format filters
+  const formatCounts = useMemo(() => {
+    let physical = 0;
+    let digital = 0;
+    let audio = 0;
+
+    books.forEach((b) => {
+      const hasPhysical = b.formats?.some((f) => f.format === 'PHYSICAL') || (!b.is_digital && !b.is_audio);
+      const hasDigital = b.is_digital || b.formats?.some((f) => f.format === 'DIGITAL' || f.is_digital);
+      const hasAudio = b.is_audio || b.formats?.some((f) => f.format === 'AUDIO' || f.is_audio);
+
+      if (hasPhysical) physical++;
+      if (hasDigital) digital++;
+      if (hasAudio) audio++;
+    });
+
+    return { all: books.length, physical, digital, audio };
+  }, [books]);
+
+  // Filtered books
+  const filteredBooks = useMemo(() => {
+    if (formatFilter === 'PHYSICAL') {
+      return books.filter((b) => b.formats?.some((f) => f.format === 'PHYSICAL') || (!b.is_digital && !b.is_audio));
+    }
+    if (formatFilter === 'DIGITAL') {
+      return books.filter((b) => b.is_digital || b.formats?.some((f) => f.format === 'DIGITAL' || f.is_digital));
+    }
+    if (formatFilter === 'AUDIO') {
+      return books.filter((b) => b.is_audio || b.formats?.some((f) => f.format === 'AUDIO' || f.is_audio));
+    }
+    return books;
+  }, [books, formatFilter]);
+
+  // Unique authors count fallback if not provided by backend
+  const uniqueAuthorsCount = useMemo(() => {
+    if (publisher?.authors_count) return publisher.authors_count;
+    const authorIds = new Set();
+    books.forEach((b) => {
+      const aId = b.author_id || b.author?.id;
+      if (aId) authorIds.add(aId);
+    });
+    return authorIds.size;
+  }, [publisher, books]);
 
 
 
 
-// ---Loading State---
-  if (!publisher) {
-    return <div>Loading publisher information...</div>;
+
+
+  // --- Loading State ---
+  if (isLoading) {
+    return (
+      <div className="publisher-page-wrapper">
+        <div className="publisher-nav-full">
+          <Navbar />
+        </div>
+        <div className="publisher-nav-res">
+          <SimpleNav />
+        </div>
+        <div className="publisher-container publisher-loading-box">
+          <div className="publisher-spinner"></div>
+          <p>Loading publisher information...</p>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
+  // --- Error / Not Found State ---
+  if (error || !publisher) {
+    return (
+      <div className="publisher-page-wrapper">
+        <div className="publisher-nav-full">
+          <Navbar />
+        </div>
+        <div className="publisher-nav-res">
+          <SimpleNav />
+        </div>
+        <div className="publisher-container publisher-error-box">
+          <div className="publisher-error-icon">
+            <i className="fas fa-landmark"></i>
+          </div>
+          <h2>{error || "Publisher Not Found"}</h2>
+          <p>
+            The requested publisher could not be found or has not published catalog entries yet.
+          </p>
+          <div className="publisher-error-actions">
+            <button
+              onClick={() => navigate('/all-publisher')}
+              className="publisher-primary-btn"
+              type="button"
+            >
+              Browse All Publishers
+            </button>
+            <button
+              onClick={() => navigate('/home')}
+              className="publisher-secondary-btn"
+              type="button"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
-
-
+  const logo = getPublisherLogo(publisher.slug);
+  const description = publisher.description || "";
+  const isLongDesc = description.length > 200;
 
   return (
-    <div>
-
-      <div className="search-nav-res">
-        <SimpleNav/>
+    <div className="publisher-page-wrapper">
+      {/* Desktop Navigation */}
+      <div className="publisher-nav-full">
+        <Navbar />
       </div>
 
-    <div className="publisher-container">
-          
-    {/* Back Button  */}
-    <button 
-      onClick={()=>navigate(-1)}
-      className="big-back-btn"
-    >
-      <i className="fas fa-angle-left"></i>            
-    </button>
+      {/* Mobile Navigation */}
+      <div className="publisher-nav-res">
+        <SimpleNav />
+      </div>
 
-    {/* Publisher Bio */}
-    <div className="publisher-bio-container">
-            <div className="publisher-bio">
-                <span>20 author</span>
-                <img src={publisher.imgUrl} alt={publisher.name}  loading='lazy' />
-                <span>30 book</span>
-            </div>
+      <div className="publisher-container">
+        {/* Top bar with Back Button & Breadcrumbs */}
+        <div className="publisher-top-bar">
+          <button
+            onClick={() => navigate(-1)}
+            className="publisher-back-btn"
+            type="button"
+          >
+            ← Back
+          </button>
+          <div className="publisher-breadcrumbs">
+            <Link to="/home">Home</Link>
+            <span>/</span>
+            <Link to="/all-publisher">Publishers</Link>
+            <span>/</span>
+            <span className="current">{publisher.name}</span>
+          </div>
+        </div>
 
-            <div className="publisher-name">
-                <span >{publisher.name}</span>
-            </div>
-    </div>
-
-
-    {/* Expandable Content */}
-    <div className="publisher-data-show">
-    <Box sx={{ maxWidth: 650, margin:'0 auto',
-      '@media (max-width:600px)':{
-              padding:'0 20px',
-            }
-     }}>
-      <motion.div
-        style={{
-          overflow: 'hidden',
-          position: 'relative'
-        }}
-        animate={{
-          maxHeight: expanded ? 500 : 100
-        }}
-        transition={{ duration: 0.3 }}
-      >
-        <Typography sx={{ whiteSpace: 'pre-wrap',
-          '@media (max-width: 600px)': {
-                  padding: '15px',  
-                } 
-      }}>
-          {CONTENT}
-        </Typography>
-        
-        <AnimatePresence>
-          {!expanded && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '50px',
-                background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.5))',
-                pointerEvents: 'none'
-              }}
+        {/* Publisher Hero Profile */}
+        <div className="publisher-hero-card">
+          <div className="publisher-hero-logo-wrap">
+            <img
+              src={logo}
+              alt={publisher.name}
+              className="publisher-hero-logo"
             />
+          </div>
+
+          <div className="publisher-hero-content">
+            <div className="publisher-hero-header">
+              <span className="publisher-verified-pill">
+                <i className="fas fa-check-circle"></i> Authorized Publisher
+              </span>
+              <h1 className="publisher-hero-name">{publisher.name}</h1>
+            </div>
+
+            <div className="publisher-stats-row">
+              <span className="pub-stat-chip">
+                <i className="fas fa-book"></i>
+                <strong>{publisher.books_count || books.length}</strong> Publications
+              </span>
+              <span className="pub-stat-chip">
+                <i className="fas fa-user-edit"></i>
+                <strong>{uniqueAuthorsCount}</strong> Authors
+              </span>
+              {publisher.website && (
+                <a
+                  href={publisher.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pub-stat-chip pub-website-chip"
+                >
+                  <i className="fas fa-globe"></i> Official Website{" "}
+                  <i className="fas fa-external-link-alt" style={{ fontSize: "0.75rem" }}></i>
+                </a>
+              )}
+            </div>
+
+            {description && (
+              <div className="publisher-description-wrap">
+                <p className="publisher-description-text">
+                  {isLongDesc && !isDescExpanded
+                    ? description.slice(0, 200) + "..."
+                    : description}
+                </p>
+                {isLongDesc && (
+                  <button
+                    type="button"
+                    className="publisher-desc-toggle-btn"
+                    onClick={() => setIsDescExpanded((prev) => !prev)}
+                  >
+                    {isDescExpanded ? "Show Less ↑" : "Show More ↓"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Publications Catalog Section */}
+        <div className="publisher-catalog-section">
+          <div className="publisher-catalog-header">
+            <div className="publisher-catalog-title-wrap">
+              <h2>Publications by {publisher.name}</h2>
+              <span className="publisher-catalog-total-tag">
+                {books.length} {books.length === 1 ? "Book" : "Books"} in Catalog
+              </span>
+            </div>
+
+            {/* Format Filter Tabs */}
+            {books.length > 0 && (
+              <div className="publisher-format-tabs">
+                <button
+                  type="button"
+                  className={`format-tab-btn ${formatFilter === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setFormatFilter('ALL')}
+                >
+                  All ({formatCounts.all})
+                </button>
+                {formatCounts.physical > 0 && (
+                  <button
+                    type="button"
+                    className={`format-tab-btn ${formatFilter === 'PHYSICAL' ? 'active' : ''}`}
+                    onClick={() => setFormatFilter('PHYSICAL')}
+                  >
+                    Physical ({formatCounts.physical})
+                  </button>
+                )}
+                {formatCounts.digital > 0 && (
+                  <button
+                    type="button"
+                    className={`format-tab-btn ${formatFilter === 'DIGITAL' ? 'active' : ''}`}
+                    onClick={() => setFormatFilter('DIGITAL')}
+                  >
+                    E-Books / PDF ({formatCounts.digital})
+                  </button>
+                )}
+                {formatCounts.audio > 0 && (
+                  <button
+                    type="button"
+                    className={`format-tab-btn ${formatFilter === 'AUDIO' ? 'active' : ''}`}
+                    onClick={() => setFormatFilter('AUDIO')}
+                  >
+                    Audiobooks ({formatCounts.audio})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Books Grid */}
+          {filteredBooks.length === 0 ? (
+            <div className="publisher-books-empty">
+              <i className="fas fa-book-open publisher-empty-icon"></i>
+              <h3>No books found for this format filter</h3>
+              <p>Try selecting "All" or exploring our general bookstore catalog.</p>
+              <button
+                type="button"
+                className="publisher-clear-filter-btn"
+                onClick={() => setFormatFilter('ALL')}
+              >
+                Show All Formats
+              </button>
+            </div>
+          ) : (
+            <div className="publisher-books-grid">
+              {filteredBooks.map((book) => {
+                const bookId = book.id || book.searchId;
+                const bookTitle = book.title || book.name;
+                const bookImg =
+                  book.cover_image_url ||
+                  book.cover_image ||
+                  book.imgUrl ||
+                  "/default-book.png";
+                const hasDiscount = Boolean(book.has_discount);
+                const discountPercent = book.discount_percent || 0;
+                const authorName = book.author?.name || book.author_name || "Unknown Author";
+                const authorId = book.author_id || book.author?.id;
+
+                return (
+                  <div key={bookId} className="pub-book-card">
+                    <Link to={`/book/${bookId}`} className="pub-book-cover-link">
+                      <div className="pub-book-cover-wrap">
+                        {hasDiscount && discountPercent > 0 && (
+                          <span className="pub-book-discount-badge">
+                            -{discountPercent}%
+                          </span>
+                        )}
+                        <img
+                          src={bookImg}
+                          alt={bookTitle}
+                          loading="lazy"
+                          className="pub-book-cover-img"
+                        />
+                        <div className="pub-book-formats-badges">
+                          {book.is_digital && (
+                            <span className="format-tag-digital" title="Digital PDF">📱</span>
+                          )}
+                          {book.is_audio && (
+                            <span className="format-tag-audio" title="Audiobook">🎧</span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div className="pub-book-card-info">
+                      <Link to={`/book/${bookId}`} className="pub-book-title-link">
+                        <h4 className="pub-book-title">{bookTitle}</h4>
+                      </Link>
+
+                      {authorId ? (
+                        <Link to={`/author/${authorId}`} className="pub-book-author-link">
+                          <i className="fas fa-feather-alt"></i> {authorName}
+                        </Link>
+                      ) : (
+                        <span className="pub-book-author-text">
+                          <i className="fas fa-feather-alt"></i> {authorName}
+                        </span>
+                      )}
+
+                      <div className="pub-book-price-row">
+                        {hasDiscount && book.original_price ? (
+                          <div className="pub-book-price-discounted">
+                            <span className="pub-book-orig-price">
+                              {formatPrice(book.original_price)}
+                            </span>
+                            <span className="pub-book-final-price">
+                              {formatPrice(book.price)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="pub-book-final-price">
+                            {formatPrice(book.price)}
+                          </span>
+                        )}
+                      </div>
+
+                      <Link to={`/book/${bookId}`} className="pub-book-action-btn">
+                        View Details →
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </AnimatePresence>
-      </motion.div>
-          <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'center',
-                  mb: 2
-                }}>
-                    <Button
-                      onClick={() => setExpanded(!expanded)}
-                      startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                      sx={{ mt: 2,p:2,justifyContent: 'center', }}
-                      variant="outlined"
-                      color="primary"
-                    >
-                      {expanded ? 'Show Less' : 'Show More'}
-                    </Button>
+        </div>
 
-          </Box>
-    </Box>
+        <Footer />
+      </div>
     </div>
-
-    {/* Sliders */}
-    <div className="publisher-work">
-
-    <ReusableSlider
-        items={sliderItems}
-        title="Genius Author"
-        viewAllLink="/categories"
-        customClass="publisher-author"
-        />
-    <ReusableSlider
-        items={sliderItems}
-        title="Most Offer"
-        viewAllLink="/categories"
-        customClass="publisher-offer"
-        />
-
-
-    <ReusableSliderPortrait
-        items={sliderItems3}
-        title="Famous Book"
-        viewAllLink="/categories"
-        customClass="publisher-famous2"
-        portrait={SAVE_PORTRAIT}
-        />
-
-
-    <ReusableSlider
-        items={sliderItems}
-        title="Best E-book"
-        viewAllLink="/categories"
-        customClass="publisher-ebook"
-        />
-    <ReusableSlider
-        items={sliderItems}
-        title="Top Sell"
-        viewAllLink="/categories"
-        customClass="publisher-sell"
-        />
-
-
-    <ReusableSliderPortrait
-        items={sliderItems3}
-        title="New Book"
-        viewAllLink="/categories"
-        customClass="publisher-new2"
-        portrait={SAVE_PORTRAIT2}
-        />
-
-        
-                               
-
-    </div>
-
-
-    <Footer/>
-
-
-    </div>
-
-
-
-    </div>
-  )
+  );
 }
+
