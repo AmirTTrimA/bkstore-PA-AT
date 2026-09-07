@@ -273,6 +273,9 @@ class OrderItemOutputSerializer(serializers.ModelSerializer):
     # Display the book title and author name from the saved snapshots
     book_title = serializers.CharField(source="snapshot_title", read_only=True)
     author_name = serializers.CharField(source="snapshot_author_name", read_only=True)
+    format_type = serializers.CharField(source="book_format.format_type", read_only=True)
+    format_name = serializers.CharField(source="book_format.name", read_only=True)
+    cover_image_url = serializers.URLField(source="book.cover_image_url", read_only=True)
 
     class Meta:
         model = OrderItem
@@ -282,6 +285,9 @@ class OrderItemOutputSerializer(serializers.ModelSerializer):
             "author_name",
             "quantity",
             "book_format",
+            "format_type",
+            "format_name",
+            "cover_image_url",
             "snapshot_price",  # The price locked in at the time of purchase
         )
 

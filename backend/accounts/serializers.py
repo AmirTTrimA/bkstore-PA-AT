@@ -349,6 +349,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "username",
+            "first_name",
+            "last_name",
             "email",
             "job_or_major",
             "hobbies_or_likings",
@@ -372,6 +374,8 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "username",
+            "first_name",
+            "last_name",
             "job_or_major",
             "hobbies_or_likings",
         )
