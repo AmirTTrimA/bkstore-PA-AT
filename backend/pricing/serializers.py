@@ -26,6 +26,7 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         source="discount.value", max_digits=15, decimal_places=0, read_only=True
     )
     is_valid = serializers.SerializerMethodField()
+    is_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = DiscountCode
@@ -36,6 +37,7 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
             "discount_type",
             "value",
             "is_valid",
+            "is_percentage",
         )
         read_only_fields = fields
 
@@ -47,6 +49,14 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         if not obj.discount or not obj.discount.is_active_now():
             return False
         return True
+
+    def get_is_percentage(self, obj):
+        if not obj.discount:
+            return False
+        return str(obj.discount.discount_type).upper() in (
+            "PERCENT",
+            "PERCENTAGE",
+        )
 
 # -------------------------------------------------------------
 # 3. PRICE SERIALIZERS

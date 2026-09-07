@@ -2157,3 +2157,53 @@ class SubscriptionCancelTests(TestCase):
         url = reverse("subscription-cancel")
         response = self.client.post(url, {})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class DiscountCodeValidationEndpointTestCase(PricingEngineTestBase):
+    """Tests POST /api/v1/pricing/validate/ and is_percentage output."""
+
+    def test_validate_percentage_discount_code(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        discount = self.create_discount(
+            name="VIP 30% Off",
+            discount_type=Discount.DiscountType.PERCENT,
+            value=Decimal("30"),
+            activation=Discount.Activation.COUPON,
+        )
+        self.create_coupon(discount=discount, code="VIP30")
+
+        url = reverse("discount-validate")
+        response = self.client.post(url, {"code": "VIP30"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["code"], "VIP30")
+        self.assertEqual(data["discount_type"], "PERCENT")
+        self.assertEqual(Decimal(data["value"]), Decimal("30"))
+        self.assertTrue(data["is_valid"])
+        self.assertTrue(data["is_percentage"])
+
+    def test_validate_fixed_discount_code(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        discount = self.create_discount(
+            name="Flat 5000 Off",
+            discount_type=Discount.DiscountType.FIXED,
+            value=Decimal("5000"),
+            activation=Discount.Activation.COUPON,
+        )
+        self.create_coupon(discount=discount, code="FLAT5K")
+
+        url = reverse("discount-validate")
+        response = self.client.post(url, {"code": "FLAT5K"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["code"], "FLAT5K")
+        self.assertEqual(data["discount_type"], "FIXED")
+        self.assertEqual(Decimal(data["value"]), Decimal("5000"))
+        self.assertTrue(data["is_valid"])
+        self.assertFalse(data["is_percentage"])
