@@ -121,9 +121,10 @@ class WishlistItemSerializer(serializers.ModelSerializer):
     cover_image_url = serializers.URLField(
         source="book.cover_image_url", read_only=True
     )
-
-    # 🔑 Note: Price is NOT included here, as it changes frequently.
-    # The frontend should pull the current price separately via the public /books/ endpoint.
+    price = serializers.SerializerMethodField()
+    original_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    has_discount = serializers.SerializerMethodField()
 
     class Meta:
         model = WishlistItem
@@ -133,9 +134,64 @@ class WishlistItemSerializer(serializers.ModelSerializer):
             "title",
             "author_name",
             "cover_image_url",
+            "price",
+            "original_price",
+            "discount_percent",
+            "has_discount",
             "added_at",
         )
         read_only_fields = fields  # All output fields are read-only
+
+    def _get_pricing(self, obj):
+        if not hasattr(obj, "_cached_pricing"):
+            from pricing.services import PricingEngine
+
+            request = self.context.get("request")
+            user = request.user if request and request.user.is_authenticated else None
+            format_obj = obj.book.formats.first()
+            if not format_obj:
+                obj._cached_pricing = None
+                return None
+            try:
+                engine = PricingEngine(book_format=format_obj, user=user)
+                obj._cached_pricing = engine.calculate()
+            except Exception:
+                obj._cached_pricing = None
+        return obj._cached_pricing
+
+    def get_price(self, obj):
+        res = self._get_pricing(obj)
+        if res:
+            return str(int(round(res.final_price)))
+        format_obj = obj.book.formats.first()
+        if format_obj:
+            from pricing.services import PricingEngine
+
+            price = PricingEngine(book_format=format_obj).get_current_price()
+            return str(price.value) if price else None
+        return None
+
+    def get_original_price(self, obj):
+        res = self._get_pricing(obj)
+        if res:
+            return str(int(round(res.base_price)))
+        format_obj = obj.book.formats.first()
+        if format_obj:
+            from pricing.services import PricingEngine
+
+            price = PricingEngine(book_format=format_obj).get_current_price()
+            return str(price.value) if price else None
+        return None
+
+    def get_discount_percent(self, obj):
+        res = self._get_pricing(obj)
+        if res and res.final_price < res.base_price and res.base_price > 0:
+            return int(round((res.base_price - res.final_price) / res.base_price * 100))
+        return 0
+
+    def get_has_discount(self, obj):
+        res = self._get_pricing(obj)
+        return bool(res and res.final_price < res.base_price)
 
 
 class WishlistCreateSerializer(serializers.Serializer):
