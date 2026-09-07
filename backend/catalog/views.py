@@ -106,7 +106,7 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         is_digital = self.request.query_params.get("is_digital")
         is_audio = self.request.query_params.get("is_audio")
         publisher = self.request.query_params.get("publisher")
-        format_param = self.request.query_params.get("format")
+        format_param = self.request.query_params.get("format") or self.request.query_params.get("book_format")
 
         # 🔑 ANNOTATE QUERYSET: Add a SearchVector field to the queryset that combines relevant text fields.
         queryset = self.queryset.annotate(
@@ -116,7 +116,7 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
         if genre:
-            queryset = queryset.filter(genre=genre)
+            queryset = queryset.filter(genre__iexact=genre)
 
         if author:
             queryset = queryset.filter(author_id=author)
@@ -128,7 +128,7 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
                 queryset = queryset.filter(creation_proposal__proposal__publisher__slug=publisher)
 
         if format_param:
-            queryset = queryset.filter(formats__format_type=format_param.upper(), formats__is_available=True)
+            queryset = queryset.filter(formats__format_type=format_param.upper(), formats__is_available=True).distinct()
 
         if is_digital is not None:
             queryset = queryset.filter(
