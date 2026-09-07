@@ -20,12 +20,73 @@
     position: sticky;
     z-index: 1000;
     top: 0;
+    display: block;
 }
 
 .lib-nav {
     position: sticky;
     z-index: 1000;
     top: 0;
+    display: none;
+}
+
+/* ============================================
+        TOP BAR & BREADCRUMBS
+   ============================================ */
+
+.library-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: var(--bg-primary);
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.library-back-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    color: var(--text-primarys);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.library-back-btn:hover {
+    border-color: #d17842;
+    color: #d17842;
+    transform: translateX(-3px);
+}
+
+.library-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.library-breadcrumbs a {
+    color: var(--text-primarys);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.library-breadcrumbs a:hover {
+    color: #d17842;
+}
+
+.library-breadcrumbs .current {
+    color: #d17842;
+    font-weight: 600;
 }
 
 
@@ -166,6 +227,7 @@
    ============================================ */
 
 .library-card-cover {
+    position: relative;
     width: 100%;
 
     aspect-ratio: 2 / 3;
@@ -176,6 +238,34 @@
         linear-gradient(145deg,
             var(--bg-secondary),
             var(--bg-primary));
+}
+
+.library-card-discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #e53e3e;
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    z-index: 2;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.library-card-formats-badges {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    z-index: 2;
+    backdrop-filter: blur(4px);
 }
 
 
@@ -262,6 +352,34 @@
     line-height: 1;
 }
 
+
+.library-card-pricing {
+    margin: 6px 0 0;
+}
+
+.library-price-discount-box {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.library-price-orig {
+    font-size: 0.82rem;
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.library-price-final {
+    color: var(--accent-light, #d17842);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.library-price-final.discounted {
+    color: #d17842;
+}
 
 .library-card-price {
     margin: 5px 0 0;
@@ -455,42 +573,86 @@
 }
 
 
-@media (max-width: 768px) {
+.BottomNav {
+    display: none;
+}
 
-    .all {
-        width: 95%;
+@media (max-width: 768px) {
+    .full-lib-nav {
+        display: none !important;
     }
 
+    .lib-nav {
+        display: block !important;
+        margin: 0;
+    }
+
+    .all {
+        width: 100%;
+        border-radius: 0;
+    }
 
     .lib-container {
         width: 100%;
-        padding: 0 5px 40px;
+        padding: 0 12px 40px;
     }
-
 
     .head {
-        margin-top: 35px;
+        margin-top: 25px;
     }
-
 
     .head-txt {
-        font-size: 2.8rem;
-
+        font-size: 2.5rem;
         text-align: center;
+        margin-bottom: 35px;
     }
-
 
     .explore {
-        padding: 10px 15px 25px;
-
-        gap: 25px 18px;
+        padding: 10px 5px 25px;
+        gap: 20px 15px;
     }
 
-
-    .lib-nav {
-        margin: 0 -30px;
+    .BottomNav {
+        display: block;
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        z-index: 1000;
+        margin-top: 20px;
     }
 
+    .bottom-navbar {
+        display: flex;
+        justify-content: space-around;
+        background-color: var(--bg-top-res, #1e1e1e);
+        height: 65px;
+        box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.3);
+        border-radius: 14px 14px 0 0;
+        padding: 0 10px;
+        align-items: center;
+    }
+
+    .nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #999;
+        font-size: 11px;
+        gap: 4px;
+        padding: 6px 0;
+        transition: color 0.2s;
+    }
+
+    .nav-item.active {
+        color: #d17842;
+    }
+
+    .nav-item i {
+        font-size: 18px;
+    }
 }
 
 

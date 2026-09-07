@@ -42,6 +42,16 @@ const SubscriptionService = {
     },
 
 
+    cancel: async (payload = {}) => {
+
+        return ApiClient.post(
+            "/pricing/subscriptions/cancel/",
+            payload
+        );
+
+    },
+
+
 };
 
 
