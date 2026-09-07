@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
+import { useAuth } from "../../Context/AuthContext";
 import WishlistService from "../../Services/WishlistService";
 import { formatPrice } from "../../utils/formatPrice";
 
@@ -15,6 +16,7 @@ import "../../Styles/components/Favorites.css";
 
 export default function Favorites() {
     const navigate = useNavigate();
+    const { isLoggedIn } = useAuth();
 
     // ============================================
     //      State
@@ -111,6 +113,10 @@ export default function Favorites() {
     // ============================================
     //      Render
     // ============================================
+
+    if (isLoggedIn) {
+        return <Navigate to="/dashboard?tab=favorites" replace />;
+    }
 
     return (
         <div className="favorites-page-root">

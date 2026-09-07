@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
+import { useAuth } from "../../Context/AuthContext";
 import Notification from "../../Components/feature/Notification";
 import SubscriptionService from "../../Services/SubscriptionService";
 import { formatPrice } from "../../utils/formatPrice";
@@ -16,6 +17,7 @@ import "../../Styles/components/Subscription.css";
 
 export default function Subscription() {
     const navigate = useNavigate();
+    const { isLoggedIn } = useAuth();
     const notificationRef = useRef(null);
 
     // -------------------------
@@ -156,6 +158,10 @@ export default function Subscription() {
     // -------------------------
     // Render
     // -------------------------
+    if (isLoggedIn) {
+        return <Navigate to="/dashboard?tab=subscription" replace />;
+    }
+
     return (
         <div className="subscription-page-root">
             {/* Desktop Navigation */}

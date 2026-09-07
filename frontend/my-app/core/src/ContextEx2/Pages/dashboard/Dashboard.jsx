@@ -4,12 +4,14 @@ import React, {
   useRef,
   useState
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../Context/AuthContext";
 
 import Addresses from "./addresses/Addresses";
 import Financial from "./financial/Financial";
 import Profile from "./profile/Profile";
+import FavoritesView from "./views/FavoritesView";
+import SubscriptionView from "./views/SubscriptionView";
 import { ThemeToggle } from "../../Components/common/ThemeToggle";
 import { ppic14 } from "../../Constants";
 import ContentService from "../../Services/ContentService";
@@ -20,9 +22,31 @@ import "../../Styles/components/Dashboard.css";
 const SEARCH_MIN_LENGTH = 2;
 const HIGHLIGHT_DURATION = 4000;
 
-export default function Dashboard() {
+export default function Dashboard({ initialTab }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Determine active view from URL query param `?tab=...` or initialTab prop
+  const currentTabParam = searchParams.get("tab") || initialTab || "library";
+  const [activeView, setActiveView] = useState(currentTabParam);
+
+  // Sync state if URL search param changes
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && ["library", "favorites", "subscription", "addresses"].includes(tab)) {
+      setActiveView(tab);
+    }
+  }, [searchParams]);
+
+  // Tab switch handler with URL query sync
+  const switchTab = useCallback(
+    (newTab) => {
+      setActiveView(newTab);
+      setSearchParams({ tab: newTab });
+    },
+    [setSearchParams]
+  );
 
   // Refs
   const inputRef = useRef(null);
@@ -36,9 +60,6 @@ export default function Dashboard() {
 
   const [profileData, setProfileData] = useState(null);
 
-  // Active view inside dashboard: "library" or "addresses"
-  const [activeView, setActiveView] = useState("library");
-
   // Modals
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [financialModalOpen, setFinancialModalOpen] = useState(false);
@@ -47,7 +68,7 @@ export default function Dashboard() {
   // Mobile drawer
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Search & Highlight
+  // Search & Highlight (for library shelf)
   const [searchInputValue, setSearchInputValue] = useState("");
   const [selectedRowId, setSelectedRowId] = useState(null);
 
@@ -70,13 +91,6 @@ export default function Dashboard() {
     profileData?.username ||
     user?.username ||
     "Reader";
-
-  const formattedDate = new Date().toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
 
   // Filtered books based on search input
   const displayedBooks =
@@ -212,70 +226,100 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-wrapper">
-      {/* Unified Top Navigation Header */}
+      {/* Site-Wide Aligned Top Navigation Bar */}
       <header className="dashboard-topbar">
-        {/* User Identity & Avatar */}
-        <div className="topbar-user-section" onClick={handleOpenProfile} title="Edit Profile & Security">
-          <div className="user-avatar-container">
-            <img src={currentAvatar} alt="User Avatar" className="topbar-avatar" />
-            <span className="avatar-edit-badge">✏️</span>
-          </div>
-          <div className="user-info-text">
-            <h2 className="user-greeting">Hi, {username}</h2>
-            <span className="user-date-chip">{formattedDate}</span>
+        {/* Brand Logo & User Greeting */}
+        <div className="topbar-left-group">
+          <Link to="/home" className="nav-logo dashboard-logo" title="Back to Home">
+            PageNet
+          </Link>
+
+          <div
+            className="topbar-user-section"
+            onClick={handleOpenProfile}
+            title="Edit Profile & Security Settings"
+          >
+            <div className="user-avatar-container">
+              <img src={currentAvatar} alt="User Avatar" className="topbar-avatar" />
+              <span className="avatar-edit-badge">✏️</span>
+            </div>
+            <div className="user-info-text">
+              <h2 className="user-greeting">Hi, {username}</h2>
+              <span className="user-profile-label">My Account</span>
+            </div>
           </div>
         </div>
 
-        {/* Central Search Bar */}
-        <div className="topbar-search-section">
-          <div className="search-input-wrapper">
-            <svg
-              className="search-svg-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              height="18"
-              viewBox="0 0 24 24"
-              width="18"
-              fill="currentColor"
-            >
-              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-            </svg>
-            <input
-              type="text"
-              className="topbar-search-input"
-              placeholder="Search library by title or format..."
-              ref={inputRef}
-              value={searchInputValue}
-              onChange={handleSearch}
-              onKeyDown={handleKeyPress}
-            />
-            {searchInputValue && (
-              <button
-                type="button"
-                className="clear-search-btn"
-                onClick={() => setSearchInputValue("")}
+        {/* Central Search Bar (when browsing library shelf) */}
+        {activeView === "library" && (
+          <div className="topbar-search-section">
+            <div className="search-input-wrapper">
+              <svg
+                className="search-svg-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                height="18"
+                viewBox="0 0 24 24"
+                width="18"
+                fill="currentColor"
               >
-                ✕
-              </button>
-            )}
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+              </svg>
+              <input
+                type="text"
+                className="topbar-search-input"
+                placeholder="Search shelf by title, format..."
+                ref={inputRef}
+                value={searchInputValue}
+                onChange={handleSearch}
+                onKeyDown={handleKeyPress}
+              />
+              {searchInputValue && (
+                <button
+                  type="button"
+                  className="clear-search-btn"
+                  onClick={() => setSearchInputValue("")}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Navigation Actions Bar */}
+        {/* Unified Dashboard Navigation Actions */}
         <nav className="topbar-nav-actions">
-          {/* Library View Toggle */}
+          {/* My Shelf View */}
           <button
             type="button"
             className={`topbar-nav-pill ${activeView === "library" ? "active" : ""}`}
-            onClick={() => setActiveView("library")}
+            onClick={() => switchTab("library")}
           >
-            📚 Library
+            📚 My Shelf
           </button>
 
-          {/* Addresses View Toggle */}
+          {/* Favorites View */}
+          <button
+            type="button"
+            className={`topbar-nav-pill ${activeView === "favorites" ? "active" : ""}`}
+            onClick={() => switchTab("favorites")}
+          >
+            ⭐️ Favorites
+          </button>
+
+          {/* VIP Plans View */}
+          <button
+            type="button"
+            className={`topbar-nav-pill ${activeView === "subscription" ? "active" : ""}`}
+            onClick={() => switchTab("subscription")}
+          >
+            💎 VIP Plans
+          </button>
+
+          {/* Addresses View */}
           <button
             type="button"
             className={`topbar-nav-pill ${activeView === "addresses" ? "active" : ""}`}
-            onClick={() => setActiveView("addresses")}
+            onClick={() => switchTab("addresses")}
           >
             📍 Addresses
           </button>
@@ -289,16 +333,6 @@ export default function Dashboard() {
           >
             💳 Financial
           </button>
-
-          {/* Subscription Link */}
-          <Link to="/subscription" className="topbar-nav-pill">
-            💎 VIP Plan
-          </Link>
-
-          {/* Favorites Link */}
-          <Link to="/favorites" className="topbar-nav-pill">
-            ⭐️ Favorites
-          </Link>
 
           {/* Cart Direct Route */}
           <button
@@ -366,18 +400,18 @@ export default function Dashboard() {
           <Link to="/home" className="store-return-link">
             ← Return to Storefront
           </Link>
-          {activeView === "addresses" && (
+          {activeView !== "library" && (
             <button
               type="button"
               className="breadcrumb-switch-btn"
-              onClick={() => setActiveView("library")}
+              onClick={() => switchTab("library")}
             >
-              📚 Back to My Library
+              📚 Back to My Shelf
             </button>
           )}
         </div>
 
-        {/* View 1: My Licensed Books Library */}
+        {/* View 1: My Shelf (Purchased & Licensed Content) */}
         {activeView === "library" && (
           <section className="library-table-section">
             <div className="section-header-row">
@@ -533,7 +567,21 @@ export default function Dashboard() {
           </section>
         )}
 
-        {/* View 2: Addresses Management */}
+        {/* View 2: Favorites / Wishlist */}
+        {activeView === "favorites" && (
+          <section className="favorites-view-section">
+            <FavoritesView />
+          </section>
+        )}
+
+        {/* View 3: VIP Subscription Plans */}
+        {activeView === "subscription" && (
+          <section className="subscription-view-section">
+            <SubscriptionView />
+          </section>
+        )}
+
+        {/* View 4: Saved Addresses */}
         {activeView === "addresses" && (
           <section className="addresses-view-section">
             <Addresses />
@@ -556,7 +604,7 @@ export default function Dashboard() {
               <img src={currentAvatar} alt="Profile" className="drawer-avatar" />
               <div>
                 <h4 className="drawer-username">{username}</h4>
-                <span className="drawer-role">Reader Profile</span>
+                <span className="drawer-role">Reader Account</span>
               </div>
             </div>
             <button
@@ -574,11 +622,35 @@ export default function Dashboard() {
                 type="button"
                 className={`drawer-link ${activeView === "library" ? "active" : ""}`}
                 onClick={() => {
-                  setActiveView("library");
+                  switchTab("library");
                   setMobileMenuOpen(false);
                 }}
               >
-                📚 My Library
+                📚 My Shelf
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeView === "favorites" ? "active" : ""}`}
+                onClick={() => {
+                  switchTab("favorites");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                ⭐️ My Favorites
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeView === "subscription" ? "active" : ""}`}
+                onClick={() => {
+                  switchTab("subscription");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                💎 VIP Subscription Plans
               </button>
             </li>
             <li>
@@ -586,7 +658,7 @@ export default function Dashboard() {
                 type="button"
                 className={`drawer-link ${activeView === "addresses" ? "active" : ""}`}
                 onClick={() => {
-                  setActiveView("addresses");
+                  switchTab("addresses");
                   setMobileMenuOpen(false);
                 }}
               >
@@ -610,24 +682,6 @@ export default function Dashboard() {
               >
                 ⚙️ Profile & Security
               </button>
-            </li>
-            <li>
-              <Link
-                to="/subscription"
-                className="drawer-link"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                💎 VIP Subscription
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/favorites"
-                className="drawer-link"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                ⭐️ Saved Favorites
-              </Link>
             </li>
             <li>
               <Link
