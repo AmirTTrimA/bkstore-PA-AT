@@ -4,6 +4,7 @@ from django.urls import path
 from .views import (BookCreateProposalSubmissionView,
                     BookDeleteProposalSubmissionView,
                     BookUpdateProposalSubmissionView, MyPublishersView,
+                    PublicPublisherListView, PublicPublisherDetailView,
                     PriceChangeProposalCreateView, ProposalDetailView, ProposalWithdrawalView,
                     PublisherProposalListView, PublisherBooksView, AuthorCreateProposalSubmissionView,
                     AuthorUpdateProposalSubmissionView
@@ -12,6 +13,16 @@ from .views import (BookCreateProposalSubmissionView,
 app_name = "publishing-api"
 
 urlpatterns = [
+    path(
+        "public/publishers/",
+        PublicPublisherListView.as_view(),
+        name="public-publishers",
+    ),
+    path(
+        "public/publishers/<str:id_or_slug>/",
+        PublicPublisherDetailView.as_view(),
+        name="public-publisher-detail",
+    ),
     path(
         "publishers/",
         MyPublishersView.as_view(),

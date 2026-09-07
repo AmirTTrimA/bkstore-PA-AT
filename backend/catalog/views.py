@@ -11,7 +11,7 @@ from rest_framework.response import Response
 
 from .models import Author, Book
 from .pagination import BookPagination
-from .serializers import (AuthorSerializer, BookDetailSerializer,
+from .serializers import (AuthorDetailSerializer, AuthorSerializer, BookDetailSerializer,
                           BookListSerializer, GenreSerializer)
 
 TRUE_VALUES = {"true", "1", "yes"}
@@ -28,10 +28,9 @@ class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
     def get_serializer_class(self):
-        # Use a simpler serializer for listing, and the detail serializer for single retrieval
-        if self.action == "list":
-            return AuthorSerializer
-        return AuthorSerializer  # Both use the same serializer for now
+        if self.action == "retrieve":
+            return AuthorDetailSerializer
+        return AuthorSerializer
 
 
 # class BookViewSet(viewsets.ReadOnlyModelViewSet):
@@ -76,7 +75,7 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     # Start with the default queryset
-    queryset = Book.objects.all().select_related("author")
+    queryset = Book.objects.all().select_related("author", "creation_proposal__proposal__publisher")
     permission_classes = [AllowAny]
     pagination_class = BookPagination
 
@@ -106,6 +105,8 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         author = self.request.query_params.get("author")
         is_digital = self.request.query_params.get("is_digital")
         is_audio = self.request.query_params.get("is_audio")
+        publisher = self.request.query_params.get("publisher")
+        format_param = self.request.query_params.get("format")
 
         # 🔑 ANNOTATE QUERYSET: Add a SearchVector field to the queryset that combines relevant text fields.
         queryset = self.queryset.annotate(
@@ -119,6 +120,15 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
 
         if author:
             queryset = queryset.filter(author_id=author)
+
+        if publisher:
+            if publisher.isdigit():
+                queryset = queryset.filter(creation_proposal__proposal__publisher_id=int(publisher))
+            else:
+                queryset = queryset.filter(creation_proposal__proposal__publisher__slug=publisher)
+
+        if format_param:
+            queryset = queryset.filter(formats__format_type=format_param.upper(), formats__is_available=True)
 
         if is_digital is not None:
             queryset = queryset.filter(

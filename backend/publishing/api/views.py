@@ -58,6 +58,34 @@ class MyPublishersView(generics.ListAPIView):
         )
 
 
+class PublicPublisherListView(generics.ListAPIView):
+    """
+    Public list of active publishers for the storefront.
+    """
+
+    serializer_class = PublisherSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Publisher.objects.filter(is_active=True).order_by("name")
+
+
+class PublicPublisherDetailView(generics.RetrieveAPIView):
+    """
+    Public detail of an active publisher by ID or slug.
+    """
+
+    serializer_class = PublisherSerializer
+    permission_classes = [AllowAny]
+
+    def get_object(self):
+        lookup = self.kwargs["id_or_slug"]
+        if str(lookup).isdigit():
+            return generics.get_object_or_404(Publisher, id=int(lookup), is_active=True)
+        return generics.get_object_or_404(Publisher, slug=lookup, is_active=True)
+
+
 class PublisherBooksView(generics.ListAPIView):
     """
     Returns books associated with a specific publisher.

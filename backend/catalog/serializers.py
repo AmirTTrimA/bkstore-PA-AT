@@ -189,6 +189,9 @@ class BookDetailSerializer(BookListSerializer):
     genre = serializers.CharField(
         source="get_genre_display"
     )  # Gets the human-readable genre name
+    publisher_id = serializers.SerializerMethodField()
+    publisher_name = serializers.SerializerMethodField()
+    publisher_slug = serializers.SerializerMethodField()
 
     class Meta(BookListSerializer.Meta):
         fields = BookListSerializer.Meta.fields + (
@@ -196,4 +199,38 @@ class BookDetailSerializer(BookListSerializer):
             "isbn",
             "description",
             "genre",
+            "publisher_id",
+            "publisher_name",
+            "publisher_slug",
         )
+
+    def get_publisher_id(self, obj):
+        proposal = getattr(obj, "creation_proposal", None)
+        if proposal and proposal.proposal_id:
+            return proposal.proposal.publisher_id
+        return None
+
+    def get_publisher_name(self, obj):
+        proposal = getattr(obj, "creation_proposal", None)
+        if proposal and proposal.proposal_id and proposal.proposal.publisher:
+            return proposal.proposal.publisher.name
+        return None
+
+    def get_publisher_slug(self, obj):
+        proposal = getattr(obj, "creation_proposal", None)
+        if proposal and proposal.proposal_id and proposal.proposal.publisher:
+            return proposal.proposal.publisher.slug
+        return None
+
+
+class AuthorDetailSerializer(AuthorSerializer):
+    """Serializer for Author detail view, nesting all books by this author."""
+
+    books = serializers.SerializerMethodField()
+
+    class Meta(AuthorSerializer.Meta):
+        fields = AuthorSerializer.Meta.fields + ("books",)
+
+    def get_books(self, obj):
+        books_qs = obj.books.all().prefetch_related("formats", "formats__prices")
+        return BookListSerializer(books_qs, many=True, context=self.context).data
