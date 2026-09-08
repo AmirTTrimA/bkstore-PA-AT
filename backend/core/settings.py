@@ -112,7 +112,7 @@ DATABASES = {
 if os.getenv("USE_SQLITE", "False").lower() in ("true", "1") or "test" in sys.argv:
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "test_db.sqlite3",
+        "NAME": BASE_DIR / "test_db.sqlite3" if "test" in sys.argv else BASE_DIR / "db.sqlite3",
     }
 
 

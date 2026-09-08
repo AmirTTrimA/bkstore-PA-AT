@@ -1,7 +1,23 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .models import Author, Book, BookFormat
+from .models import Author, Book, BookFormat, Genre, Tag
+
+
+class GenreModelSerializer(serializers.ModelSerializer):
+    """Serializer for the controlled Genre taxonomy model."""
+
+    class Meta:
+        model = Genre
+        fields = ("id", "name", "slug", "description")
+
+
+class TagModelSerializer(serializers.ModelSerializer):
+    """Serializer for the fine-grained Tag taxonomy model."""
+
+    class Meta:
+        model = Tag
+        fields = ("id", "name", "normalized_name", "description", "language")
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -15,7 +31,17 @@ class AuthorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Author
-        fields = ("id", "name", "biography", "bio_summary", "created_at", "books_count")
+        fields = (
+            "id",
+            "name",
+            "normalized_name",
+            "primary_language",
+            "avatar_url",
+            "biography",
+            "bio_summary",
+            "created_at",
+            "books_count",
+        )
 
     def get_bio_summary(self, obj):
         """Returns a summary of the biography for list views."""
@@ -160,7 +186,7 @@ class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
     """Serializer for the public Book list and search results."""
 
     author_name = serializers.CharField(source="author.name")
-
+    language = serializers.CharField(read_only=True)
     formats = BookFormatSerializer(many=True, read_only=True)
 
     class Meta:
@@ -171,6 +197,7 @@ class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
             "slug",
             "author_name",
             "cover_image_url",
+            "language",
             "formats",
             "price",
             "original_price",
@@ -189,6 +216,11 @@ class BookDetailSerializer(BookListSerializer):
     genre = serializers.CharField(
         source="get_genre_display"
     )  # Gets the human-readable genre name
+    genres = GenreModelSerializer(many=True, read_only=True)
+    tags = TagModelSerializer(many=True, read_only=True)
+    publication_year = serializers.IntegerField(read_only=True)
+    edition = serializers.CharField(read_only=True)
+    is_semantically_eligible = serializers.BooleanField(read_only=True)
     publisher_id = serializers.SerializerMethodField()
     publisher_name = serializers.SerializerMethodField()
     publisher_slug = serializers.SerializerMethodField()
@@ -199,6 +231,11 @@ class BookDetailSerializer(BookListSerializer):
             "isbn",
             "description",
             "genre",
+            "genres",
+            "tags",
+            "publication_year",
+            "edition",
+            "is_semantically_eligible",
             "publisher_id",
             "publisher_name",
             "publisher_slug",

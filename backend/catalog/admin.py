@@ -1,7 +1,21 @@
 from django.contrib import admin
 from django.db.models import Count
 
-from .models import Author, Book, BookFormat
+from .models import Author, Book, BookFormat, Genre, Tag
+
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "normalized_name", "created_at")
+    search_fields = ("name", "slug", "normalized_name")
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("name", "normalized_name", "language", "created_at")
+    search_fields = ("name", "normalized_name")
+    list_filter = ("language",)
 
 
 @admin.register(BookFormat)
@@ -9,6 +23,7 @@ class BookFormatAdmin(admin.ModelAdmin):
     list_display = ("book", "format_type", "is_available")
     list_filter = ("format_type", "is_available")
     search_fields = ("book__title",)
+
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
