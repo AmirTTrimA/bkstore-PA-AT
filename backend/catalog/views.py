@@ -108,12 +108,7 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         publisher = self.request.query_params.get("publisher")
         format_param = self.request.query_params.get("format") or self.request.query_params.get("book_format")
 
-        # 🔑 ANNOTATE QUERYSET: Add a SearchVector field to the queryset that combines relevant text fields.
-        queryset = self.queryset.annotate(
-            search=SearchVector("title", weight="A", config="english")
-            + SearchVector("description", weight="B", config="english")
-            + SearchVector("author__name", weight="B", config="english")
-        )
+        queryset = self.queryset
 
         if genre:
             queryset = queryset.filter(genre__iexact=genre)
@@ -141,15 +136,27 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         if search_query_param:
-            # Create the SearchQuery object from the user's input
-            query = SearchQuery(search_query_param, config="english")
+            from django.db import connection
 
-            # Filter the queryset using the SearchQuery, then apply ranking
-            return (
-                queryset.filter(search=query)
-                .annotate(rank=SearchRank(F("search"), query))
-                .order_by("-rank")
-            )
+            if connection.vendor == "postgresql":
+                search_vector = (
+                    SearchVector("title", weight="A", config="english")
+                    + SearchVector("description", weight="B", config="english")
+                    + SearchVector("author__name", weight="B", config="english")
+                )
+                query = SearchQuery(search_query_param, config="english")
+                return (
+                    queryset.annotate(search=search_vector)
+                    .filter(search=query)
+                    .annotate(rank=SearchRank(F("search"), query))
+                    .order_by("-rank")
+                )
+            else:
+                return queryset.filter(
+                    Q(title__icontains=search_query_param)
+                    | Q(description__icontains=search_query_param)
+                    | Q(author__name__icontains=search_query_param)
+                ).distinct().order_by("-created_at")
 
         # Fallback: If no search query, return all books ordered by creation date
         return queryset.order_by("-created_at")
