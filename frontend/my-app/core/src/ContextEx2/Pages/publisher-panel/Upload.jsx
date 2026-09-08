@@ -1,578 +1,789 @@
-// ✅
-import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Notification from '../../Components/feature/Notification';
 import PublisherService from '../../Services/PublisherService';
+import { ppic14 } from '../../Constants';
+import { formatPrice } from '../../utils/formatPrice';
 
-import "../../Styles/publisher-panel/Upload.css"
+import '../../Styles/publisher-panel/Upload.css';
 
-// ============================================
-//    Constants
-// ============================================
-const MIN_NAME_LENGTH = 3;
-const MIN_ABOUT_LENGTH = 10;
-const ERROR_DISPLAY_DURATION = 2000;
-
-// ============================================
-//    Main 
-// ============================================
+const GENRE_OPTIONS = [
+  { value: 'FICTION', label: 'Fiction' },
+  { value: 'NON_FICTION', label: 'Non-Fiction' },
+  { value: 'SCIENCE_FICTION', label: 'Science Fiction' },
+  { value: 'FANTASY', label: 'Fantasy' },
+  { value: 'MYSTERY', label: 'Mystery & Thriller' },
+  { value: 'BIOGRAPHY', label: 'Biography' },
+  { value: 'HISTORY', label: 'History' },
+  { value: 'TECH', label: 'Technology & Science' },
+  { value: 'ROMANCE', label: 'Romance' },
+  { value: 'CHILDREN', label: 'Children' },
+];
 
 export default function Upload({
   bookToEdit,
-  handleDeleteBooks,
-  PageChanger,
   clearEditMode,
+  PageChanger,
   currentPublisher,
-  onProposalCreated
+  onProposalCreated,
 }) {
+  const notificationRef = useRef();
 
-  //---Refs---
-  const notificationRef = useRef()
-  const intervalRef = useRef(null); 
+  // Core metadata state
+  const [title, setTitle] = useState('');
+  const [authorId, setAuthorId] = useState('');
+  const [isbn, setIsbn] = useState('');
+  const [genre, setGenre] = useState('FICTION');
+  const [description, setDescription] = useState('');
+  const [coverImageUrl, setCoverImageUrl] = useState('');
 
-  //---State---
-  const [uploadbooks,setUploadBooks]= useState({
-      id: '',
-      name:'',
-      author:'',
-      type:'physical',
-      genre:'FICTION',
-      category:[],   
-      price:'',
-      discount:'',
-      bookImage:'',
-      aboutbook:'',
-      isbn: ''
-  })
-  const [authors,setAuthors]= useState([]);
-  const [error,setError] = useState({});
-  const [submitError, setSubmitError] = useState('') 
-  const [previewUrl, setPreviewUrl] = useState(null);
+  // Format instances state
+  const [formats, setFormats] = useState({
+    physical: { enabled: true, price: '', stock: 50 },
+    digital: { enabled: false, price: '', filePath: '' },
+    audio: { enabled: false, price: '', filePath: '' },
+  });
 
-  const isEditBookmode = bookToEdit !== null;
+  // Authors list from API
+  const [authors, setAuthors] = useState([]);
+  const [loadingAuthors, setLoadingAuthors] = useState(true);
 
-  const isFormValid = useMemo(() => {
-    const { name, author, type, price, aboutbook } = uploadbooks;
-    return (
-      name?.trim().length >= MIN_NAME_LENGTH &&
-      String(author)?.trim().length > 0 &&
-      type?.trim().length > 0 &&
-      String(price)?.trim().length > 0 &&
-      aboutbook?.trim().length >= MIN_ABOUT_LENGTH
-    );
-  }, [uploadbooks]);
+  // Submission & validation state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
+  // Price change modal for Edit Mode
+  const [priceModal, setPriceModal] = useState({
+    isOpen: false,
+    formatType: 'PHYSICAL',
+    formatLabel: 'Physical Book',
+    currentPrice: 0,
+    newPrice: '',
+    reason: '',
+    submitting: false,
+  });
 
-//---Effects---
+  const isEditMode = bookToEdit !== null;
+
+  // Load available authors
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  //---Load Authors from API---
-  useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     const fetchAuthors = async () => {
       try {
-        const authorsData = await PublisherService.getAuthors();
-        if (isMounted) {
-          setAuthors(authorsData || []);
+        setLoadingAuthors(true);
+        const data = await PublisherService.getAuthors();
+        if (mounted) {
+          setAuthors(data || []);
+          if (!isEditMode && data && data.length > 0) {
+            setAuthorId(String(data[0].id));
+          }
         }
       } catch (err) {
-        console.error('Failed to load authors from API:', err);
+        console.error('Failed fetching authors:', err);
+      } finally {
+        if (mounted) setLoadingAuthors(false);
       }
     };
     fetchAuthors();
-    return () => { isMounted = false; };
-  }, []);
+    return () => {
+      mounted = false;
+    };
+  }, [isEditMode]);
 
-  useEffect(()=>{
+  // Populate data in Edit Mode
+  useEffect(() => {
+    if (isEditMode && bookToEdit) {
+      setTitle(bookToEdit.title || bookToEdit.name || '');
+      setIsbn(bookToEdit.isbn || bookToEdit.raw?.isbn || '');
+      setGenre(bookToEdit.genre || bookToEdit.raw?.genre || 'FICTION');
+      setDescription(bookToEdit.description || bookToEdit.raw?.description || bookToEdit.aboutbook || '');
+      setCoverImageUrl(bookToEdit.cover_image_url || bookToEdit.bookImage || '');
 
-    if(isEditBookmode){
-      const matchingAuthor = authors.find(
-        a => a.name === bookToEdit.author || a.id === bookToEdit.raw?.author?.id || a.id === bookToEdit.author
-      );
-
-      setUploadBooks({
-        id:bookToEdit.id,
-        name:bookToEdit.name || bookToEdit.title || '',
-        author: matchingAuthor ? matchingAuthor.id : (bookToEdit.raw?.author?.id || bookToEdit.author || ''),
-        type:bookToEdit.type || 'physical',
-        genre: bookToEdit.raw?.genre || (bookToEdit.category?.[0]) || 'FICTION',
-        category:bookToEdit.category || ['FICTION'],
-        price:bookToEdit.price || '',
-        discount:bookToEdit.discount || '0',
-        bookImage:bookToEdit.bookImage || null,
-        aboutbook:bookToEdit.aboutbook || bookToEdit.raw?.description || '',
-        isbn: bookToEdit.isbn || bookToEdit.raw?.isbn || '',
-      });
-
-      if(bookToEdit.bookImage && typeof bookToEdit.bookImage === 'string'){
-        setPreviewUrl(bookToEdit.bookImage);
+      // Identify matching author ID
+      if (bookToEdit.author_id) {
+        setAuthorId(String(bookToEdit.author_id));
+      } else if (bookToEdit.raw?.author?.id) {
+        setAuthorId(String(bookToEdit.raw.author.id));
+      } else if (authors.length > 0) {
+        const found = authors.find(
+          (a) => a.name === bookToEdit.author || a.name === bookToEdit.author_name
+        );
+        if (found) setAuthorId(String(found.id));
       }
 
-    }else{
-      setUploadBooks({
-        id:'',
-        name:'',
-        author: authors.length > 0 ? authors[0].id : '',
-        type:'physical',
-        genre:'FICTION',
-        category:['FICTION'],
-        price:'',
-        discount:'0',
-        bookImage:null,
-        aboutbook:'',
-        isbn: '',
+      // Populate format instances
+      const rawFormats = bookToEdit.formats || bookToEdit.raw?.formats || [];
+      const physicalFmt = rawFormats.find((f) => f.type === 'PHYSICAL');
+      const digitalFmt = rawFormats.find((f) => f.type === 'DIGITAL');
+      const audioFmt = rawFormats.find((f) => f.type === 'AUDIO');
+
+      setFormats({
+        physical: {
+          enabled: !!physicalFmt || (!digitalFmt && !audioFmt),
+          price: physicalFmt ? physicalFmt.price || '' : (bookToEdit.price || ''),
+          stock: 50,
+        },
+        digital: {
+          enabled: !!digitalFmt || bookToEdit.is_digital === true,
+          price: digitalFmt ? digitalFmt.price || '' : '',
+          filePath: bookToEdit.digital_file_path || '',
+        },
+        audio: {
+          enabled: !!audioFmt || bookToEdit.is_audio === true,
+          price: audioFmt ? audioFmt.price || '' : '',
+          filePath: bookToEdit.audio_file_path || '',
+        },
       });
-      setPreviewUrl(null);
-    }
-
-  },[isEditBookmode, bookToEdit, authors])
-
-
-
-
-
-
-//---Handlers---
-
-const handleChange = useCallback((e)=>{
-  if (!e || !e.target) {
-    console.error('Event or event.target is null', e);
-    return;
-  }
-
-
-  const { name , value ,type ,files } = e.target;
-
-  if (type === 'file') {
-    setUploadBooks({ ...uploadbooks, [name]: files[0] });
-  } else if (name!== 'category') {
-    setUploadBooks({ ...uploadbooks, [name]: value });
-  }
-
-
-  if (submitError) {
-    setSubmitError('');
-    if(intervalRef.current){
-      clearInterval(intervalRef.current);
-      intervalRef.current=null;
-    }
-  }
-  if (error && error[name]) {
-    setError({...error,[name]: ''});
-  }
-},[error,uploadbooks,submitError])
-
-
-
-  const handleBookImage = useCallback((e)=>{
-    const file = e.target.files[0];
-    if(file){
-      setUploadBooks({
-        ...uploadbooks,
-        bookImage:file
+    } else {
+      // Reset form for New Book
+      setTitle('');
+      setIsbn('');
+      setGenre('FICTION');
+      setDescription('');
+      setCoverImageUrl('');
+      setFormats({
+        physical: { enabled: true, price: '', stock: 50 },
+        digital: { enabled: false, price: '', filePath: '' },
+        audio: { enabled: false, price: '', filePath: '' },
       });
-
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrl(previewUrl);
-
-
-      if (error.bookImage) {
-        setError({
-          ...error,bookImage: ''
-        });
+      if (authors.length > 0) {
+        setAuthorId(String(authors[0].id));
       }
     }
-  
-  
-  },[error,uploadbooks])
+  }, [isEditMode, bookToEdit, authors]);
 
+  // Handle format toggle
+  const handleToggleFormat = (formatKey) => {
+    setFormats((prev) => ({
+      ...prev,
+      [formatKey]: {
+        ...prev[formatKey],
+        enabled: !prev[formatKey].enabled,
+      },
+    }));
+  };
 
-  const handleCancel= useCallback((e)=>{
+  // Handle format field change
+  const handleFormatFieldChange = (formatKey, field, value) => {
+    setFormats((prev) => ({
+      ...prev,
+      [formatKey]: {
+        ...prev[formatKey],
+        [field]: value,
+      },
+    }));
+  };
 
-    if(e){
-      e.preventDefault();
-    }
+  // Open price change modal
+  const handleOpenPriceModal = (formatKey, label) => {
+    const fmt = formats[formatKey];
+    setPriceModal({
+      isOpen: true,
+      formatType: formatKey.toUpperCase(),
+      formatLabel: label,
+      currentPrice: fmt?.price || bookToEdit?.price || 0,
+      newPrice: '',
+      reason: '',
+      submitting: false,
+    });
+  };
 
-    if(clearEditMode){
-      clearEditMode();
-    }
-    setUploadBooks({
-      id:'',
-      name:'',
-      author:'',
-      type:'',
-      category:[],
-      price:'',
-      discount:'',
-      bookImage:null,
-      aboutbook:'',
-    })
-    PageChanger('mybook')
+  const handleClosePriceModal = () => {
+    setPriceModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
-  },[PageChanger,clearEditMode])
-
-
-
-
-// // chain dependency
-  const BookValidation = useCallback(()=>{
-    let isValid = true;
-    const newerror={};
-
-    // Name validation
-    if(!uploadbooks.name || !uploadbooks.name.trim()){
-      newerror.name = 'name required';
-      isValid=false;
-    }else if(uploadbooks.name.trim().length < MIN_NAME_LENGTH){
-      newerror.name = `name must be at least ${MIN_NAME_LENGTH} character`
-      isValid=false
-    }
-
-    // Price validation
-    if(!uploadbooks.price || uploadbooks.price.toString().trim() === ''){
-      newerror.price = 'price required';
-      isValid=false;
-    }else if(parseFloat(uploadbooks.price) <= 0){
-      newerror.price = 'price cant be 0'
-      isValid=false
-    }
-
-    // Author validation
-    if(!uploadbooks.author){
-      newerror.author = 'select author';
-      isValid=false;
-    }
-
-    // Type validation
-    if(!uploadbooks.type){
-      newerror.type = 'select type';
-      isValid=false;
-    }
-
-    // Aboutbook validation
-    if(!uploadbooks.aboutbook || !uploadbooks.aboutbook.trim()){
-      newerror.aboutbook = 'about book required';
-      isValid=false;
-    }else if(uploadbooks.aboutbook.trim().length < MIN_ABOUT_LENGTH){
-      newerror.aboutbook = `about book must be at least ${MIN_ABOUT_LENGTH} character`
-      isValid=false
-    }
-
-    setError(newerror);
-    return {isValid, errors:newerror};
-  },[uploadbooks])
-
-
-  const showErrors = (errors)=>{
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    if(!errors || typeof errors !== 'object'){
-      return;
-    }
-
-    const errorList = Object.values(errors);
-    if (errorList.length === 0) return;
-
-    let index=0;
-    setSubmitError(errorList[0]);
-
-    intervalRef.current = setInterval(()=>{
-      index++;
-      if(index < errorList.length){
-        setSubmitError(errorList[index]);
-      }else{
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        setTimeout(() => {
-          setSubmitError('');
-        }, 500);
-      }
-    }, ERROR_DISPLAY_DURATION);
-  }
-
-  const handleSubmit = useCallback(async (e)=>{
+  // Submit price change proposal for a specific format instance
+  const handleSubmitPriceProposal = async (e) => {
     e.preventDefault();
-
-    const {isValid ,errors: valErrors} = BookValidation();
-
-    if(!isValid){
-      showErrors(valErrors);
+    if (!currentPublisher?.id) {
+      notificationRef.current?.showNotif('Please select an active publisher house first.', 'warning');
       return;
     }
 
-    if (!currentPublisher) {
-      notificationRef.current.showNotif('No active publisher selected', 'error');
+    const priceVal = parseInt(priceModal.newPrice, 10);
+    if (isNaN(priceVal) || priceVal <= 0) {
+      notificationRef.current?.showNotif('Please enter a valid price in IRR.', 'warning');
       return;
     }
 
     try {
-      if(isEditBookmode){
+      setPriceModal((prev) => ({ ...prev, submitting: true }));
+      await PublisherService.changePriceProposal({
+        publisher_id: currentPublisher.id,
+        book: bookToEdit.id,
+        value: priceVal,
+        reason: priceModal.reason || `Price update proposal for ${priceModal.formatLabel}`,
+      });
+
+      notificationRef.current?.showNotif(
+        `Price change proposal for ${priceModal.formatLabel} submitted to administrators!`,
+        'success'
+      );
+      handleClosePriceModal();
+      if (onProposalCreated) onProposalCreated();
+    } catch (err) {
+      console.error('Failed submitting price proposal:', err);
+      const errMsg = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Failed to submit price proposal.';
+      notificationRef.current?.showNotif(errMsg, 'error');
+    } finally {
+      setPriceModal((prev) => ({ ...prev, submitting: false }));
+    }
+  };
+
+  // Submit Book Proposal (Creation or Update)
+  const handleSubmitBookForm = async (e) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!currentPublisher?.id) {
+      setFormError('No active publisher selected. Please choose a publisher house.');
+      return;
+    }
+
+    if (!title.trim() || title.trim().length < 3) {
+      setFormError('Book title must be at least 3 characters.');
+      return;
+    }
+
+    if (!authorId) {
+      setFormError('Please assign an author to this title.');
+      return;
+    }
+
+    if (!description.trim() || description.trim().length < 10) {
+      setFormError('Description / synopsis must be at least 10 characters.');
+      return;
+    }
+
+    const hasAtLeastOneFormat =
+      formats.physical.enabled || formats.digital.enabled || formats.audio.enabled;
+    if (!hasAtLeastOneFormat) {
+      setFormError('Please enable at least one format (Physical, Digital, or Audio).');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (isEditMode) {
+        // Book Update Proposal
         const updatePayload = {
           publisher_id: currentPublisher.id,
-          book: uploadbooks.id,
-          title: uploadbooks.name.trim(),
-          description: uploadbooks.aboutbook.trim(),
-          genre: uploadbooks.genre || 'FICTION',
-          is_digital: uploadbooks.type === 'pdf' || uploadbooks.type === 'digital',
-          is_audio: uploadbooks.type === 'audio',
-          cover_image_url: typeof uploadbooks.bookImage === 'string' && uploadbooks.bookImage.startsWith('http')
-            ? uploadbooks.bookImage
-            : (bookToEdit?.raw?.cover_image_url || 'https://picsum.photos/400/600'),
-          digital_file_path: '',
-          audio_file_path: '',
+          book: bookToEdit.id,
+          title: title.trim(),
+          description: description.trim(),
+          genre: genre,
+          cover_image_url: coverImageUrl.trim() || null,
+          is_digital: formats.digital.enabled,
+          is_audio: formats.audio.enabled,
+          digital_file_path: formats.digital.enabled ? formats.digital.filePath : '',
+          audio_file_path: formats.audio.enabled ? formats.audio.filePath : '',
         };
 
         await PublisherService.updateBookProposal(updatePayload);
-
-        if (uploadbooks.price && parseFloat(uploadbooks.price) > 0) {
-          try {
-            await PublisherService.changePriceProposal({
-              publisher_id: currentPublisher.id,
-              book: uploadbooks.id,
-              value: Math.round(parseFloat(uploadbooks.price)),
-              reason: 'Price update from publisher dashboard',
-            });
-          } catch (priceErr) {
-            console.warn('Price change proposal notice:', priceErr);
-          }
+        notificationRef.current?.showNotif(
+          'Book update proposal submitted successfully for administrator review!',
+          'success'
+        );
+      } else {
+        // Book Creation Proposal
+        if (!isbn.trim()) {
+          setFormError('Please enter an ISBN for new book proposals.');
+          setIsSubmitting(false);
+          return;
         }
 
-        notificationRef.current.showNotif('Book update proposal submitted for review!', 'success');
-        
-        setTimeout(() => {
-          if (clearEditMode) clearEditMode();
-          if (onProposalCreated) onProposalCreated();
-          PageChanger('mybook');
-        }, 1000);
-
-      } else {
         const createPayload = {
           publisher_id: currentPublisher.id,
-          author: parseInt(uploadbooks.author, 10),
-          title: uploadbooks.name.trim(),
-          isbn: uploadbooks.isbn?.trim() || `978-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-          description: uploadbooks.aboutbook.trim(),
-          genre: uploadbooks.genre || 'FICTION',
-          is_digital: uploadbooks.type === 'pdf' || uploadbooks.type === 'digital',
-          is_audio: uploadbooks.type === 'audio',
-          cover_image_url: typeof uploadbooks.bookImage === 'string' && uploadbooks.bookImage.startsWith('http')
-            ? uploadbooks.bookImage
-            : 'https://picsum.photos/400/600',
-          digital_file_path: '',
-          audio_file_path: '',
+          author: parseInt(authorId, 10),
+          title: title.trim(),
+          isbn: isbn.trim(),
+          description: description.trim(),
+          genre: genre,
+          cover_image_url: coverImageUrl.trim() || null,
+          is_digital: formats.digital.enabled,
+          is_audio: formats.audio.enabled,
+          digital_file_path: formats.digital.enabled ? formats.digital.filePath : '',
+          audio_file_path: formats.audio.enabled ? formats.audio.filePath : '',
         };
 
         await PublisherService.createBookProposal(createPayload);
-        notificationRef.current.showNotif('Book creation proposal submitted for review!', 'success');
-
-        setTimeout(() => {
-          setUploadBooks({
-            id:'',
-            name:'',
-            author: authors.length > 0 ? authors[0].id : '',
-            type:'physical',
-            genre:'FICTION',
-            category:['FICTION'],
-            price:'',
-            discount:'0',
-            bookImage:null,
-            aboutbook:'',
-            isbn: '',
-          });
-          setPreviewUrl(null);
-          if (onProposalCreated) onProposalCreated();
-          PageChanger('mybook');
-        }, 1000);
+        notificationRef.current?.showNotif(
+          'Book creation proposal submitted successfully for administrator review!',
+          'success'
+        );
       }
+
+      if (onProposalCreated) onProposalCreated();
+      if (clearEditMode) clearEditMode();
+      if (PageChanger) PageChanger('mybook');
     } catch (err) {
-      console.error('Failed to submit book proposal:', err);
-      const data = err.response?.data;
-      let errMsg = 'Failed to submit proposal';
-      if (typeof data === 'object') {
-        const firstVal = Object.values(data)[0];
-        errMsg = Array.isArray(firstVal) ? firstVal[0] : (typeof firstVal === 'string' ? firstVal : errMsg);
+      console.error('Failed submitting book proposal:', err);
+      const resData = err.response?.data;
+      let msg = 'Failed to submit proposal.';
+      if (typeof resData === 'string') {
+        msg = resData;
+      } else if (resData?.detail) {
+        msg = resData.detail;
+      } else if (resData && typeof resData === 'object') {
+        const firstKey = Object.keys(resData)[0];
+        msg = `${firstKey}: ${Array.isArray(resData[firstKey]) ? resData[firstKey][0] : resData[firstKey]}`;
       }
-      notificationRef.current.showNotif(errMsg, 'error');
+      setFormError(msg);
+      notificationRef.current?.showNotif(msg, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-
-  },[uploadbooks, BookValidation, isEditBookmode, currentPublisher, clearEditMode, onProposalCreated, PageChanger, bookToEdit, authors])
+  };
 
   return (
-    <div className="upload-books-container">
-      <h4 className='upload-title'>
-        {isEditBookmode ? 'Edit Book Proposal' : 'Submit New Book Proposal'}
-      </h4>
-        
-      {submitError && (
-        <div className="upload-errors-container">
-          <div className="upload-errors-message">
-            {submitError}
+    <div className="upload-editor-wrapper">
+      {/* Editor Header */}
+      <div className="upload-editor-header">
+        <div className="upload-editor-title-group">
+          <h2>
+            {isEditMode ? `Edit Book Proposal: ${bookToEdit.name || bookToEdit.title}` : 'Propose New Book'}
+            <span className={`upload-mode-badge ${isEditMode ? 'edit' : 'create'}`}>
+              {isEditMode ? 'Update Mode' : 'New Creation'}
+            </span>
+          </h2>
+          <p>
+            {isEditMode
+              ? 'Modify book details or propose format price changes. All submissions require administrator approval.'
+              : 'Submit a new book creation proposal to store administrators with multi-format pricing and media.'}
+          </p>
+        </div>
+
+        {isEditMode && (
+          <button
+            type="button"
+            className="editor-cancel-btn"
+            onClick={() => {
+              if (clearEditMode) clearEditMode();
+              if (PageChanger) PageChanger('mybook');
+            }}
+          >
+            ← Back to Published Books
+          </button>
+        )}
+      </div>
+
+      {formError && (
+        <div className="upload-errors-container" style={{ borderRadius: 10, background: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', padding: '10px 16px' }}>
+          <p style={{ color: '#f87171', margin: 0, fontWeight: 600 }}>⚠️ {formError}</p>
+        </div>
+      )}
+
+      {/* Main Two-Column Grid Form */}
+      <form onSubmit={handleSubmitBookForm} className="upload-editor-grid">
+        {/* Left Column: Cover Art & Preview */}
+        <div className="upload-cover-panel">
+          <div className="upload-cover-box">
+            {coverImageUrl ? (
+              <img
+                src={coverImageUrl}
+                alt="Book cover preview"
+                onError={(e) => {
+                  e.currentTarget.src = ppic14;
+                }}
+              />
+            ) : (
+              <div className="upload-cover-placeholder">
+                <span style={{ fontSize: '2.5rem' }}>📖</span>
+                <span>Enter cover URL below to preview cover art</span>
+              </div>
+            )}
+          </div>
+
+          <div className="upload-cover-input-group">
+            <label htmlFor="cover-url-input">Cover Image URL</label>
+            <input
+              id="cover-url-input"
+              type="url"
+              className="editor-input"
+              placeholder="https://example.com/cover.jpg"
+              value={coverImageUrl}
+              onChange={(e) => setCoverImageUrl(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Right Column: Core Metadata & Formats */}
+        <div className="upload-fields-panel">
+          {/* Row 1: Title & ISBN */}
+          <div className="form-row-2col">
+            <div className="form-field-group">
+              <label htmlFor="book-title-input">
+                Book Title <span className="required">*</span>
+              </label>
+              <input
+                id="book-title-input"
+                type="text"
+                className="editor-input"
+                placeholder="e.g. Master and Margarita"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label htmlFor="book-isbn-input">
+                ISBN Code {!isEditMode && <span className="required">*</span>}
+              </label>
+              <input
+                id="book-isbn-input"
+                type="text"
+                className="editor-input"
+                placeholder="e.g. 978-0143108245"
+                value={isbn}
+                onChange={(e) => setIsbn(e.target.value)}
+                disabled={isEditMode}
+                title={isEditMode ? 'ISBN cannot be altered after proposal approval' : 'Standard 13-digit ISBN'}
+                required={!isEditMode}
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Author & Genre */}
+          <div className="form-row-2col">
+            <div className="form-field-group">
+              <label htmlFor="book-author-select">
+                Author <span className="required">*</span>
+              </label>
+              <select
+                id="book-author-select"
+                className="editor-select"
+                value={authorId}
+                onChange={(e) => setAuthorId(e.target.value)}
+                disabled={loadingAuthors || isEditMode}
+                required
+              >
+                {loadingAuthors ? (
+                  <option value="">Loading authors...</option>
+                ) : (
+                  authors.map((auth) => (
+                    <option key={auth.id} value={auth.id}>
+                      {auth.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div className="form-field-group">
+              <label htmlFor="book-genre-select">Genre Category</label>
+              <select
+                id="book-genre-select"
+                className="editor-select"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+              >
+                {GENRE_OPTIONS.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="form-field-group">
+            <label htmlFor="book-desc-textarea">
+              Description & Synopsis <span className="required">*</span>
+            </label>
+            <textarea
+              id="book-desc-textarea"
+              className="editor-textarea"
+              placeholder="Provide a compelling synopsis of the book..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* --------------------------------------------
+              Multi-Format Instances & Separate Pricing
+             -------------------------------------------- */}
+          <div className="formats-section-container">
+            <h3 className="formats-section-title">
+              <span>📚 Offered Editions & Format Pricing</span>
+            </h3>
+
+            <div className="format-instances-grid">
+              {/* Format 1: Physical Print */}
+              <div className={`format-instance-card ${formats.physical.enabled ? 'enabled' : ''}`}>
+                <div className="format-card-header">
+                  <span className="format-type-label">📦 Physical Edition</span>
+                  <label className="format-toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={formats.physical.enabled}
+                      onChange={() => handleToggleFormat('physical')}
+                    />
+                    <span>Available</span>
+                  </label>
+                </div>
+
+                {formats.physical.enabled && (
+                  <div className="format-card-body">
+                    <div className="form-field-group">
+                      <label>Retail Price</label>
+                      <div className="price-input-wrapper">
+                        <input
+                          type="number"
+                          className="editor-input"
+                          placeholder="e.g. 350000"
+                          value={formats.physical.price}
+                          onChange={(e) => handleFormatFieldChange('physical', 'price', e.target.value)}
+                          disabled={isEditMode}
+                        />
+                        <span className="currency-tag">IRR</span>
+                      </div>
+                    </div>
+
+                    {isEditMode && (
+                      <div className="price-change-action-bar">
+                        <span className="current-price-badge">
+                          Current: <strong>{formatPrice(formats.physical.price)}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          className="modify-price-btn"
+                          onClick={() => handleOpenPriceModal('physical', 'Physical Edition')}
+                        >
+                          Modify Price
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Format 2: Digital E-Book */}
+              <div className={`format-instance-card ${formats.digital.enabled ? 'enabled' : ''}`}>
+                <div className="format-card-header">
+                  <span className="format-type-label">📄 Digital (E-Book/PDF)</span>
+                  <label className="format-toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={formats.digital.enabled}
+                      onChange={() => handleToggleFormat('digital')}
+                    />
+                    <span>Available</span>
+                  </label>
+                </div>
+
+                {formats.digital.enabled && (
+                  <div className="format-card-body">
+                    <div className="form-field-group">
+                      <label>E-Book Price</label>
+                      <div className="price-input-wrapper">
+                        <input
+                          type="number"
+                          className="editor-input"
+                          placeholder="e.g. 150000"
+                          value={formats.digital.price}
+                          onChange={(e) => handleFormatFieldChange('digital', 'price', e.target.value)}
+                          disabled={isEditMode}
+                        />
+                        <span className="currency-tag">IRR</span>
+                      </div>
+                    </div>
+
+                    <div className="form-field-group">
+                      <label>Digital File Path / URL</label>
+                      <input
+                        type="text"
+                        className="editor-input"
+                        placeholder="e.g. /files/ebook.pdf"
+                        value={formats.digital.filePath}
+                        onChange={(e) => handleFormatFieldChange('digital', 'filePath', e.target.value)}
+                      />
+                    </div>
+
+                    {isEditMode && (
+                      <div className="price-change-action-bar">
+                        <span className="current-price-badge">
+                          Current: <strong>{formatPrice(formats.digital.price || 0)}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          className="modify-price-btn"
+                          onClick={() => handleOpenPriceModal('digital', 'Digital E-Book')}
+                        >
+                          Modify Price
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Format 3: Audiobook */}
+              <div className={`format-instance-card ${formats.audio.enabled ? 'enabled' : ''}`}>
+                <div className="format-card-header">
+                  <span className="format-type-label">🎧 Audiobook</span>
+                  <label className="format-toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={formats.audio.enabled}
+                      onChange={() => handleToggleFormat('audio')}
+                    />
+                    <span>Available</span>
+                  </label>
+                </div>
+
+                {formats.audio.enabled && (
+                  <div className="format-card-body">
+                    <div className="form-field-group">
+                      <label>Audiobook Price</label>
+                      <div className="price-input-wrapper">
+                        <input
+                          type="number"
+                          className="editor-input"
+                          placeholder="e.g. 220000"
+                          value={formats.audio.price}
+                          onChange={(e) => handleFormatFieldChange('audio', 'price', e.target.value)}
+                          disabled={isEditMode}
+                        />
+                        <span className="currency-tag">IRR</span>
+                      </div>
+                    </div>
+
+                    <div className="form-field-group">
+                      <label>Audio Stream / File URL</label>
+                      <input
+                        type="text"
+                        className="editor-input"
+                        placeholder="e.g. /files/audiobook.mp3"
+                        value={formats.audio.filePath}
+                        onChange={(e) => handleFormatFieldChange('audio', 'filePath', e.target.value)}
+                      />
+                    </div>
+
+                    {isEditMode && (
+                      <div className="price-change-action-bar">
+                        <span className="current-price-badge">
+                          Current: <strong>{formatPrice(formats.audio.price || 0)}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          className="modify-price-btn"
+                          onClick={() => handleOpenPriceModal('audio', 'Audiobook')}
+                        >
+                          Modify Price
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="upload-form-actions">
+            {isEditMode && (
+              <button
+                type="button"
+                className="editor-cancel-btn"
+                onClick={() => {
+                  if (clearEditMode) clearEditMode();
+                  if (PageChanger) PageChanger('mybook');
+                }}
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              type="submit"
+              className="editor-submit-btn"
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? 'Submitting Proposal...'
+                : isEditMode
+                ? 'Submit Book Update Proposal'
+                : 'Submit Book Proposal'}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {/* Dedicated Price Change Proposal Modal */}
+      {priceModal.isOpen && (
+        <div className="price-modal-backdrop" onClick={handleClosePriceModal}>
+          <div className="price-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="price-modal-header">
+              <h3>💰 Propose Price Change ({priceModal.formatLabel})</h3>
+              <button
+                type="button"
+                className="pdash-btn"
+                onClick={handleClosePriceModal}
+                style={{ padding: '4px 10px', minWidth: 'auto' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primarys)', opacity: 0.8 }}>
+              Current Price: <strong>{formatPrice(priceModal.currentPrice)}</strong>
+            </p>
+
+            <form onSubmit={handleSubmitPriceProposal} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="form-field-group">
+                <label htmlFor="new-price-input">
+                  Proposed New Price (IRR) <span className="required">*</span>
+                </label>
+                <div className="price-input-wrapper">
+                  <input
+                    id="new-price-input"
+                    type="number"
+                    className="editor-input"
+                    placeholder="e.g. 450000"
+                    value={priceModal.newPrice}
+                    onChange={(e) => setPriceModal((prev) => ({ ...prev, newPrice: e.target.value }))}
+                    autoFocus
+                    required
+                  />
+                  <span className="currency-tag">IRR</span>
+                </div>
+              </div>
+
+              <div className="form-field-group">
+                <label htmlFor="price-reason-textarea">Justification / Reason</label>
+                <textarea
+                  id="price-reason-textarea"
+                  className="editor-textarea"
+                  style={{ minHeight: 70 }}
+                  placeholder="e.g. Seasonal promotion, production cost change, or VIP discount alignment..."
+                  value={priceModal.reason}
+                  onChange={(e) => setPriceModal((prev) => ({ ...prev, reason: e.target.value }))}
+                />
+              </div>
+
+              <div className="price-modal-actions">
+                <button
+                  type="button"
+                  className="editor-cancel-btn"
+                  onClick={handleClosePriceModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="editor-submit-btn"
+                  disabled={priceModal.submitting}
+                >
+                  {priceModal.submitting ? 'Submitting...' : 'Submit Price Proposal'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      <form 
-        className='upload-form'
-        onSubmit={handleSubmit}
-      >
-        {/* Name */}
-        <input 
-          type="text"
-          name='name'
-          className={`upload-field ${error?.name ? 'error-border':''}`}
-          value={uploadbooks.name}
-          onChange={handleChange}
-          placeholder={isEditBookmode ? 'Edit book title':'Enter book title'} 
-          required
-        />
-
-        {/* Author */}
-        <select
-          name="author"
-          onChange={handleChange}
-          className={`upload-field ${error?.author ? 'error-border' : ''}`}
-          value={uploadbooks.author}
-          required
-        >
-          <option value="" disabled hidden>Choose author</option>
-          {authors.map( item =>
-            <option key={item.id} value={item.id} className="upload-options">
-              {item.name}
-            </option>
-          )}
-        </select>
-
-        {/* Genre */}
-        <select 
-          name="genre"
-          onChange={handleChange}
-          className="upload-field"
-          value={uploadbooks.genre || 'FICTION'}
-        >
-          <option value="FICTION">Fiction</option>
-          <option value="SCI_FI">Science Fiction</option>
-          <option value="HISTORY">History</option>
-          <option value="SCIENCE">Science</option>
-          <option value="TECH">Technology</option>
-          <option value="BUSINESS">Business</option>
-        </select>
-
-        {/* Type */}
-        <select 
-          name="type"
-          onChange={handleChange}
-          className={`upload-field ${error?.type ? 'error-border' : ''}`}
-          value={uploadbooks.type}
-        >
-          <option value="physical" className="upload-options">Physical</option>
-          <option value="pdf" className="upload-options">Digital (E-Book)</option>
-          <option value="audio" className="upload-options">Audiobook</option>
-        </select>
-
-        {/* ISBN */}
-        <input 
-          type="text"
-          className="upload-field"
-          value={uploadbooks.isbn || ''}
-          name='isbn'
-          onChange={handleChange}
-          placeholder={isEditBookmode ? 'ISBN' : 'ISBN (optional, auto-generated if blank)'} 
-        />
-
-        {/* Price */}
-        <input 
-          type="number"
-          className={`upload-field ${error?.price ? 'error-border' : ''}`}
-          value={uploadbooks.price}
-          name='price'
-          onChange={handleChange}                 
-          placeholder={isEditBookmode ? 'Edit price (IRR)':'Enter price (IRR)'} 
-          required
-        />
-
-        {/* Discount */}
-        <input 
-          type="number" 
-          className={`upload-field ${error?.discount ? 'error-border' : ''}`}
-          value={uploadbooks.discount}
-          name='discount'
-          onChange={handleChange}
-          placeholder={isEditBookmode ? 'Edit discount':'Enter discount'} 
-        />
-
-        {/* About Book */}
-        <textarea 
-          type="text" 
-          className={`upload-field ${error?.aboutbook ? 'error-border' : ''}`}
-          value={uploadbooks.aboutbook}
-          name='aboutbook'
-          onChange={handleChange}
-          id="abouttextarea"
-          placeholder={isEditBookmode ? 'Edit description':'Enter description'} 
-          required   
-        />
-
-        {/* Book Image */}
-        <input 
-          type="file"
-          accept='image/*'
-          id='bookImage'
-          className='upload-field'
-          name='bookImage'
-          onChange={handleBookImage}
-          placeholder='bookImage' 
-        />
-
-        {previewUrl && (
-          <div style={{ textAlign: 'center', margin: '10px 0' }}>
-            <img 
-              src={previewUrl} 
-              alt="Book cover preview" 
-              style={{ maxWidth: '140px', maxHeight: '200px', borderRadius: '8px' }} 
-            />
-          </div>
-        )}
-
-        {/* Buttons */}
-        <div className="upload-btn-group">
-          {isEditBookmode && (
-            <button 
-              type='button'
-              onClick={()=>handleDeleteBooks(uploadbooks.id)}
-              className="upload-btn-delete"
-            >
-              Delete
-            </button>
-          )}
-          <button
-            type='submit'
-            className='upload-btn-main'
-            disabled={!isFormValid}
-          >
-            {isEditBookmode? 'Submit Update Proposal':'Submit Upload Proposal'}
-          </button>
-
-          {isEditBookmode && (
-            <button 
-              type='button'
-              onClick={()=>handleCancel()}
-              className="upload-btn-cancel"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
-
-      <Notification ref={notificationRef}/>
+      <Notification ref={notificationRef} />
     </div>
-  )
+  );
 }

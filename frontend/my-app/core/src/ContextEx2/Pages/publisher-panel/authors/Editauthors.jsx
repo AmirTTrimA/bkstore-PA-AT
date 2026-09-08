@@ -1,320 +1,178 @@
-// ✅
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Notification from '../../../Components/feature/Notification';
 import PublisherService from '../../../Services/PublisherService';
-import { TextField } from '@mui/material';
 
-import '../../../Styles/publisher-panel/Editauthors.css'
+import '../../../Styles/publisher-panel/Editauthors.css';
 
-// ============================================
-// Constants
-// ============================================
 const MIN_NAME_LENGTH = 3;
 const MIN_BIO_LENGTH = 10;
 
-// ============================================
-//    Main 
-// ============================================
-export default function Editauthors({ authorToEdit, onEditComplete, currentPublisher, onProposalCreated }) {
+export default function Editauthors({
+  authorToEdit,
+  onEditComplete,
+  currentPublisher,
+  onProposalCreated,
+}) {
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  //---State---
-  const [authorsform,setAuthorsForm] = useState({
-    id:'',
-    name:'',
-    bio:'',
-    profilePic:'',
-  });
-  const [errors, setErrors] = useState({});
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const notificationRef = useRef();
 
-  //---Ref---
-  const notificationRef = useRef('');
+  const isEditMode = authorToEdit !== null;
 
-  // ---Memoized Values---
-  const isEditMode = useMemo(() => authorToEdit !== null, [authorToEdit]);
-  const isFormValid = useMemo(() => {
-    return (
-      authorsform.name?.trim().length >= MIN_NAME_LENGTH &&
-      authorsform.bio?.trim().length >= MIN_BIO_LENGTH
-    );
-  }, [authorsform]);
-
-//---Effects---
-  useEffect(()=>{
-    if(isEditMode){
-      setAuthorsForm({
-        id:authorToEdit.id,
-        name:authorToEdit.name || '', 
-        bio:authorToEdit.biography || authorToEdit.bio || '',
-        profilePic:authorToEdit.profilePic || null,
-      });
-
-      if(authorToEdit.profilePic && typeof authorToEdit.profilePic === 'string'){
-        setPreviewUrl(authorToEdit.profilePic);
-      }
-    }else{
-      setAuthorsForm({
-        id:'',
-        name:'',
-        bio:'',
-        profilePic:null,
-      });
-      setPreviewUrl(null);
+  useEffect(() => {
+    if (isEditMode && authorToEdit) {
+      setName(authorToEdit.name || '');
+      setBio(authorToEdit.biography || authorToEdit.bio || '');
+    } else {
+      setName('');
+      setBio('');
     }
-  },[isEditMode,authorToEdit])
+  }, [isEditMode, authorToEdit]);
 
-
-
-
-
-  //---Handlers---
-  const handleChange =useCallback((e)=>{
-    const { name , value } = e.target;
-    setAuthorsForm({...authorsform,[name]:value});
-    
-    if (errors[name]) {
-      setErrors({...errors,[name]: ''});
-    }
-  },[errors,authorsform])
-
-
-
-  const handleFileChange = (e)=>{
-    const file = e.target.files[0];
-    if(file){
-      setAuthorsForm({
-        ...authorsform,
-        profilePic:file
-      });
-
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrl(previewUrl);
-
-
-      if (errors.profilePic) {
-        setErrors({
-          ...errors,profilePic: ''
-        });
-      }
-    }
-  
-  
-  }
-
-  const AuthorValidation = useCallback(()=>{
-    let isValid = true;
-    const newErrors={};
-
-
-    if(!authorsform.name.trim()){
-      newErrors.name = 'Name required';
-      isValid=false;
-    }else if(authorsform.name.trim().length < MIN_NAME_LENGTH){
-      newErrors.name = `Name must be at least ${MIN_NAME_LENGTH} character`
-      isValid=false
-    }
-    if(!authorsform.bio.trim()){
-      newErrors.bio = 'Bio required';
-      isValid=false
-    }else if(authorsform.bio.trim().length < MIN_BIO_LENGTH){
-      newErrors.bio = `Bio must be at least ${MIN_BIO_LENGTH} character`
-      isValid=false
-    }
-
-
-    setErrors(newErrors);
-    return isValid;
-
-
-  },[authorsform])
-
-
-  const handleCancel=useCallback(()=>{
-    if (onEditComplete) {
-      onEditComplete(); 
-    }
-    setAuthorsForm({
-      id: '',
-      name: '',
-      bio: '',
-      profilePic: null,
-    });
-    setPreviewUrl(null);
-  },[onEditComplete])
-
-
-
-  const handleSubmit = useCallback(async (e)=>{
-
+  const handleSubmit = useCallback(
+    async (e) => {
       e.preventDefault();
+      setFormError('');
 
-      if(AuthorValidation()){
-        if (!currentPublisher) {
-          notificationRef.current.showNotif('No active publisher selected', 'error');
-          return;
-        }
-
-        try {
-          if(isEditMode){
-            await PublisherService.updateAuthorProposal({
-              publisher_id: currentPublisher.id,
-              author: authorsform.id,
-              name: authorsform.name.trim(),
-              biography: authorsform.bio.trim(),
-            });
-
-            notificationRef.current.showNotif('Author update proposal submitted for review!', 'success');
-
-            setTimeout(() => {
-              setAuthorsForm({
-                id: '',
-                name: '',
-                bio: '',
-                profilePic: null,
-              });
-              setPreviewUrl(null);
-
-              if (onEditComplete) {
-                onEditComplete();
-              }
-              if (onProposalCreated) {
-                onProposalCreated();
-              }
-            }, 1000);
-
-          }else{
-            await PublisherService.createAuthorProposal({
-              publisher_id: currentPublisher.id,
-              name: authorsform.name.trim(),
-              biography: authorsform.bio.trim(),
-            });
-
-            notificationRef.current.showNotif('Author creation proposal submitted for review!', 'success');
-
-            setTimeout(() => {
-              setAuthorsForm({
-                id: '',
-                name: '',
-                bio: '',
-                profilePic: null,
-              });
-              setPreviewUrl(null);
-
-              if (onEditComplete) {
-                onEditComplete();
-              }
-              if (onProposalCreated) {
-                onProposalCreated();
-              }
-            }, 1000);
-          }
-        } catch (err) {
-          console.error('Failed to submit author proposal:', err);
-          const data = err.response?.data;
-          let msg = 'Failed to submit author proposal';
-          if (typeof data === 'object') {
-            const firstVal = Object.values(data)[0];
-            msg = Array.isArray(firstVal) ? firstVal[0] : (typeof firstVal === 'string' ? firstVal : msg);
-          }
-          notificationRef.current.showNotif(msg, 'error');
-        }
+      if (!currentPublisher?.id) {
+        setFormError('Please select an active publisher house before submitting.');
+        return;
       }
- 
-  },[authorsform,AuthorValidation,isEditMode,currentPublisher,onEditComplete,onProposalCreated])
 
+      if (name.trim().length < MIN_NAME_LENGTH) {
+        setFormError(`Author name must be at least ${MIN_NAME_LENGTH} characters.`);
+        return;
+      }
 
+      if (bio.trim().length < MIN_BIO_LENGTH) {
+        setFormError(`Author biography must be at least ${MIN_BIO_LENGTH} characters.`);
+        return;
+      }
 
+      setIsSubmitting(true);
+      try {
+        if (isEditMode) {
+          await PublisherService.updateAuthorProposal({
+            publisher_id: currentPublisher.id,
+            author: authorToEdit.id,
+            name: name.trim(),
+            biography: bio.trim(),
+          });
+          notificationRef.current?.showNotif(
+            'Author update proposal submitted successfully for administrator review!',
+            'success'
+          );
+        } else {
+          await PublisherService.createAuthorProposal({
+            publisher_id: currentPublisher.id,
+            name: name.trim(),
+            biography: bio.trim(),
+          });
+          notificationRef.current?.showNotif(
+            'Author creation proposal submitted successfully for administrator review!',
+            'success'
+          );
+        }
 
-
+        setTimeout(() => {
+          if (onProposalCreated) onProposalCreated();
+          if (onEditComplete) onEditComplete();
+        }, 1200);
+      } catch (err) {
+        console.error('Failed to submit author proposal:', err);
+        const resMsg =
+          err.response?.data?.detail ||
+          err.response?.data?.name?.[0] ||
+          'Failed to submit author proposal. Please try again.';
+        setFormError(resMsg);
+        notificationRef.current?.showNotif(resMsg, 'error');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [currentPublisher, name, bio, isEditMode, authorToEdit, onProposalCreated, onEditComplete]
+  );
 
   return (
-    <div  className='edit-authors-container' >
-       <form onSubmit={handleSubmit}>
-      <div className='edit-authors-form'>
-          
-          {/* Name Field */}
-          <TextField
-            fullWidth
-            name="name"
-            label="name"
-            className='edit-inputs'
-            placeholder={isEditMode ? 'Edit author name':'Enter author name'}
-            value={authorsform.name || ''}
-            onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
+    <div className="edit-authors-panel">
+      <div className="edit-authors-header">
+        <h3>
+          {isEditMode ? `Edit Author Proposal: ${authorToEdit.name}` : 'Propose New Author'}
+        </h3>
+        <p>
+          Author profiles are catalog-wide entities. All author creations and edits require review by store administrators.
+        </p>
+      </div>
 
-            required
-
-          />
-          
-        
-        
-          {/* Bio Field */}
-          <TextField
-            fullWidth
-            name="bio"
-            label="bio"
-            className='edit-inputs'
-            placeholder={isEditMode ? "Edit author bio" : "Enter author bio"}
-            value={authorsform.bio || ''}
-            onChange={handleChange}
-
-            error={!!errors.bio}
-            helperText={errors.bio}
-            multiline
-            rows={3}
-            required
-          />
-          
+      {formError && (
+        <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+          <p style={{ color: '#f87171', margin: 0, fontSize: '0.88rem', fontWeight: 600 }}>
+            ⚠️ {formError}
+          </p>
         </div>
-        
-        {/* Profile Picture */}
-        <div style={{ marginBottom: '10px' }}>
-          <label className='edit-authors-profile-label'>
-            Profile Picture
+      )}
+
+      <form onSubmit={handleSubmit} className="author-form-body">
+        <div className="author-form-field">
+          <label htmlFor="author-name-input">
+            Author Full Name <span className="required">*</span>
           </label>
           <input
-            type="file"
-            name="profilePic"
-            onChange={handleFileChange}
-            accept="image/*"
-            className='edit-authors-pic-input'
-            
+            id="author-name-input"
+            type="text"
+            className="editor-input"
+            placeholder="e.g. Leo Tolstoy"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            autoFocus
           />
-          {previewUrl && (
-            <div className='selected-authors-pic'>
-              <img 
-                src={previewUrl} 
-                alt="Preview"  
-                loading='lazy'
-              />
-            </div>
-          )}
         </div>
-        
-        {/* Submit Button */}
-        <div className="edit-submit">
-            <button
-              type="submit"
-              className="edit-submit-btn"
-            >
-              {isEditMode ? 'Update':'Submit'}
-            </button>
-            {isEditMode &&
-                <button
-                className="edit-cancel-btn"
-                onClick={()=>handleCancel()}
-                disabled={!isFormValid}
-                >
-                  Cancel
-                </button>
-            }
-            
+
+        <div className="author-form-field">
+          <label htmlFor="author-bio-textarea">
+            Biography & Summary <span className="required">*</span>
+          </label>
+          <textarea
+            id="author-bio-textarea"
+            className="editor-textarea"
+            style={{ minHeight: 120 }}
+            placeholder="Write a comprehensive biography of the author, notable awards, and background..."
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            required
+          />
+          <span className="char-counter">{bio.length} characters (min {MIN_BIO_LENGTH})</span>
         </div>
-        
+
+        <div className="author-form-actions">
+          <button
+            type="button"
+            className="editor-cancel-btn"
+            onClick={onEditComplete}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            className="editor-submit-btn"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? 'Submitting Proposal...'
+              : isEditMode
+              ? 'Submit Author Update'
+              : 'Submit Author Proposal'}
+          </button>
+        </div>
       </form>
+
       <Notification ref={notificationRef} />
     </div>
-  )
+  );
 }

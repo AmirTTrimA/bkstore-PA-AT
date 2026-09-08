@@ -1,0 +1,713 @@
+/* ============================================
+   PUBLISHER DASHBOARD STYLES (MODERN GLASSMORPHIC)
+   ============================================ */
+
+.pdashboard-wrapper {
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+  color: var(--text-primarys);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------
+   Site-Wide Aligned Top Navigation Bar
+   -------------------------------------------- */
+.pdashboard-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg-nav);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.45);
+  border-radius: 0 0 10px 10px;
+  padding: 10px 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pdashboard-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pdashboard-logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #d17842 !important;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.pdashboard-logo:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.pdashboard-user-greeting {
+  font-size: 0.92rem;
+  color: var(--text-primarys);
+  opacity: 0.85;
+}
+
+.pdashboard-user-greeting strong {
+  color: #d17842;
+}
+
+/* Publisher Badge & Selector */
+.publisher-selector-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+
+.publisher-badge-icon {
+  font-size: 0.95rem;
+}
+
+.publisher-badge-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #d17842;
+}
+
+.publisher-dropdown-select {
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primarys);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.publisher-dropdown-select:focus {
+  border-color: #d17842;
+}
+
+/* Topbar Right Controls */
+.pdashboard-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pdash-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primarys);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.pdash-btn:hover {
+  background: rgba(209, 120, 66, 0.15);
+  border-color: #d17842;
+  color: #d17842;
+  transform: translateY(-1px);
+}
+
+.pdash-btn-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.notif-bell-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  color: var(--text-primarys);
+  cursor: pointer;
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.notif-bell-btn:hover {
+  background: rgba(209, 120, 66, 0.2);
+  border-color: #d17842;
+  color: #d17842;
+}
+
+.notif-count-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+}
+
+.mobile-nav-toggle {
+  display: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  color: var(--text-primarys);
+  padding: 6px 10px;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* --------------------------------------------
+   Main Container & KPI Metrics Cards
+   -------------------------------------------- */
+.pdashboard-main {
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pdashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.kpi-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(209, 120, 66, 0.35);
+}
+
+.kpi-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(209, 120, 66, 0.12);
+  color: #d17842;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.kpi-info-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  color: var(--text-primarys);
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primarys);
+  margin-top: 2px;
+}
+
+/* --------------------------------------------
+   In-Page Navigation Tabs
+   -------------------------------------------- */
+.pdashboard-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 6px;
+  overflow-x: auto;
+}
+
+.pdash-tab-btn {
+  background: transparent;
+  color: var(--text-primarys);
+  opacity: 0.8;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.pdash-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 1;
+}
+
+.pdash-tab-btn.active {
+  background: #d17842;
+  color: #ffffff;
+  opacity: 1;
+  box-shadow: 0 4px 14px rgba(209, 120, 66, 0.4);
+}
+
+.tab-badge {
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+/* --------------------------------------------
+   Tab 1: Published Books Table
+   -------------------------------------------- */
+.pdash-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+.pdash-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pdash-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primarys);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdash-table-search {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 6px 12px;
+  gap: 8px;
+  width: 280px;
+  max-width: 100%;
+}
+
+.pdash-table-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primarys);
+  font-size: 0.88rem;
+  width: 100%;
+}
+
+.pdash-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pdash-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.pdash-table th {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-primarys);
+  opacity: 0.85;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pdash-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+  color: var(--text-primarys);
+  vertical-align: middle;
+}
+
+.pdash-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.book-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.book-thumb-img {
+  width: 42px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.book-meta-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.book-main-title {
+  font-weight: 700;
+  color: var(--text-primarys);
+  margin-bottom: 2px;
+}
+
+.book-sub-author {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.format-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.format-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.format-pill.physical {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.format-pill.digital {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.format-pill.audio {
+  background: rgba(209, 120, 66, 0.15);
+  color: #d17842;
+  border: 1px solid rgba(209, 120, 66, 0.35);
+}
+
+.price-text {
+  font-weight: 700;
+  color: #d17842;
+}
+
+.table-action-btn {
+  background: rgba(209, 120, 66, 0.12);
+  color: #d17842;
+  border: 1px solid rgba(209, 120, 66, 0.35);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.table-action-btn:hover {
+  background: #d17842;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------
+   Tab 4: Proposals Waiting List
+   -------------------------------------------- */
+.proposals-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.proposal-filter-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-primarys);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.proposal-filter-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.proposal-filter-chip.active {
+  background: #d17842;
+  border-color: #d17842;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(209, 120, 66, 0.35);
+}
+
+.proposals-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.proposal-card-item {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.proposal-card-item:hover {
+  border-color: rgba(209, 120, 66, 0.3);
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.proposal-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.proposal-type-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.proposal-type-badge.book_create {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.proposal-type-badge.book_update {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.proposal-type-badge.price_change {
+  background: rgba(209, 120, 66, 0.15);
+  color: #d17842;
+  border: 1px solid rgba(209, 120, 66, 0.35);
+}
+
+.proposal-type-badge.author_create,
+.proposal-type-badge.author_update {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.proposal-status-chip {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.proposal-status-chip.pending {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.proposal-status-chip.approved,
+.proposal-status-chip.applied {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.proposal-status-chip.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.proposal-status-chip.withdrawn {
+  background: rgba(150, 150, 150, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(150, 150, 150, 0.3);
+}
+
+.proposal-item-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primarys);
+  margin: 4px 0 0 0;
+}
+
+.proposal-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.82rem;
+  color: var(--text-primarys);
+  opacity: 0.75;
+  flex-wrap: wrap;
+}
+
+.admin-review-box {
+  background: rgba(234, 179, 8, 0.08);
+  border-left: 3px solid #eab308;
+  border-radius: 0 8px 8px 0;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #eab308;
+  margin-top: 4px;
+}
+
+.admin-review-box.rejected-box {
+  background: rgba(239, 68, 68, 0.08);
+  border-left-color: #ef4444;
+  color: #f87171;
+}
+
+.proposal-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.withdraw-btn {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.withdraw-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* --------------------------------------------
+   Responsive Styles
+   -------------------------------------------- */
+@media (max-width: 900px) {
+  .pdashboard-topbar {
+    padding: 10px 16px;
+  }
+  
+  .pdash-btn span,
+  .pdash-btn-logout span {
+    display: none;
+  }
+
+  .pdashboard-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .pdashboard-topbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pdashboard-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pdashboard-tabs-bar {
+    gap: 6px;
+  }
+
+  .pdash-tab-btn {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  .pdash-table-search {
+    width: 100%;
+  }
+}

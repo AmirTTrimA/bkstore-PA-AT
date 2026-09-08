@@ -1,156 +1,266 @@
-// ✅
-import React from 'react';
-import {
-  Modal,
-  Box,
-  Typography,
-  IconButton,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Button
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'APPROVED':
-    case 'APPLIED':
-      return 'success';
-    case 'PENDING':
-      return 'warning';
-    case 'REJECTED':
-      return 'error';
-    case 'WITHDRAWN':
-      return 'default';
-    default:
-      return 'info';
-  }
-};
+import React, { useState, useMemo } from 'react';
+import { formatPrice } from '../../utils/formatPrice';
 
 export default function NotifModal({ open, onClose, notifmessage = [], onWithdraw }) {
+  const [filter, setFilter] = useState('ALL');
+  const [confirmWithdrawId, setConfirmWithdrawId] = useState(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+  // Group counts
+  const counts = useMemo(() => {
+    return {
+      ALL: notifmessage.length,
+      PENDING: notifmessage.filter((p) => p.status === 'PENDING').length,
+      APPROVED: notifmessage.filter((p) => p.status === 'APPROVED' || p.status === 'APPLIED').length,
+      REJECTED: notifmessage.filter((p) => p.status === 'REJECTED').length,
+    };
+  }, [notifmessage]);
+
+  const filteredProposals = useMemo(() => {
+    if (filter === 'ALL') return notifmessage;
+    if (filter === 'APPROVED') {
+      return notifmessage.filter((p) => p.status === 'APPROVED' || p.status === 'APPLIED');
+    }
+    return notifmessage.filter((p) => p.status === filter);
+  }, [notifmessage, filter]);
+
+  const getProposalTypeInfo = (type) => {
+    switch (type) {
+      case 'BOOK_CREATE':
+        return { label: '📖 New Book', className: 'book_create' };
+      case 'BOOK_UPDATE':
+        return { label: '✏️ Book Update', className: 'book_update' };
+      case 'PRICE_CHANGE':
+        return { label: '💰 Price Change', className: 'price_change' };
+      case 'AUTHOR_CREATE':
+        return { label: '👤 New Author', className: 'author_create' };
+      case 'AUTHOR_UPDATE':
+        return { label: '📝 Author Update', className: 'author_update' };
+      default:
+        return { label: '📋 Proposal', className: 'generic' };
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return <span className="proposal-status-chip pending">⏳ Under Review</span>;
+      case 'APPROVED':
+      case 'APPLIED':
+        return <span className="proposal-status-chip approved">✅ Approved</span>;
+      case 'REJECTED':
+        return <span className="proposal-status-chip rejected">❌ Rejected</span>;
+      case 'WITHDRAWN':
+        return <span className="proposal-status-chip withdrawn">↩️ Withdrawn</span>;
+      default:
+        return <span className="proposal-status-chip">{status}</span>;
+    }
+  };
+
+  const handleWithdrawConfirm = async (proposalId) => {
+    if (!onWithdraw) return;
+    setIsWithdrawing(true);
+    try {
+      await onWithdraw(proposalId);
+      setConfirmWithdrawId(null);
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  if (!open) return null;
+
   return (
-    <div>
-      <Modal
-        open={open}
-        onClose={onClose}
-        aria-labelledby="notif-modal-title"
-        aria-describedby="notif-modal-description"
+    <div
+      className="price-modal-backdrop"
+      onClick={onClose}
+      style={{ zIndex: 1050 }}
+    >
+      <div
+        className="price-modal-card"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '820px',
+          width: '95%',
+          maxHeight: '85vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px 28px',
+        }}
       >
-        <Box
-          className="mod-box"
-          sx={{
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            width: { xs: '90%', sm: 600 },
+        {/* Modal Header */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            paddingBottom: '16px',
           }}
         >
-          {/* Close Button */}
-          <IconButton
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primarys)' }}>
+              🔔 Proposals & Activity Hub
+            </h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: 'var(--text-primarys)', opacity: 0.75 }}>
+              Track submissions, editorial reviews, and status changes across all catalog items.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="pdash-btn"
             onClick={onClose}
-            sx={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
-            }}
+            style={{ padding: '6px 12px' }}
           >
-            <CloseIcon />
-          </IconButton>
+            ✕
+          </button>
+        </div>
 
-          {/* Title */}
-          <Typography
-            id="notif-modal-title"
-            variant="h5"
-            component="h2"
-            gutterBottom
-            sx={{ mb: 3, textAlign: 'center', fontWeight: '800' }}
+        {/* Filter Tabs Strip */}
+        <div
+          className="proposals-filter-strip"
+          style={{ marginTop: '16px', marginBottom: '16px' }}
+        >
+          <button
+            type="button"
+            className={`proposal-filter-chip ${filter === 'ALL' ? 'active' : ''}`}
+            onClick={() => setFilter('ALL')}
           >
-            Proposals & Notifications
-          </Typography>
+            All ({counts.ALL})
+          </button>
+          <button
+            type="button"
+            className={`proposal-filter-chip ${filter === 'PENDING' ? 'active' : ''}`}
+            onClick={() => setFilter('PENDING')}
+          >
+            ⏳ Pending ({counts.PENDING})
+          </button>
+          <button
+            type="button"
+            className={`proposal-filter-chip ${filter === 'APPROVED' ? 'active' : ''}`}
+            onClick={() => setFilter('APPROVED')}
+          >
+            ✅ Approved ({counts.APPROVED})
+          </button>
+          <button
+            type="button"
+            className={`proposal-filter-chip ${filter === 'REJECTED' ? 'active' : ''}`}
+            onClick={() => setFilter('REJECTED')}
+          >
+            ❌ Rejected ({counts.REJECTED})
+          </button>
+        </div>
 
-          {/* Notification Grid */}
-          <Grid container spacing={2}>
-            {notifmessage.length === 0 ? (
-              <Grid item xs={12}>
-                <Typography
-                  variant="body1"
-                  sx={{ textAlign: 'center', color: 'text.secondary', py: 4 }}
-                >
-                  No proposals or notifications available
-                </Typography>
-              </Grid>
-            ) : (
-              notifmessage.map((item) => {
-                const isPending = item.status === 'PENDING';
-                return (
-                  <Grid item xs={12} key={item.id}>
-                    <Card variant="outlined" sx={{ borderRadius: 2 }}>
-                      <CardContent sx={{ pb: '16px !important' }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                            gap: 1,
-                            mb: 1,
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            component="div"
-                            sx={{ fontWeight: 600 }}
+        {/* Proposals List Scrollable Body */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            paddingRight: '6px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          {filteredProposals.length === 0 ? (
+            <div className="empty-roster-state" style={{ margin: '30px 0' }}>
+              <p>No proposals found in this category.</p>
+            </div>
+          ) : (
+            filteredProposals.map((item) => {
+              const typeInfo = getProposalTypeInfo(item.proposal_type);
+              const isPending = item.status === 'PENDING';
+              const submittedDate = item.submitted_at || item.created_at;
+              const formattedDate = submittedDate
+                ? new Date(submittedDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Date unknown';
+
+              return (
+                <div key={item.id} className="proposal-card-item">
+                  <div className="proposal-card-top">
+                    <span className={`proposal-type-badge ${typeInfo.className}`}>
+                      {typeInfo.label}
+                    </span>
+                    {getStatusBadge(item.status)}
+                  </div>
+
+                  <div>
+                    <h4 className="proposal-item-title">{item.title}</h4>
+                    <div className="proposal-item-meta" style={{ marginTop: 6 }}>
+                      <span>📅 Submitted: {formattedDate}</span>
+                      {item.submitted_by_username && (
+                        <span>👤 Submitter: {item.submitted_by_username}</span>
+                      )}
+                      {item.proposal_type === 'PRICE_CHANGE' && item.details?.value && (
+                        <span>
+                          💰 Proposed Price: <strong>{formatPrice(item.details.value)}</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Admin Review Notes (if available) */}
+                  {item.review_notes && (
+                    <div
+                      className={`admin-review-box ${
+                        item.status === 'REJECTED' ? 'rejected-box' : ''
+                      }`}
+                    >
+                      <strong>Editorial Feedback:</strong> {item.review_notes}
+                    </div>
+                  )}
+
+                  {/* Withdraw action for Pending proposals */}
+                  {isPending && (
+                    <div className="proposal-card-actions">
+                      {confirmWithdrawId === item.id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '0.8rem', color: '#f87171' }}>
+                            Withdraw this proposal?
+                          </span>
+                          <button
+                            type="button"
+                            className="withdraw-btn"
+                            style={{ background: '#ef4444', color: '#fff' }}
+                            onClick={() => handleWithdrawConfirm(item.id)}
+                            disabled={isWithdrawing}
                           >
-                            {item.title || item.msg || `Proposal #${item.id}`}
-                          </Typography>
-                          {item.status && (
-                            <Chip
-                              label={item.status_display || item.status}
-                              color={getStatusColor(item.status)}
-                              size="small"
-                              sx={{ fontWeight: 600, fontSize: '0.75rem' }}
-                            />
-                          )}
-                        </Box>
-
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            flexWrap: 'wrap',
-                            gap: 1,
-                            mt: 1,
-                          }}
+                            {isWithdrawing ? 'Withdrawing...' : 'Yes, Withdraw'}
+                          </button>
+                          <button
+                            type="button"
+                            className="pdash-btn"
+                            style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+                            onClick={() => setConfirmWithdrawId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="withdraw-btn"
+                          onClick={() => setConfirmWithdrawId(item.id)}
+                          title="Withdraw proposal from admin queue"
                         >
-                          <Typography variant="caption" color="text.secondary">
-                            {item.proposal_type_display || item.proposal_type || 'Proposal'}
-                            {item.submitted_at &&
-                              ` • ${new Date(item.submitted_at).toLocaleDateString()}`}
-                          </Typography>
-
-                          {isPending && onWithdraw && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="error"
-                              onClick={() => onWithdraw(item.id)}
-                              sx={{ textTransform: 'none', py: 0.2, px: 1.5 }}
-                            >
-                              Withdraw
-                            </Button>
-                          )}
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })
-            )}
-          </Grid>
-        </Box>
-      </Modal>
+                          Withdraw Proposal
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
     </div>
   );
 }

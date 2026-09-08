@@ -1,88 +1,71 @@
-// ✅
-import React,{useState} from 'react'
-import {
-  Tab,
-  Tabs
-} from '@mui/material';
+import React, { useState, useCallback } from 'react';
 import Editauthors from './Editauthors';
 import Allauthor from './Allauthor';
 
-import '../../../Styles/publisher-panel/Authors.css'
-import { useCallback } from 'react';
+import '../../../Styles/publisher-panel/Authors.css';
 
-
-
-
-
-// ============================================
-//    Main 
-// ============================================
 export default function Authors({ currentPublisher, onProposalCreated }) {
-
-  //---State--- 
-  const [value,setValue]= useState(0); // 0  Edit, 1  All
+  // 0: Roster List, 1: Propose New / Edit
+  const [tabIndex, setTabIndex] = useState(0);
   const [authorToEdit, setAuthorToEdit] = useState(null);
 
-//---Handlers---
-  const handleTabChange = useCallback((_, newValue) => {
-    setValue(newValue);
-    if(newValue === 0){
-      setAuthorToEdit(null)
-    }
-  },[])
-
-  const handleEditAuthor = useCallback((author)=>{
+  const handleEditAuthor = useCallback((author) => {
     setAuthorToEdit(author);
-    setValue(0);
-  },[])
+    setTabIndex(1);
+  }, []);
 
-  const clearEditMode = useCallback(()=>{
+  const handleNewAuthor = useCallback(() => {
     setAuthorToEdit(null);
-  },[])
+    setTabIndex(1);
+  }, []);
+
+  const handleComplete = useCallback(() => {
+    setAuthorToEdit(null);
+    setTabIndex(0);
+  }, []);
 
   return (
-    <div  className='authors-container'>
-      {/* Tabs */}
-      <Tabs
-        value={value}
-        onChange={handleTabChange}
-        aria-label='setting navigation tabs'
-        sx={{
-              borderBottom:2 ,
-              borderColor:'divider',
-              mb:3,
-              mt:2,
-        
-              '& .Mui-selected':{
-                color:"white !important"
-              },
-              '& .MuiTabs-indicator':{
-                backgroundColor:'white'
-              }
-            }}
+    <div className="authors-wrapper">
+      {/* Custom Glassmorphic Navigation Tabs */}
+      <div className="authors-nav-tabs">
+        <button
+          type="button"
+          className={`author-tab-btn ${tabIndex === 0 ? 'active' : ''}`}
+          onClick={() => {
+            setAuthorToEdit(null);
+            setTabIndex(0);
+          }}
         >
-            <Tab label={authorToEdit ? "Edit Author" : "New Author"} sx={{color:'white'}}/>
-            <Tab label="All Authors" sx={{color:'white'}}/>
-        </Tabs>
+          👥 Authors Roster
+        </button>
 
-        <div className='form-authors-container' >
-          {value === 0 &&
-            <Editauthors
-              authorToEdit={authorToEdit}
-              onEditComplete={() => {
-                clearEditMode();
-                setValue(1); // Switch to All Authors tab
-              }}
-              currentPublisher={currentPublisher}
-              onProposalCreated={onProposalCreated}
-            />
-          }
-          {value === 1 &&
-            <Allauthor
-              onEditAuthor={handleEditAuthor}
-            />
-          }
-        </div>
+        <button
+          type="button"
+          className={`author-tab-btn ${tabIndex === 1 ? 'active' : ''}`}
+          onClick={handleNewAuthor}
+        >
+          {authorToEdit ? `✏️ Edit: ${authorToEdit.name}` : '✍️ Propose New Author'}
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="authors-tab-content">
+        {tabIndex === 0 && (
+          <Allauthor
+            onEditAuthor={handleEditAuthor}
+            onAddNew={handleNewAuthor}
+          />
+        )}
+
+        {tabIndex === 1 && (
+          <Editauthors
+            authorToEdit={authorToEdit}
+            onEditComplete={handleComplete}
+            currentPublisher={currentPublisher}
+            onProposalCreated={onProposalCreated}
+          />
+        )}
+      </div>
     </div>
-  )
+  );
 }
