@@ -38,20 +38,6 @@
   }
 }
 
-/* Two-column row for Username and Age */
-.signup-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 0.85rem;
-}
-
-@media (max-width: 480px) {
-  .signup-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-}
-
 /* Password Strength Meter */
 .signup-strength-container {
   margin-top: 0.45rem;

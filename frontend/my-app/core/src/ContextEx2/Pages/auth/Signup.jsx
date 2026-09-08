@@ -5,8 +5,6 @@ import Notification from '../../Components/feature/Notification';
 import '../../Styles/components/Login.css';
 import '../../Styles/components/Signup.css';
 
-const MIN_AGE = 13;
-const MAX_AGE = 120;
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,10 +13,9 @@ export default function Signup() {
   const { signup, setError, error, clearError } = useAuth();
   const notificationRef = useRef(null);
 
-  // Form State
+  // Form State (no age field)
   const [formData, setFormData] = useState({
     name: '',
-    age: '',
     email: '',
     password: '',
     password2: '',
@@ -92,9 +89,6 @@ export default function Signup() {
 
   const isFormValid =
     formData.name.trim().length >= 3 &&
-    formData.age &&
-    Number(formData.age) >= MIN_AGE &&
-    Number(formData.age) <= MAX_AGE &&
     EMAIL_REGEX.test(formData.email.trim()) &&
     formData.password.length >= MIN_PASSWORD_LENGTH &&
     isPasswordsMatch;
@@ -103,22 +97,14 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { name, age, email, password, password2 } = formData;
+    const { name, email, password, password2 } = formData;
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    const parsedAge = parseInt(age, 10);
 
     // Validation checks
-    if (!trimmedName || !trimmedEmail || !age || !password || !password2) {
+    if (!trimmedName || !trimmedEmail || !password || !password2) {
       if (notificationRef.current) {
         notificationRef.current.showNotif('Please complete all fields.', 'error');
-      }
-      return;
-    }
-
-    if (parsedAge < MIN_AGE || parsedAge > MAX_AGE) {
-      if (notificationRef.current) {
-        notificationRef.current.showNotif(`Age must be between ${MIN_AGE} and ${MAX_AGE}.`, 'error');
       }
       return;
     }
@@ -149,7 +135,7 @@ export default function Signup() {
 
     setSubmitting(true);
     try {
-      const success = await signup(trimmedName, parsedAge, trimmedEmail, password, password2);
+      const success = await signup(trimmedName, trimmedEmail, password, password2);
       if (success) {
         if (notificationRef.current) {
           notificationRef.current.showNotif(
@@ -204,48 +190,25 @@ export default function Signup() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
-          {/* Row: Username and Age */}
-          <div className="signup-row">
-            <div className="auth-form-group">
-              <label className="auth-label" htmlFor="signup-username">
-                Username
-              </label>
-              <div className="auth-input-wrapper">
-                <i className="fas fa-user auth-input-icon"></i>
-                <input
-                  id="signup-username"
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="e.g. alex_reader"
-                  required
-                  className="auth-input"
-                  autoComplete="username"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div className="auth-form-group">
-              <label className="auth-label" htmlFor="signup-age">
-                Age
-              </label>
-              <div className="auth-input-wrapper">
-                <i className="fas fa-calendar-alt auth-input-icon"></i>
-                <input
-                  id="signup-age"
-                  type="number"
-                  name="age"
-                  min={MIN_AGE}
-                  max={MAX_AGE}
-                  value={formData.age}
-                  onChange={handleChange}
-                  placeholder="Age"
-                  required
-                  className="auth-input"
-                />
-              </div>
+          {/* Username */}
+          <div className="auth-form-group">
+            <label className="auth-label" htmlFor="signup-username">
+              Username
+            </label>
+            <div className="auth-input-wrapper">
+              <i className="fas fa-user auth-input-icon"></i>
+              <input
+                id="signup-username"
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="e.g. alex_reader"
+                required
+                className="auth-input"
+                autoComplete="username"
+                autoFocus
+              />
             </div>
           </div>
 
@@ -349,7 +312,7 @@ export default function Signup() {
             )}
           </div>
 
-          {/* Confirm Password — FIXED: type is now password with toggle */}
+          {/* Confirm Password */}
           <div className="auth-form-group">
             <label className="auth-label" htmlFor="signup-password-repeat">
               Confirm Password

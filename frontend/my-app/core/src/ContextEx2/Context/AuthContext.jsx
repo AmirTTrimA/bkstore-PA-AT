@@ -94,26 +94,39 @@ export default function AuthProvider({ children }){
 
   // Signup
   const signup = useCallback(
-  async (name, age, email, password,password2) => {
-    try {
-      await AuthService.register({
-        username: name.trim().toLowerCase(),
-        age,
-        email: email.trim(),
-        password,
-        password2
-      });
+    async (name, ...args) => {
+      let email, password, password2;
+      if (args.length === 4) {
+        // legacy: (name, age, email, password, password2)
+        [, email, password, password2] = args;
+      } else {
+        // modern: (name, email, password, password2)
+        [email, password, password2] = args;
+      }
 
+      try {
+        await AuthService.register({
+          username: name.trim().toLowerCase(),
+          email: email.trim(),
+          password,
+          password2,
+        });
 
-
-      
-      return true;
-    } catch (err) {
-        setError(err.response?.data?.message || "Signup failed");
+        return true;
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+          err.response?.data?.detail ||
+          err.response?.data?.username?.[0] ||
+          err.response?.data?.email?.[0] ||
+          err.response?.data?.password?.[0] ||
+          "Signup failed"
+        );
         return false;
-    }
-
-  },[]);
+      }
+    },
+    []
+  );
 
 
   // Login with email (magic link)
