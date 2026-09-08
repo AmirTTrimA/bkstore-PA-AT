@@ -212,14 +212,16 @@ export default function Dashboard({ initialTab }) {
 
   const openReader = useCallback(
     (book) => {
-      navigate("/pdfreader", { state: { book } });
+      const bookId = book.book_id || book.id;
+      navigate(bookId ? `/pdf/${bookId}` : "/pdfreader", { state: { book } });
     },
     [navigate]
   );
 
   const openAudioPlayer = useCallback(
     (book) => {
-      navigate("/audioplayer", { state: { book } });
+      const bookId = book.book_id || book.id;
+      navigate(bookId ? `/audio/${bookId}` : "/audioplayer", { state: { book } });
     },
     [navigate]
   );
