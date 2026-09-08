@@ -54,6 +54,7 @@ class ProposalListSerializer(serializers.ModelSerializer):
             "proposal_type_display",
             "status",
             "status_display",
+            "created_at",
             "submitted_at",
             "reviewed_at",
             "applied_at",
