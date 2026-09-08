@@ -185,7 +185,7 @@ class ProposalAdmin(admin.ModelAdmin):
     def approve_selected(self, request, queryset):
 
         queryset = queryset.filter(
-            status=Proposal.Status.SUBMITTED
+            status=Proposal.Status.PENDING
         )
 
         success = 0
@@ -221,7 +221,7 @@ class ProposalAdmin(admin.ModelAdmin):
     def reject_selected(self, request, queryset):
 
         queryset = queryset.filter(
-            status=Proposal.Status.SUBMITTED
+            status=Proposal.Status.PENDING
         )
 
         success = 0
