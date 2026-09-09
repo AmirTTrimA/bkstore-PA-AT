@@ -8,6 +8,7 @@ admin.site.site_title = "PageNet Admin Portal"
 admin.site.index_title = "Bookstore Management & Editorial Operations"
 
 urlpatterns = [
+    path("i18n/", include("django.conf.urls.i18n")),
     path("admin/", admin.site.urls),
 
     # API Version 1 Router
@@ -23,6 +24,7 @@ urlpatterns = [
                 path("wallet/", include("wallet.api.urls")),
                 path("content/", include("content.urls")),
                 path("payments/", include("payments.api.urls")),
+                path("recommendations/", include("recommendations.urls")),
             ]
         ),
     ),

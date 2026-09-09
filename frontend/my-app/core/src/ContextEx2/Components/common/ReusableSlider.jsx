@@ -131,6 +131,13 @@ return (
                 </div>
                 {/* Card Content */}
                 <h4>{item.title}</h4>
+                {item.match_reasons && item.match_reasons.length > 0 && (
+                  <div className="slider-match-badge" title={item.match_reasons.join(" • ")}>
+                    <span className="slider-match-text">
+                      💡 {item.match_reasons[0]}
+                    </span>
+                  </div>
+                )}
                 <div className="slider-pricing-row">
                   {item.has_discount && item.original_price ? (
                     <>

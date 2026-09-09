@@ -154,6 +154,36 @@ class Book(models.Model):
     )
     edition = models.CharField(_("Edition"), max_length=50, blank=True)
 
+    TARGET_AGE_CHOICES = [
+        ("all_ages", _("All Ages")),
+        ("children", _("Children (0-12)")),
+        ("young_adult", _("Young Adult (13-17)")),
+        ("adult", _("Adult (18+)")),
+    ]
+    CONTENT_TONE_CHOICES = [
+        ("philosophical", _("Philosophical & Reflective")),
+        ("dystopian", _("Dark & Dystopian")),
+        ("academic", _("Analytical & Academic")),
+        ("inspiring", _("Uplifting & Inspiring")),
+        ("humorous", _("Lighthearted & Humorous")),
+        ("mystical", _("Mystical & Spiritual")),
+    ]
+
+    target_age_group = models.CharField(
+        _("Target Age Group"),
+        max_length=30,
+        choices=TARGET_AGE_CHOICES,
+        default="all_ages",
+        blank=True,
+    )
+    content_tone = models.CharField(
+        _("Content Tone"),
+        max_length=50,
+        choices=CONTENT_TONE_CHOICES,
+        default="philosophical",
+        blank=True,
+    )
+
     @property
     def is_semantically_eligible(self):
         """

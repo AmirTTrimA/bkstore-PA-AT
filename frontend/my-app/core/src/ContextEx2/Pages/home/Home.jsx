@@ -17,6 +17,7 @@ import "../../Styles/components/Home.css";
 // --- Services ---
 import BookService from "../../Services/BookService";
 import PublisherService from "../../Services/PublisherService";
+import RecommendationService from "../../Services/RecommendationService";
 import { formatPrice } from "../../utils/formatPrice";
 
 // --- Constants ---
@@ -63,6 +64,8 @@ function mapBookForSlider(book) {
       book.author_profile ||
       ppic1,
     img: getBookImage(book),
+    match_reasons: book.match_reasons || [],
+    similarity_score: book.similarity_score,
   };
 }
 
@@ -89,12 +92,13 @@ export default function Home() {
   const inputRef = useRef(null);
   const notificationRef = useRef();
   const { isLoggedIn } = useAuth();
-  const { t, isPersian } = useLanguage();
+  const { t } = useLanguage();
 
   // ----------------------------------------
   // Book & Catalog State
   // ----------------------------------------
   const [heroBooks, setHeroBooks] = useState([]);
+  const [recommendedBooks, setRecommendedBooks] = useState([]);
   const [newBooks, setNewBooks] = useState([]);
   const [discountBooks, setDiscountBooks] = useState([]);
   const [digitalBooks, setDigitalBooks] = useState([]);
@@ -130,6 +134,7 @@ export default function Home() {
           audioBooksRes,
           publishersRes,
           genresRes,
+          recommendedRes,
         ] = await Promise.allSettled([
           BookService.getNewBooks({ page_size: 10 }),
           BookService.getBooks({ page_size: 20 }),
@@ -137,6 +142,7 @@ export default function Home() {
           BookService.getBooks({ format: "AUDIO", page_size: 10 }),
           PublisherService.getPublicPublishers({ page_size: 8 }),
           BookService.getGenres(),
+          RecommendationService.getForYouRecommendations({ limit: 8 }),
         ]);
 
         if (cancelled) return;
@@ -149,7 +155,15 @@ export default function Home() {
           setHeroBooks(mappedNew.slice(0, 5));
         }
 
-        // 2. Best Offers / Discounted Editions
+        // 2. Recommendations (Phase 3 Semantic & Personalized Engine)
+        if (recommendedRes.status === "fulfilled") {
+          const rawRec = extractBooks(
+            recommendedRes.value?.recommendations || recommendedRes.value
+          );
+          setRecommendedBooks(rawRec.map(mapBookForSlider));
+        }
+
+        // 3. Best Offers / Discounted Editions
         if (allBooksRes.status === "fulfilled") {
           const rawAll = extractBooks(allBooksRes.value);
           const discounts = rawAll.filter((b) => b.has_discount && b.discount_percent > 0);
@@ -157,7 +171,7 @@ export default function Home() {
           setDiscountBooks((discounts.length > 0 ? discounts : rawAll.slice(0, 10)).map(mapBookForSlider));
         }
 
-        // 3. Digital Editions (PDFs)
+        // 4. Digital Editions (PDFs)
         let digitalList = [];
         if (digitalBooksRes.status === "fulfilled") {
           digitalList = extractBooks(digitalBooksRes.value);
@@ -170,7 +184,7 @@ export default function Home() {
         }
         setDigitalBooks(digitalList.map(mapBookForSlider));
 
-        // 4. Audiobooks
+        // 5. Audiobooks
         let audioList = [];
         if (audioBooksRes.status === "fulfilled") {
           audioList = extractBooks(audioBooksRes.value);
@@ -183,13 +197,13 @@ export default function Home() {
         }
         setAudioBooks(audioList.map(mapBookForSlider));
 
-        // 5. Iranian Publishers
+        // 6. Iranian Publishers
         if (publishersRes.status === "fulfilled") {
           const rawPubs = publishersRes.value?.results || publishersRes.value || [];
           setPublishers(Array.isArray(rawPubs) ? rawPubs : []);
         }
 
-        // 6. Genres
+        // 7. Genres
         if (genresRes.status === "fulfilled") {
           const rawGenres = genresRes.value?.results || genresRes.value || [];
           setGenres(Array.isArray(rawGenres) ? rawGenres : []);
@@ -427,6 +441,17 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {/* DYNAMIC SECTION 0: RECOMMENDED FOR YOU (PHASE 3 SEMANTIC RECOMMENDATION ENGINE) */}
+        {recommendedBooks.length > 0 && (
+          <ReusableSlider
+            items={recommendedBooks}
+            title={t('home.recommendedForYou', 'Recommended For You')}
+            viewAllLink="/search"
+            customClass="home-popular"
+            cardWidth="280px"
+          />
+        )}
 
         {/* DYNAMIC SECTION 1: NEW ARRIVALS */}
         <ReusableSlider

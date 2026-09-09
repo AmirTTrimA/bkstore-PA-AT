@@ -188,6 +188,8 @@ class BookAdmin(admin.ModelAdmin):
 
     list_filter = (
         "language",
+        "target_age_group",
+        "content_tone",
         "genres",
         "genre",
         "is_digital",
@@ -334,6 +336,7 @@ class BookAdmin(admin.ModelAdmin):
                     "genre",
                     "genres",
                     "tags",
+                    ("target_age_group", "content_tone"),
                     "semantic_status_detail",
                 ),
             },

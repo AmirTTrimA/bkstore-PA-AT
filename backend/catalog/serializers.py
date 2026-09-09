@@ -187,6 +187,8 @@ class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
 
     author_name = serializers.CharField(source="author.name")
     language = serializers.CharField(read_only=True)
+    target_age_group = serializers.CharField(read_only=True)
+    content_tone = serializers.CharField(read_only=True)
     formats = BookFormatSerializer(many=True, read_only=True)
 
     class Meta:
@@ -198,6 +200,8 @@ class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
             "author_name",
             "cover_image_url",
             "language",
+            "target_age_group",
+            "content_tone",
             "formats",
             "price",
             "original_price",

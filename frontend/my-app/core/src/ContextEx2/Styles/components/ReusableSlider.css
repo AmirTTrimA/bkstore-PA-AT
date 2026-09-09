@@ -322,3 +322,26 @@
   font-weight: 700;
   margin: 0;
 }
+
+/* Recommendation Match Reason Tag */
+.slider-match-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px auto 6px;
+  max-width: 92%;
+}
+
+.slider-match-text {
+  font-size: 0.72rem;
+  color: #d17842;
+  background: rgba(209, 120, 66, 0.12);
+  border: 1px solid rgba(209, 120, 66, 0.28);
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-weight: 600;
+}

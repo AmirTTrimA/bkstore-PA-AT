@@ -4,25 +4,65 @@ import { useNavigate, useParams } from "react-router-dom";
 import BasketService from "../../Services/BasketService";
 import BookService from "../../Services/BookService";
 import WishlistService from "../../Services/WishlistService";
+import RecommendationService from "../../Services/RecommendationService";
 
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
+import ReusableSlider from "../../Components/common/ReusableSlider";
 import Notification from "../../Components/feature/Notification";
 
 import { useAuth } from "../../Context/AuthContext";
+import { useLanguage } from "../../Context/LanguageContext";
 import { formatPrice } from "../../utils/formatPrice";
+import { ppic1 } from "../../Constants";
 
 import "../../Styles/components/Book.css";
 
+// ============================================
+// Helpers
+// ============================================
+
+function getBookImage(b) {
+  return (
+    b.cover_image_url ||
+    b.cover_image ||
+    "https://placehold.co/400x600?text=No+Cover"
+  );
+}
+
+function getBookPrice(b) {
+  if (b.price === null || b.price === undefined || b.price === "") {
+    return "N/A";
+  }
+  return formatPrice(b.price);
+}
+
+function mapBookForSlider(b) {
+  return {
+    id: b.id,
+    title: b.title || "Untitled Book",
+    price: getBookPrice(b),
+    original_price: b.original_price ? formatPrice(b.original_price) : null,
+    discount_percent: b.discount_percent || 0,
+    has_discount: Boolean(b.has_discount),
+    link: String(b.id),
+    authorId: b.author_id || b.author?.id || 0,
+    author_profile:
+      b.author?.profile_image_url ||
+      b.author_profile ||
+      ppic1,
+    img: getBookImage(b),
+    match_reasons: b.match_reasons || [],
+    similarity_score: b.similarity_score,
+  };
+}
 
 export default function Book() {
-
   const { bookId } = useParams();
   const navigate = useNavigate();
-
   const { isLoggedIn } = useAuth();
-
+  const { t } = useLanguage();
   const notificationRef = useRef(null);
 
 
@@ -45,6 +85,16 @@ export default function Book() {
   const [addingCart, setAddingCart] = useState(false);
 
   const [updatingWishlist, setUpdatingWishlist] = useState(false);
+
+  const [similarBooks, setSimilarBooks] = useState([]);
+
+
+  // ==========================
+  // Scroll to top on book change
+  // ==========================
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [bookId]);
 
 
   // ==========================
@@ -87,6 +137,30 @@ export default function Book() {
 
     fetchBook();
 
+  }, [bookId]);
+
+
+  // ==========================
+  // Load similar books (Phase 3 Semantic Recommendations)
+  // ==========================
+
+  useEffect(() => {
+    if (!bookId) return;
+    let cancelled = false;
+
+    RecommendationService.getSimilarBooks(bookId, 6)
+      .then((data) => {
+        if (!cancelled && data?.recommendations) {
+          setSimilarBooks(data.recommendations.map(mapBookForSlider));
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load similar books:", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [bookId]);
 
 
@@ -398,7 +472,7 @@ export default function Book() {
         <div className="book-nav-res"><SimpleNav /></div>
         <div className="book-status-screen">
           <div className="book-spinner"></div>
-          <p>Loading book details...</p>
+          <p>{t("common.loading", "Loading book details...")}</p>
         </div>
         <Footer />
       </>
@@ -411,10 +485,10 @@ export default function Book() {
         <div className="book-nav-full"><Navbar /></div>
         <div className="book-nav-res"><SimpleNav /></div>
         <div className="book-status-screen">
-          <h2>{error || "Book not found"}</h2>
-          <p>The requested book could not be found in our catalog.</p>
+          <h2>{error || t("book.notFound", "Book not found")}</h2>
+          <p>{t("book.notFoundDesc", "The requested book could not be found in our catalog.")}</p>
           <button className="book-back-action-btn" onClick={() => navigate("/library")}>
-            ← Explore Book Catalog
+            ← {t("library.exploreCatalog", "Explore Book Catalog")}
           </button>
         </div>
         <Footer />
@@ -437,13 +511,13 @@ export default function Book() {
       <main className="book-container">
         {/* Top bar with back button & breadcrumbs */}
         <div className="book-top-bar">
-          <button className="book-back-btn" onClick={() => navigate(-1)} title="Go Back">
-            <i className="fas fa-angle-left"></i> Back
+          <button className="book-back-btn" onClick={() => navigate(-1)} title={t("common.back", "Go Back")}>
+            <i className="fas fa-angle-left"></i> {t("common.back", "Back")}
           </button>
           <div className="book-breadcrumbs">
-            <button onClick={() => navigate("/home")} className="crumb-link">Home</button>
+            <button onClick={() => navigate("/home")} className="crumb-link">{t("nav.home", "Home")}</button>
             <span className="crumb-sep">/</span>
-            <button onClick={() => navigate("/library")} className="crumb-link">Library</button>
+            <button onClick={() => navigate("/library")} className="crumb-link">{t("library.bookCatalog", "Library")}</button>
             <span className="crumb-sep">/</span>
             <span className="crumb-current">{book.title}</span>
           </div>
@@ -472,8 +546,8 @@ export default function Book() {
                 <div className="book-meta-tags-row">
                   {/* Author */}
                   <div className="meta-item">
-                    <span className="meta-label">Author:</span>
-                    <button id="ext" onClick={goAuthor} title="View Author Profile">
+                    <span className="meta-label">{t("common.author", "Author")}:</span>
+                    <button id="ext" onClick={goAuthor} title={t("author.authorProfile", "View Author Profile")}>
                       {book.author_name}
                     </button>
                   </div>
@@ -481,11 +555,11 @@ export default function Book() {
                   {/* Publisher */}
                   {book.publisher_id && (
                     <div className="meta-item">
-                      <span className="meta-label">Publisher:</span>
+                      <span className="meta-label">{t("book.publisher", "Publisher")}:</span>
                       <button
                         className="book-publisher-badge"
                         onClick={() => navigate(`/publisher/${book.publisher_id}`)}
-                        title="View Publisher"
+                        title={t("publisher.viewPublisher", "View Publisher")}
                       >
                         <i className="fas fa-building" style={{ marginRight: 5 }}></i>
                         {book.publisher_name}
@@ -495,9 +569,29 @@ export default function Book() {
 
                   {/* Genre */}
                   <div className="meta-item">
-                    <span className="meta-label">Genre:</span>
+                    <span className="meta-label">{t("book.genre", "Genre")}:</span>
                     <span className="book-categories-link">{book.genre}</span>
                   </div>
+
+                  {/* Content Tone (Phase 3 Semantic Model) */}
+                  {book.content_tone && (
+                    <div className="meta-item">
+                      <span className="meta-label">{t("book.contentTone", "Content Tone")}:</span>
+                      <span className="book-meta-chip tone-chip" style={{ textTransform: "capitalize" }}>
+                        {book.content_tone}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Target Age Group (Phase 3 Semantic Model) */}
+                  {book.target_age_group && (
+                    <div className="meta-item">
+                      <span className="meta-label">{t("book.targetAge", "Target Audience")}:</span>
+                      <span className="book-meta-chip age-chip" style={{ textTransform: "capitalize" }}>
+                        {book.target_age_group}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <p className="extra-info">
@@ -513,10 +607,10 @@ export default function Book() {
                   <i className={liked ? "fas fa-heart" : "far fa-heart"}></i>
                   <span>
                     {updatingWishlist
-                      ? "Updating..."
+                      ? t("common.updating", "Updating...")
                       : liked
-                      ? "In Wishlist (Remove)"
-                      : "Add to Wishlist"}
+                      ? t("book.inWishlist", "In Wishlist (Remove)")
+                      : t("book.addToWishlist", "Add to Wishlist")}
                   </span>
                 </button>
               </div>
@@ -526,9 +620,9 @@ export default function Book() {
           {/* Right Aside: Visible Formats & Purchase */}
           <aside className="side-card">
             <div className="side-card-header">
-              <h3>Available Formats</h3>
+              <h3>{t("book.availableFormats", "Available Formats")}</h3>
               <span className="format-count-tag">
-                {book.formats?.length || 0} {book.formats?.length === 1 ? "Format" : "Formats"}
+                {book.formats?.length || 0} {t("book.formatsCount", "Formats")}
               </span>
             </div>
 
@@ -555,17 +649,17 @@ export default function Book() {
                         {isAudio && "🎧"}
                       </span>
                       <span className="format-name-text">
-                        {isPhysical && "Physical Book"}
-                        {isDigital && "Digital (PDF)"}
-                        {isAudio && "Audiobook"}
+                        {isPhysical && t("book.physicalBook", "Physical Book")}
+                        {isDigital && t("book.digitalPdf", "Digital (PDF)")}
+                        {isAudio && t("book.audiobook", "Audiobook")}
                       </span>
                       {isSelected && <span className="format-check-mark">✓</span>}
                     </div>
 
                     <div className="format-desc-subtext">
-                      {isPhysical && "Express delivery to door"}
-                      {isDigital && "Instant reading on dashboard"}
-                      {isAudio && "High quality audio stream"}
+                      {isPhysical && t("book.expressDelivery", "Express delivery to door")}
+                      {isDigital && t("book.instantReading", "Instant reading on dashboard")}
+                      {isAudio && t("book.highQualityAudio", "High quality audio stream")}
                     </div>
 
                     <div className="format-card-price-line">
@@ -591,7 +685,7 @@ export default function Book() {
             {/* Total price & Checkout CTA */}
             <div className="side-card-summary">
               <div className="summary-price-row">
-                <span className="summary-label">Selected Format Price:</span>
+                <span className="summary-label">{t("book.selectedPrice", "Selected Format Price:")}</span>
                 <div className="summary-price-values">
                   {selectedFormat?.has_discount && (
                     <span className="summary-original-price">
@@ -606,7 +700,7 @@ export default function Book() {
 
               {selectedFormat?.has_discount && (
                 <div className="summary-savings-note">
-                  Save {selectedFormat.discount_percent}% on this edition
+                  {t("book.saveDiscount", "Save {percent}% on this edition", { percent: selectedFormat.discount_percent })}
                 </div>
               )}
             </div>
@@ -617,7 +711,7 @@ export default function Book() {
               disabled={addingCart}
             >
               <i className="fas fa-cart-plus" style={{ marginRight: 8 }}></i>
-              {addingCart ? "Adding to Cart..." : "Add to Shopping Cart"}
+              {addingCart ? t("cart.adding", "Adding to Cart...") : t("book.addToCart", "Add to Shopping Cart")}
             </button>
           </aside>
         </section>
@@ -626,7 +720,7 @@ export default function Book() {
         <section className="book-rest">
           <div className="about-book">
             <div className="about-book-content">
-              <h2>About this book</h2>
+              <h2>{t("book.aboutThisBook", "About this book")}</h2>
               <p>{book.description}</p>
             </div>
           </div>
@@ -636,11 +730,11 @@ export default function Book() {
         <section className="book-reviews-section">
           <div className="reviews-container">
             <div className="reviews-header">
-              <h2>Community Reviews & Ratings</h2>
+              <h2>{t("book.communityReviews", "Community Reviews & Ratings")}</h2>
               <div className="overall-score-badge">
                 <span className="stars-gold">★★★★★</span>
                 <span className="score-num">4.8</span>
-                <span className="score-total">/ 5.0 (Verified Readers)</span>
+                <span className="score-total">/ 5.0 ({t("book.verifiedReaders", "Verified Readers")})</span>
               </div>
             </div>
 
@@ -649,7 +743,7 @@ export default function Book() {
                 <div className="review-box-top">
                   <strong>Mohsen R.</strong>
                   <span className="review-stars">★★★★★</span>
-                  <span className="verified-tag">Verified Reader</span>
+                  <span className="verified-tag">{t("book.verifiedReader", "Verified Reader")}</span>
                 </div>
                 <p>
                   "A masterfully written piece with vivid imagery and deep psychological layers.
@@ -661,7 +755,7 @@ export default function Book() {
                 <div className="review-box-top">
                   <strong>Sara T.</strong>
                   <span className="review-stars">★★★★★</span>
-                  <span className="verified-tag">Verified Reader</span>
+                  <span className="verified-tag">{t("book.verifiedReader", "Verified Reader")}</span>
                 </div>
                 <p>
                   "The translation and footnotes are very insightful. Having instant access in my dashboard
@@ -671,6 +765,19 @@ export default function Book() {
             </div>
           </div>
         </section>
+
+        {/* Phase 3 Semantic Recommendation Showcase: Similar & Related Books */}
+        {similarBooks.length > 0 && (
+          <section className="book-similar-section">
+            <ReusableSlider
+              items={similarBooks}
+              title={t("book.similarBooks", "Similar & Related Books")}
+              viewAllLink="/search"
+              customClass="home-popular"
+              cardWidth="280px"
+            />
+          </section>
+        )}
       </main>
 
       <Footer />

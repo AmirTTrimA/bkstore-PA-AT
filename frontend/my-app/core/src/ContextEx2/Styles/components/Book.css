@@ -1497,3 +1497,43 @@
         min-width: 25px;
     }    
 }
+
+/* ============================================
+   PHASE 3: SEMANTIC TAGS & RECOMMENDATIONS SLIDER
+============================================ */
+.book-meta-chip {
+    font-size: 0.85rem;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-weight: 600;
+    cursor: default;
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+}
+
+.book-meta-chip.tone-chip {
+    background: rgba(103, 172, 0, 0.15);
+    border: 1px solid rgba(103, 172, 0, 0.35);
+    color: #8ed628;
+}
+
+.book-meta-chip.age-chip {
+    background: rgba(80, 160, 255, 0.15);
+    border: 1px solid rgba(80, 160, 255, 0.35);
+    color: #70b4ff;
+}
+
+.book-similar-section {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 24px 20px;
+}
+
+.book-similar-section .slider-section {
+    max-width: 100%;
+    margin: 1rem 0;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+}

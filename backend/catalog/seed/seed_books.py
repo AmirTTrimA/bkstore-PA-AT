@@ -981,6 +981,24 @@ def seed_books(authors_map, publishers_map, genres_map, tags_map, stdout=None):
         if not book_slug:
             book_slug = f"book-{b_data['isbn']}"
 
+        # Determine semantic content tone and target age group
+        tone = b_data.get("content_tone")
+        if not tone:
+            g_list = b_data.get("genres", [])
+            t_list = b_data.get("tags", [])
+            if any(t in t_list for t in ["dystopia", "totalitarianism", "surveillance"]):
+                tone = "dystopian"
+            elif any(g in g_list for g in ["technology", "business"]) or "system design" in t_list or "clean code" in t_list:
+                tone = "academic"
+            elif any(t in t_list for t in ["mysticism", "persian poetry", "عرفان و تصوف"]):
+                tone = "mystical"
+            elif any(t in t_list for t in ["habits", "productivity", "leadership"]):
+                tone = "inspiring"
+            else:
+                tone = "philosophical"
+
+        age_group = b_data.get("target_age_group", "adult")
+
         book, created = Book.objects.update_or_create(
             isbn=b_data["isbn"],
             defaults={
@@ -990,6 +1008,8 @@ def seed_books(authors_map, publishers_map, genres_map, tags_map, stdout=None):
                 "description": b_data["description"],
                 "genre": b_data["genre"],
                 "language": b_data["language"],
+                "target_age_group": age_group,
+                "content_tone": tone,
                 "publication_year": b_data.get("publication_year"),
                 "edition": b_data.get("edition", ""),
                 "cover_image_url": b_data["cover_image_url"],
