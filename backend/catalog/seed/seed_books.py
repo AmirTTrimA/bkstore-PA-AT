@@ -1042,6 +1042,7 @@ def seed_books(authors_map, publishers_map, genres_map, tags_map, stdout=None):
         Price.objects.update_or_create(
             book=book,
             book_format=phys_fmt,
+            effective_until=None,
             defaults={
                 "value": base_price_val,
                 "min_price": base_price_val * Decimal("0.8"),
@@ -1060,6 +1061,7 @@ def seed_books(authors_map, publishers_map, genres_map, tags_map, stdout=None):
             Price.objects.update_or_create(
                 book=book,
                 book_format=dig_fmt,
+                effective_until=None,
                 defaults={
                     "value": Decimal(int(base_price_val * Decimal("0.55"))),
                     "min_price": Decimal(int(base_price_val * Decimal("0.4"))),
@@ -1078,6 +1080,7 @@ def seed_books(authors_map, publishers_map, genres_map, tags_map, stdout=None):
             Price.objects.update_or_create(
                 book=book,
                 book_format=aud_fmt,
+                effective_until=None,
                 defaults={
                     "value": Decimal(int(base_price_val * Decimal("0.70"))),
                     "min_price": Decimal(int(base_price_val * Decimal("0.55"))),
