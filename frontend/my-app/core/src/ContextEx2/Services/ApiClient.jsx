@@ -50,6 +50,14 @@ const ApiClient = axios.create({
 // ============================================
 
 ApiClient.interceptors.request.use((config) => {
+  // Always attach Accept-Language header for bilingual backend localization
+  try {
+    const lang = localStorage.getItem("language") || "en";
+    config.headers["Accept-Language"] = lang;
+  } catch {
+    config.headers["Accept-Language"] = "en";
+  }
+
   if (isPublicEndpoint(config.url)) {
     return config;
   }

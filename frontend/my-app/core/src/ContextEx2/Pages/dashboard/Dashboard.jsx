@@ -13,6 +13,8 @@ import Profile from "./profile/Profile";
 import FavoritesView from "./views/FavoritesView";
 import SubscriptionView from "./views/SubscriptionView";
 import { ThemeToggle } from "../../Components/common/ThemeToggle";
+import { LanguageToggle } from "../../Components/common/LanguageToggle";
+import { useLanguage } from "../../Context/LanguageContext";
 import { ppic14 } from "../../Constants";
 import ContentService from "../../Services/ContentService";
 import UserService from "../../Services/UserService";
@@ -24,6 +26,7 @@ const HIGHLIGHT_DURATION = 4000;
 
 export default function Dashboard({ initialTab }) {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -296,7 +299,7 @@ export default function Dashboard({ initialTab }) {
             className={`topbar-nav-pill ${activeView === "library" ? "active" : ""}`}
             onClick={() => switchTab("library")}
           >
-            📚 My Shelf
+            📚 {t('dashboard.digitalBookshelf', 'My Shelf')}
           </button>
 
           {/* Favorites View */}
@@ -305,7 +308,7 @@ export default function Dashboard({ initialTab }) {
             className={`topbar-nav-pill ${activeView === "favorites" ? "active" : ""}`}
             onClick={() => switchTab("favorites")}
           >
-            ⭐️ Favorites
+            ⭐️ {t('nav.wishlist', 'Favorites')}
           </button>
 
           {/* VIP Plans View */}
@@ -314,7 +317,7 @@ export default function Dashboard({ initialTab }) {
             className={`topbar-nav-pill ${activeView === "subscription" ? "active" : ""}`}
             onClick={() => switchTab("subscription")}
           >
-            💎 VIP Plans
+            💎 {t('dashboard.subscription', 'VIP Plans')}
           </button>
 
           {/* Addresses View */}
@@ -323,7 +326,7 @@ export default function Dashboard({ initialTab }) {
             className={`topbar-nav-pill ${activeView === "addresses" ? "active" : ""}`}
             onClick={() => switchTab("addresses")}
           >
-            📍 Addresses
+            📍 {t('dashboard.savedAddresses', 'Addresses')}
           </button>
 
           {/* Financial Hub Button */}
@@ -333,7 +336,7 @@ export default function Dashboard({ initialTab }) {
             onClick={() => handleOpenFinancial(0)}
             title="Wallet, Orders & Transactions"
           >
-            💳 Financial
+            💳 {t('dashboard.wallet', 'Financial')}
           </button>
 
           {/* Cart Direct Route */}
@@ -353,6 +356,9 @@ export default function Dashboard({ initialTab }) {
               <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z" />
             </svg>
           </button>
+
+          {/* Language Toggle */}
+          <LanguageToggle page="dash" />
 
           {/* Dark Mode Toggle */}
           <ThemeToggle page="dash" />

@@ -6,8 +6,10 @@ import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
 import ReusableSlider from "../../Components/common/ReusableSlider";
 import { ThemeToggle } from "../../Components/common/ThemeToggle";
+import { LanguageToggle } from "../../Components/common/LanguageToggle";
 import Notification from "../../Components/feature/Notification";
 import { useAuth } from "../../Context/AuthContext";
+import { useLanguage } from "../../Context/LanguageContext";
 
 // --- Styles ---
 import "../../Styles/components/Home.css";
@@ -87,6 +89,7 @@ export default function Home() {
   const inputRef = useRef(null);
   const notificationRef = useRef();
   const { isLoggedIn } = useAuth();
+  const { t, isPersian } = useLanguage();
 
   // ----------------------------------------
   // Book & Catalog State
@@ -305,11 +308,12 @@ export default function Home() {
           </div>
           <div className="down">
             <ThemeToggle page="home" />
+            <LanguageToggle page="home" />
             <div className="search-res-wrapper">
               <input
                 ref={inputRef}
                 type="search"
-                placeholder="Search catalog..."
+                placeholder={t('nav.searchPlaceholder', 'Search catalog...')}
                 className="search-res"
                 value={searchInputValue}
                 onChange={(e) => setSearchInputValue(e.target.value)}
@@ -343,13 +347,13 @@ export default function Home() {
         {genres.length > 0 && (
           <section className="categories-section">
             <div className="section-meta-header">
-              <h3>Browse by Subject</h3>
+              <h3>{t('home.popularCategories', 'Browse by Subject')}</h3>
               <button
                 onClick={() => navigate("/search")}
                 className="home-meta-link"
                 type="button"
               >
-                All Genres →
+                {t('common.viewAll', 'All Genres')} →
               </button>
             </div>
             <div className="categories-grid" id="home-categories">
@@ -393,13 +397,13 @@ export default function Home() {
             >
               <img className="slide-image" src={slide.img} alt={slide.title} />
               <div className="slide-overlay">
-                <span className="slide-featured-pill">Featured Book</span>
+                <span className="slide-featured-pill">{t('home.staffPicks', 'Featured Book')}</span>
                 <h3 className="slide-title">{slide.title}</h3>
                 <span className="slide-price-pill">{slide.price}</span>
               </div>
             </div>
           ) : (
-            <p>No featured books available.</p>
+            <p>{t('common.noData', 'No featured books available.')}</p>
           )}
 
           {totalSlides > 1 && (
@@ -427,7 +431,7 @@ export default function Home() {
         {/* DYNAMIC SECTION 1: NEW ARRIVALS */}
         <ReusableSlider
           items={newBooks}
-          title="New Arrivals"
+          title={t('home.newArrivals', 'New Arrivals')}
           viewAllLink="/search/new"
           customClass="home-popular"
           cardWidth="280px"
@@ -437,7 +441,7 @@ export default function Home() {
         {discountBooks.length > 0 && (
           <ReusableSlider
             items={discountBooks}
-            title="Special Offers & Discounts"
+            title={t('home.bestsellers', 'Special Offers & Discounts')}
             viewAllLink="/search"
             customClass="home-popular"
             cardWidth="280px"
@@ -448,7 +452,7 @@ export default function Home() {
         {digitalBooks.length > 0 && (
           <ReusableSlider
             items={digitalBooks}
-            title="Digital Editions (PDF)"
+            title={t('book.digital', 'Digital Editions (PDF)')}
             viewAllLink="/search?format=DIGITAL"
             customClass="home-popular"
             cardWidth="280px"
@@ -459,7 +463,7 @@ export default function Home() {
         {audioBooks.length > 0 && (
           <ReusableSlider
             items={audioBooks}
-            title="Audiobooks & Spoken Audio"
+            title={t('book.audio', 'Audiobooks & Spoken Audio')}
             viewAllLink="/search?format=AUDIO"
             customClass="home-popular"
             cardWidth="280px"
@@ -470,13 +474,13 @@ export default function Home() {
         {publishers.length > 0 && (
           <section className="publishers-showcase-section">
             <div className="section-meta-header">
-              <h3>Featured Iranian Publishers</h3>
+              <h3>{t('publisher.title', 'Featured Iranian Publishers')}</h3>
               <button
                 onClick={() => navigate("/all-publisher")}
                 className="home-meta-link"
                 type="button"
               >
-                View All Publishers →
+                {t('common.viewAll', 'View All Publishers')} →
               </button>
             </div>
 

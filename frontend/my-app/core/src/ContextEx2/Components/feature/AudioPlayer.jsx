@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation, useParams, Link } from "react-router-dom";
 import { ThemeToggle } from "../common/ThemeToggle";
+import { LanguageToggle } from "../common/LanguageToggle";
 import BookService from "../../Services/BookService";
 import { ppic14 } from "../../Constants";
 import "../../Styles/components/AudioPlayer.css";
@@ -490,8 +491,9 @@ export default function AudioPlayer() {
           </button>
         </div>
 
-        {/* Footer Theme Toggle */}
-        <div className="audio-footer-bar">
+        {/* Footer Controls */}
+        <div className="audio-footer-bar" style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+          <LanguageToggle page="dash" />
           <ThemeToggle page="dash" />
         </div>
       </div>

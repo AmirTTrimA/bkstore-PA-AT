@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Document, Page } from "react-pdf";
 import { useNavigate, useLocation, useParams, Link } from "react-router-dom";
 import { ThemeToggle } from "../common/ThemeToggle";
+import { LanguageToggle } from "../common/LanguageToggle";
 import BookService from "../../Services/BookService";
 
 import "../../../pdf-worker";
@@ -266,6 +267,7 @@ export default function PDFReader() {
 
           <div className="pdf-top-tools">
             <ThemeToggle page="pdf" />
+            <LanguageToggle page="pdf" />
             <button
               type="button"
               className="pdf-btn pdf-btn-icon"

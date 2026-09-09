@@ -6,7 +6,9 @@ import Upload from './Upload';
 import NotifModal from './NotifModal';
 import Notification from '../../Components/feature/Notification';
 import { ThemeToggle } from '../../Components/common/ThemeToggle';
+import { LanguageToggle } from '../../Components/common/LanguageToggle';
 import { useAuth } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
 import PublisherService from '../../Services/PublisherService';
 import { ppic14 } from '../../Constants';
 import { formatPrice } from '../../utils/formatPrice';
@@ -18,6 +20,7 @@ const HIGHLIGHT_DURATION = 4000;
 
 export default function PDashboard() {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
 
   // Core publisher state
   const [publishers, setPublishers] = useState([]);
@@ -274,15 +277,18 @@ export default function PDashboard() {
             )}
           </button>
 
-          {/* Profile Shortcut */}
+          {/* Profile Modal Trigger */}
           <button
             type="button"
             className="pdash-btn"
             onClick={() => setIsModalOpen(true)}
             title="Publisher Account Settings"
           >
-            👤 Profile
+            👤 {t('dashboard.profile', 'Profile')}
           </button>
+
+          {/* Language Toggle */}
+          <LanguageToggle page="dash" />
 
           {/* Theme Toggle */}
           <ThemeToggle page="dash" />
@@ -294,7 +300,7 @@ export default function PDashboard() {
             onClick={logout}
             title="Log Out"
           >
-            Logout
+            {t('nav.logout', 'Logout')}
           </button>
 
           {/* Mobile Menu Trigger */}

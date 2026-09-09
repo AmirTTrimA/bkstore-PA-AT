@@ -1,7 +1,8 @@
 // App.jsx
 import React,{useEffect} from 'react';
 import AuthProvider, {useAuth} from './Context/AuthContext';
-import {ThemeProvider} from './Context/ThemeContext'
+import {ThemeProvider} from './Context/ThemeContext';
+import {LanguageProvider} from './Context/LanguageContext';
 
 
 
@@ -58,7 +59,9 @@ import Router from './Routes/Router';
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
+          <LanguageProvider>
             <AppContent />
+          </LanguageProvider>
         </ThemeProvider>
       </AuthProvider> 
     </BrowserRouter>

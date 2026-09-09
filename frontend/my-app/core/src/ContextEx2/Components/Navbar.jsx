@@ -23,7 +23,9 @@ import {
 
 // ---Components---
 import { useAuth } from '../Context/AuthContext';
+import { useLanguage } from '../Context/LanguageContext';
 import { ThemeToggle } from './common/ThemeToggle';
+import { LanguageToggle } from './common/LanguageToggle';
 import { ppic13 } from "../Constants"
 
 import '../Styles/components/Navbar.css'
@@ -37,6 +39,7 @@ export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
     const { isLoggedIn, user, logout } = useAuth();
+    const { t } = useLanguage();
     const inputRef = useRef(null);
     const searchDropdownRef = useRef(null);
     const secondaryNavRef = useRef(null);
@@ -200,7 +203,7 @@ export default function Navbar() {
                 className='login_check'
                 onClick={() => navigate('/login')}
               >
-                login|signup
+                {t('nav.login', 'login')} | {t('nav.signup', 'signup')}
               </button>
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -241,7 +244,7 @@ export default function Navbar() {
                     <ListItemIcon>
                       <Person fontSize="small" />
                     </ListItemIcon>
-                    My Profile
+                    {t('dashboard.profile', 'My Profile')}
                   </MenuItem>
               
                   <Divider />
@@ -250,7 +253,7 @@ export default function Navbar() {
                     <ListItemIcon>
                       <Help fontSize="small" />
                     </ListItemIcon>
-                    Question
+                    {t('nav.aboutUs', 'Question')}
                   </MenuItem>
 
                   <Divider />
@@ -262,22 +265,25 @@ export default function Navbar() {
                     <ListItemIcon>
                       <Logout fontSize="small" color="error" />
                     </ListItemIcon>
-                    Logout
+                    {t('nav.logout', 'Logout')}
                   </MenuItem>
                 </Menu>
               </Box>   
             )}
           </div>
 
-          <li><Link to="/home" className='nav-logo'>PageNet</Link></li>
+          <li><Link to="/home" className='nav-logo'>{t('nav.brandName', 'PageNet')}</Link></li>
           
           <div className="second_middle_nav">
+            <li>
+              <LanguageToggle page="home" />
+            </li>
             <li>
               <button
                 type="button"
                 className={`search_bar_btn ${isSearchOpen ? 'active' : ''}`}
                 onClick={() => setIsSearchOpen((prev) => !prev)}
-                title="Search books..."
+                title={t('common.search', 'Search books...')}
                 aria-label="Toggle Search"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
@@ -306,7 +312,7 @@ export default function Navbar() {
                   ref={inputRef}
                   type="search"
                   className="nav-search-input"
-                  placeholder="Search books by title, author, genre, or ISBN..."
+                  placeholder={t('nav.searchPlaceholder', 'Search books by title, author, genre, or ISBN...')}
                   value={searchInputValue}
                   onChange={(e) => setSearchInputValue(e.target.value)}
                   autoComplete="off"
@@ -326,7 +332,7 @@ export default function Navbar() {
                   className="nav-search-submit-btn"
                   disabled={searchInputValue.trim().length > 0 && searchInputValue.trim().length < SEARCH_MIN_LENGTH}
                 >
-                  Search
+                  {t('common.search', 'Search')}
                 </button>
                 <button
                   type="button"
@@ -339,23 +345,24 @@ export default function Navbar() {
               </div>
             </form>
 
+            {/* Recent Searches Panel */}
             {recentSearches.length > 0 && (
-              <div className="nav-recent-searches">
-                <div className="nav-recent-header">
-                  <span>
+              <div className="nav-recent-searches-panel">
+                <div className="nav-recent-searches-header">
+                  <span className="nav-recent-title">
                     <i className="fas fa-history"></i> Recent Searches
                   </span>
                   <button
                     type="button"
-                    className="nav-recent-clear-btn"
+                    className="nav-recent-clear-all"
                     onClick={clearAllRecentSearches}
                   >
-                    Clear All
+                    {t('common.clear', 'Clear all')}
                   </button>
                 </div>
-                <div className="nav-recent-chips">
-                  {recentSearches.map((term, index) => (
-                    <span key={index} className="nav-recent-chip">
+                <div className="nav-recent-chips-list">
+                  {recentSearches.map((term) => (
+                    <span key={term} className="nav-recent-chip">
                       <span
                         className="nav-recent-chip-text"
                         onClick={() => handleRecentSearchClick(term)}
@@ -391,10 +398,10 @@ export default function Navbar() {
         )}
         <ul className='secondary_nav_right'>
           {!isLibraryPage && (
-            <li><Link to='/library' className='category'>library</Link></li>
+            <li><Link to='/library' className='category'>{t('nav.catalog', 'library')}</Link></li>
           )}
-          <li><Link to='/favorites' onClick={handleLoginCheck} className='favorites'>favorites</Link></li>
-          <li><Link to='/faq' className='anyquestion'>any question</Link></li>
+          <li><Link to='/favorites' onClick={handleLoginCheck} className='favorites'>{t('nav.wishlist', 'favorites')}</Link></li>
+          <li><Link to='/faq' className='anyquestion'>{t('nav.aboutUs', 'any question')}</Link></li>
         </ul>
       </nav>
       
