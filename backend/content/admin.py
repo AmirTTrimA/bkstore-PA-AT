@@ -1,22 +1,27 @@
 from django.contrib import admin
+from django.urls import reverse
+from django.utils.html import format_html, mark_safe
 
 from .models import License
+
 
 @admin.register(License)
 class LicenseAdmin(admin.ModelAdmin):
 
     list_display = (
-        "user",
-        "book",
-        "order",
-        "is_active",
+        "cover_thumb",
+        "user_display",
+        "book_display",
+        "format_badge",
+        "order_link",
+        "status_badge",
         "valid_from",
         "valid_until",
-        "is_currently_valid",
     )
 
     list_filter = (
         "is_active",
+        "book_format__format_type",
         "valid_from",
         "valid_until",
     )
@@ -25,6 +30,7 @@ class LicenseAdmin(admin.ModelAdmin):
         "user__username",
         "user__email",
         "book__title",
+        "book__isbn",
     )
 
     ordering = (
@@ -34,22 +40,82 @@ class LicenseAdmin(admin.ModelAdmin):
     autocomplete_fields = (
         "user",
         "book",
+        "book_format",
         "order",
     )
 
     list_select_related = (
         "user",
         "book",
+        "book_format",
         "order",
     )
 
     readonly_fields = (
         "user",
         "book",
+        "book_format",
         "order",
         "valid_from",
         "valid_until",
     )
+
+    list_per_page = 25
+
+    @admin.display(description="Cover")
+    def cover_thumb(self, obj):
+        if obj.book and obj.book.cover_image_url:
+            return format_html(
+                '<img src="{}" class="book-cover-thumb" alt="Cover" />',
+                obj.book.cover_image_url,
+            )
+        return mark_safe('<div class="book-cover-placeholder">&#x1F4D6;</div>')
+
+    @admin.display(description="Customer", ordering="user__username")
+    def user_display(self, obj):
+        url = reverse("admin:accounts_user_change", args=[obj.user.pk])
+        return format_html(
+            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            url,
+            obj.user.username,
+            obj.user.email,
+        )
+
+    @admin.display(description="Book", ordering="book__title")
+    def book_display(self, obj):
+        url = reverse("admin:catalog_book_change", args=[obj.book.pk])
+        return format_html(
+            '<a href="{}" style="font-weight:600; color:var(--pn-primary);">{}</a>',
+            url,
+            obj.book.title,
+        )
+
+    @admin.display(description="Format")
+    def format_badge(self, obj):
+        if not obj.book_format:
+            return "-"
+        fmt = obj.book_format.format_type
+        cls = "status-purple" if "DIGITAL" in fmt else ("status-info" if "AUDIO" in fmt else "status-neutral")
+        return mark_safe(f'<span class="status-badge {cls}">{fmt.replace("_", " ")}</span>')
+
+    @admin.display(description="Order", ordering="order__id")
+    def order_link(self, obj):
+        if not obj.order:
+            return mark_safe('<span style="color:#94a3b8;">Manual / Grant</span>')
+        url = reverse("admin:cart_order_change", args=[obj.order.pk])
+        return format_html(
+            '<a href="{}" style="font-family:monospace; font-weight:700; color:#0f172a;">#{:05d}</a>',
+            url,
+            obj.order.id,
+        )
+
+    @admin.display(description="License Status")
+    def status_badge(self, obj):
+        if not obj.is_active:
+            return mark_safe('<span class="status-badge status-danger">Revoked</span>')
+        if not obj.is_valid():
+            return mark_safe('<span class="status-badge status-neutral">Expired</span>')
+        return mark_safe('<span class="status-badge status-success">Active License</span>')
 
     fieldsets = (
         (
@@ -58,6 +124,7 @@ class LicenseAdmin(admin.ModelAdmin):
                 "fields": (
                     "user",
                     "book",
+                    "book_format",
                     "order",
                 )
             },

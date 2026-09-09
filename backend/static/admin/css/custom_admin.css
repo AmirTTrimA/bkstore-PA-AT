@@ -1,0 +1,329 @@
+/* ==========================================================================
+   PageNet Bookstore - Executive Admin Theme Stylesheet
+   ========================================================================== */
+
+:root {
+  --pn-primary: #d17842;
+  --pn-primary-hover: #b8622e;
+  --pn-primary-light: rgba(209, 120, 66, 0.12);
+  --pn-dark-bg: #1e1e24;
+  --pn-header-bg: #18181c;
+  --pn-surface: #ffffff;
+  --pn-border: #e2e8f0;
+}
+
+/* --- Executive Top Header & Branding --- */
+#header {
+  background: var(--pn-header-bg) !important;
+  border-bottom: 3px solid var(--pn-primary);
+  padding: 12px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pagenet-admin-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none !important;
+}
+
+.brand-badge-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.brand-title {
+  color: #ffffff !important;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 60%, var(--pn-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-subtitle {
+  color: var(--pn-primary) !important;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background: rgba(209, 120, 66, 0.15);
+  border: 1px solid rgba(209, 120, 66, 0.35);
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-left: 6px;
+}
+
+#user-tools {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+#user-tools a {
+  color: #f1f5f9 !important;
+  border-bottom: 1px dashed rgba(209, 120, 66, 0.6);
+  transition: color 0.15s ease;
+}
+
+#user-tools a:hover {
+  color: var(--pn-primary) !important;
+}
+
+/* --- Breadcrumbs --- */
+div.breadcrumbs {
+  background: #f8fafc;
+  border-bottom: 1px solid var(--pn-border);
+  padding: 10px 24px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+div.breadcrumbs a {
+  color: #334155;
+  font-weight: 500;
+}
+
+div.breadcrumbs a:hover {
+  color: var(--pn-primary);
+}
+
+/* --- Changelist Tables --- */
+#changelist table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#changelist thead th {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--pn-border);
+}
+
+#changelist tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+#changelist tbody tr:hover {
+  background-color: var(--pn-primary-light) !important;
+}
+
+#changelist tbody td, #changelist tbody th {
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+/* --- Visual Media Thumbnails --- */
+.book-cover-thumb {
+  width: 38px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  vertical-align: middle;
+  background: #e2e8f0;
+  cursor: pointer;
+}
+
+.book-cover-thumb:hover {
+  transform: scale(2.8);
+  transform-origin: left center;
+  z-index: 999;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+}
+
+.book-cover-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 54px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #94a3b8;
+  font-size: 1.2rem;
+  vertical-align: middle;
+}
+
+.author-avatar-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  vertical-align: middle;
+  background: #f1f5f9;
+}
+
+.publisher-logo-thumb {
+  width: 44px;
+  height: 30px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #ffffff;
+  padding: 2px 4px;
+  border: 1px solid var(--pn-border);
+  vertical-align: middle;
+}
+
+/* --- Currency Formatting --- */
+.currency-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.currency-tag span.irr-unit {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+/* --- Color-Coded Status Badges --- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border-radius: 12px;
+  padding: 3px 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.status-badge.status-success {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.status-badge.status-warning {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.status-badge.status-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.status-badge.status-info {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.status-badge.status-purple {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+.status-badge.status-neutral {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.status-badge.status-accent {
+  background: rgba(209, 120, 66, 0.12);
+  color: #d17842;
+  border: 1px solid rgba(209, 120, 66, 0.35);
+}
+
+/* --- Language and Tag Pills --- */
+.pill-en {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+}
+
+.pill-fa {
+  background: #fce7f3;
+  color: #9d174d;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+}
+
+.item-count-badge {
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  border: 1px solid #cbd5e1;
+}
+
+/* --- Action Buttons & Forms --- */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+  background: var(--pn-primary) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  padding: 8px 16px !important;
+  transition: background-color 0.15s ease, transform 0.1s ease !important;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover {
+  background: var(--pn-primary-hover) !important;
+  transform: translateY(-1px);
+}
+
+.button.default, input[type=submit].default {
+  background: #0f172a !important;
+}
+
+.button.default:hover, input[type=submit].default:hover {
+  background: #1e293b !important;
+}
+
+/* --- Dark Theme Support (Django 4.2+ / 5.x) --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pn-surface: #1e293b;
+    --pn-border: #334155;
+  }
+  #changelist thead th {
+    background: #0f172a;
+    color: #cbd5e1;
+    border-bottom: 2px solid #334155;
+  }
+  div.breadcrumbs {
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+    color: #94a3b8;
+  }
+  div.breadcrumbs a {
+    color: #e2e8f0;
+  }
+  .currency-tag {
+    color: #f8fafc;
+  }
+}

@@ -1,6 +1,8 @@
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count
+from django.urls import reverse
+from django.utils.html import format_html, mark_safe
 
 from .models import (AuthorCreateProposal, AuthorUpdateProposal,
                      BookCreateProposal, BookDeleteProposal,
@@ -9,17 +11,26 @@ from .models import (AuthorCreateProposal, AuthorUpdateProposal,
 from .services.proposal_service import ProposalService
 
 # ============================================================
-# Publisher
+# Publisher Inlines & Admin
 # ============================================================
+
+class PublisherMembershipInline(admin.TabularInline):
+    model = PublisherMembership
+    extra = 0
+    autocomplete_fields = ("user",)
+    fields = ("user", "role", "is_active", "joined_at")
+    readonly_fields = ("joined_at",)
+
 
 @admin.register(Publisher)
 class PublisherAdmin(admin.ModelAdmin):
 
     list_display = (
         "name",
+        "website_link",
         "member_count",
         "proposal_count",
-        "is_active",
+        "status_badge",
         "created_at",
     )
 
@@ -42,6 +53,7 @@ class PublisherAdmin(admin.ModelAdmin):
     )
 
     list_per_page = 25
+    inlines = [PublisherMembershipInline]
 
     def get_queryset(self, request):
 
@@ -65,14 +77,35 @@ class PublisherAdmin(admin.ModelAdmin):
         description="Members",
     )
     def member_count(self, obj):
-        return obj.member_total
+        return mark_safe(f'<span class="item-count-badge">{obj.member_total} members</span>')
 
     @admin.display(
         ordering="proposal_total",
         description="Proposals",
     )
     def proposal_count(self, obj):
-        return obj.proposal_total
+        return mark_safe(f'<span class="item-count-badge">{obj.proposal_total} proposals</span>')
+
+    @admin.display(
+        description="Status",
+        ordering="is_active",
+    )
+    def status_badge(self, obj):
+        if obj.is_active:
+            return mark_safe('<span class="status-badge status-success">Active</span>')
+        return mark_safe('<span class="status-badge status-neutral">Inactive</span>')
+
+    @admin.display(
+        description="Website",
+    )
+    def website_link(self, obj):
+        if obj.website:
+            return format_html(
+                '<a href="{}" target="_blank" rel="noopener noreferrer" style="color:var(--pn-primary); font-weight:600;">{} &#x2197;</a>',
+                obj.website,
+                obj.website[:32] + ("..." if len(obj.website) > 32 else ""),
+            )
+        return "-"
 
 
 # ============================================================
@@ -83,10 +116,10 @@ class PublisherAdmin(admin.ModelAdmin):
 class PublisherMembershipAdmin(admin.ModelAdmin):
 
     list_display = (
-        "user",
-        "publisher",
-        "role",
-        "is_active",
+        "user_display",
+        "publisher_display",
+        "role_badge",
+        "status_badge",
         "joined_at",
     )
 
@@ -121,6 +154,40 @@ class PublisherMembershipAdmin(admin.ModelAdmin):
         "user",
     )
 
+    @admin.display(description="User", ordering="user__username")
+    def user_display(self, obj):
+        url = reverse("admin:accounts_user_change", args=[obj.user.pk])
+        return format_html(
+            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            url,
+            obj.user.get_full_name() or obj.user.username,
+            obj.user.email,
+        )
+
+    @admin.display(description="Publisher", ordering="publisher__name")
+    def publisher_display(self, obj):
+        url = reverse("admin:publishing_publisher_change", args=[obj.publisher.pk])
+        return format_html(
+            '<a href="{}" style="font-weight:600; color:var(--pn-primary);">{}</a>',
+            url,
+            obj.publisher.name,
+        )
+
+    @admin.display(description="Role", ordering="role")
+    def role_badge(self, obj):
+        badge_cls = {
+            PublisherMembership.Role.OWNER: "status-purple",
+            PublisherMembership.Role.MANAGER: "status-info",
+            PublisherMembership.Role.EDITOR: "status-accent",
+        }.get(obj.role, "status-neutral")
+        return mark_safe(f'<span class="status-badge {badge_cls}">{obj.get_role_display()}</span>')
+
+    @admin.display(description="Status", ordering="is_active")
+    def status_badge(self, obj):
+        if obj.is_active:
+            return mark_safe('<span class="status-badge status-success">Active</span>')
+        return mark_safe('<span class="status-badge status-danger">Inactive</span>')
+
 # ============================================================
 # Proposal
 # ============================================================
@@ -129,10 +196,11 @@ class PublisherMembershipAdmin(admin.ModelAdmin):
 class ProposalAdmin(admin.ModelAdmin):
 
     list_display = (
-        "title",
-        "publisher",
-        "proposal_type",
-        "proposal_status",
+        "title_display",
+        "publisher_display",
+        "type_badge",
+        "status_badge",
+        "target_preview",
         "submitted_by",
         "submitted_at",
         "reviewed_by",
@@ -178,6 +246,96 @@ class ProposalAdmin(admin.ModelAdmin):
     )
 
     date_hierarchy = "submitted_at"
+    list_per_page = 25
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("publisher", "submitted_by", "reviewed_by")
+            .prefetch_related(
+                "book_create",
+                "book_update__book",
+                "book_delete__book",
+                "author_create",
+                "author_update__author",
+                "price_change__book",
+            )
+        )
+
+    @admin.display(description="Title", ordering="title")
+    def title_display(self, obj):
+        return format_html('<span style="font-weight:700; color:#0f172a;">{}</span>', obj.title)
+
+    @admin.display(description="Publisher", ordering="publisher__name")
+    def publisher_display(self, obj):
+        return format_html(
+            '<span style="font-weight:600; color:#334155;">{}</span>',
+            obj.publisher.name,
+        )
+
+    @admin.display(description="Type", ordering="proposal_type")
+    def type_badge(self, obj):
+        badges = {
+            Proposal.ProposalType.BOOK_CREATE: ("status-purple", "Book Create"),
+            Proposal.ProposalType.BOOK_UPDATE: ("status-info", "Book Update"),
+            Proposal.ProposalType.BOOK_DELETE: ("status-danger", "Book Delete"),
+            Proposal.ProposalType.AUTHOR_CREATE: ("status-info", "Author Create"),
+            Proposal.ProposalType.AUTHOR_UPDATE: ("status-accent", "Author Update"),
+            Proposal.ProposalType.PRICE_CHANGE: ("status-warning", "Price Change"),
+        }
+        cls, label = badges.get(obj.proposal_type, ("status-neutral", obj.get_proposal_type_display()))
+        return mark_safe(f'<span class="status-badge {cls}">{label}</span>')
+
+    @admin.display(description="Status", ordering="status")
+    def status_badge(self, obj):
+        badges = {
+            Proposal.Status.PENDING: ("status-warning", "Pending"),
+            Proposal.Status.APPROVED: ("status-info", "Approved"),
+            Proposal.Status.APPLIED: ("status-success", "Applied"),
+            Proposal.Status.REJECTED: ("status-danger", "Rejected"),
+            Proposal.Status.WITHDRAWN: ("status-neutral", "Withdrawn"),
+        }
+        cls, label = badges.get(obj.status, ("status-neutral", obj.get_status_display()))
+        return mark_safe(f'<span class="status-badge {cls}">{label}</span>')
+
+    @admin.display(description="Proposal Target")
+    def target_preview(self, obj):
+        try:
+            if hasattr(obj, "book_create"):
+                return format_html(
+                    '<span style="font-size:0.85rem; color:#475569;">Book: <strong>{}</strong></span>',
+                    obj.book_create.title,
+                )
+            elif hasattr(obj, "book_update"):
+                return format_html(
+                    '<span style="font-size:0.85rem; color:#475569;">Book: <strong>{}</strong></span>',
+                    obj.book_update.book.title,
+                )
+            elif hasattr(obj, "book_delete"):
+                return format_html(
+                    '<span style="font-size:0.85rem; color:#b91c1c;">Book: <strong>{}</strong></span>',
+                    obj.book_delete.book.title,
+                )
+            elif hasattr(obj, "author_create"):
+                return format_html(
+                    '<span style="font-size:0.85rem; color:#475569;">Author: <strong>{}</strong></span>',
+                    obj.author_create.name,
+                )
+            elif hasattr(obj, "author_update"):
+                return format_html(
+                    '<span style="font-size:0.85rem; color:#475569;">Author: <strong>{}</strong></span>',
+                    obj.author_update.author.name,
+                )
+            elif hasattr(obj, "price_change"):
+                val = f"{obj.price_change.value:,.0f}"
+                return mark_safe(
+                    f'<span style="font-size:0.85rem; color:#475569;">{obj.price_change.book.title} &rarr; '
+                    f'<span class="currency-tag">{val} <span class="irr-unit">IRR</span></span></span>'
+                )
+        except Exception:
+            pass
+        return "-"
 
     @admin.action(
         description="Approve selected proposals"
@@ -307,11 +465,12 @@ class ProposalAdmin(admin.ModelAdmin):
 class BookCreateProposalAdmin(admin.ModelAdmin):
 
     list_display = (
+        "cover_preview",
         "title",
         "author",
         "genre",
         "created_book",
-        "proposal",
+        "proposal_status_badge",
     )
 
     search_fields = (
@@ -325,6 +484,34 @@ class BookCreateProposalAdmin(admin.ModelAdmin):
         "proposal",
         "created_book",
     )
+
+    list_select_related = (
+        "author",
+        "proposal",
+        "created_book",
+    )
+
+    @admin.display(description="Cover")
+    def cover_preview(self, obj):
+        if obj.cover_image_url:
+            return format_html(
+                '<img src="{}" class="book-cover-thumb" alt="Cover" />',
+                obj.cover_image_url,
+            )
+        return mark_safe('<div class="book-cover-placeholder">&#x1F4D6;</div>')
+
+    @admin.display(description="Proposal Status")
+    def proposal_status_badge(self, obj):
+        st = obj.proposal.status
+        badges = {
+            Proposal.Status.PENDING: "status-warning",
+            Proposal.Status.APPROVED: "status-info",
+            Proposal.Status.APPLIED: "status-success",
+            Proposal.Status.REJECTED: "status-danger",
+            Proposal.Status.WITHDRAWN: "status-neutral",
+        }
+        cls = badges.get(st, "status-neutral")
+        return mark_safe(f'<span class="status-badge {cls}">{obj.proposal.get_status_display()}</span>')
 
     def get_readonly_fields(self, request, obj=None):
 
@@ -342,17 +529,38 @@ class BookUpdateProposalAdmin(admin.ModelAdmin):
 
     list_display = (
         "book",
-        "proposal",
+        "title",
+        "genre",
+        "proposal_status_badge",
     )
 
     search_fields = (
         "book__title",
+        "title",
     )
 
     autocomplete_fields = (
         "book",
         "proposal",
     )
+
+    list_select_related = (
+        "book",
+        "proposal",
+    )
+
+    @admin.display(description="Status")
+    def proposal_status_badge(self, obj):
+        st = obj.proposal.status
+        badges = {
+            Proposal.Status.PENDING: "status-warning",
+            Proposal.Status.APPROVED: "status-info",
+            Proposal.Status.APPLIED: "status-success",
+            Proposal.Status.REJECTED: "status-danger",
+            Proposal.Status.WITHDRAWN: "status-neutral",
+        }
+        cls = badges.get(st, "status-neutral")
+        return mark_safe(f'<span class="status-badge {cls}">{obj.proposal.get_status_display()}</span>')
 
 
 @admin.register(BookDeleteProposal)
@@ -360,17 +568,41 @@ class BookDeleteProposalAdmin(admin.ModelAdmin):
 
     list_display = (
         "book",
-        "proposal",
+        "reason_summary",
+        "proposal_status_badge",
     )
 
     search_fields = (
         "book__title",
+        "reason",
     )
 
     autocomplete_fields = (
         "book",
         "proposal",
     )
+
+    list_select_related = (
+        "book",
+        "proposal",
+    )
+
+    @admin.display(description="Reason")
+    def reason_summary(self, obj):
+        return obj.reason[:60] + ("..." if len(obj.reason) > 60 else "")
+
+    @admin.display(description="Status")
+    def proposal_status_badge(self, obj):
+        st = obj.proposal.status
+        badges = {
+            Proposal.Status.PENDING: "status-warning",
+            Proposal.Status.APPROVED: "status-info",
+            Proposal.Status.APPLIED: "status-success",
+            Proposal.Status.REJECTED: "status-danger",
+            Proposal.Status.WITHDRAWN: "status-neutral",
+        }
+        cls = badges.get(st, "status-neutral")
+        return mark_safe(f'<span class="status-badge {cls}">{obj.proposal.get_status_display()}</span>')
 
 
 @admin.register(AuthorCreateProposal)
@@ -378,12 +610,33 @@ class AuthorCreateProposalAdmin(admin.ModelAdmin):
 
     list_display = (
         "name",
-        "proposal",
+        "proposal_status_badge",
     )
 
     search_fields = (
         "name",
     )
+
+    autocomplete_fields = (
+        "proposal",
+    )
+
+    list_select_related = (
+        "proposal",
+    )
+
+    @admin.display(description="Status")
+    def proposal_status_badge(self, obj):
+        st = obj.proposal.status
+        badges = {
+            Proposal.Status.PENDING: "status-warning",
+            Proposal.Status.APPROVED: "status-info",
+            Proposal.Status.APPLIED: "status-success",
+            Proposal.Status.REJECTED: "status-danger",
+            Proposal.Status.WITHDRAWN: "status-neutral",
+        }
+        cls = badges.get(st, "status-neutral")
+        return mark_safe(f'<span class="status-badge {cls}">{obj.proposal.get_status_display()}</span>')
 
 
 @admin.register(AuthorUpdateProposal)
@@ -391,11 +644,13 @@ class AuthorUpdateProposalAdmin(admin.ModelAdmin):
 
     list_display = (
         "author",
-        "proposal",
+        "name",
+        "proposal_status_badge",
     )
 
     search_fields = (
         "author__name",
+        "name",
     )
 
     autocomplete_fields = (
@@ -403,21 +658,69 @@ class AuthorUpdateProposalAdmin(admin.ModelAdmin):
         "proposal",
     )
 
+    list_select_related = (
+        "author",
+        "proposal",
+    )
+
+    @admin.display(description="Status")
+    def proposal_status_badge(self, obj):
+        st = obj.proposal.status
+        badges = {
+            Proposal.Status.PENDING: "status-warning",
+            Proposal.Status.APPROVED: "status-info",
+            Proposal.Status.APPLIED: "status-success",
+            Proposal.Status.REJECTED: "status-danger",
+            Proposal.Status.WITHDRAWN: "status-neutral",
+        }
+        cls = badges.get(st, "status-neutral")
+        return mark_safe(f'<span class="status-badge {cls}">{obj.proposal.get_status_display()}</span>')
+
 
 @admin.register(PriceChangeProposal)
 class PriceChangeProposalAdmin(admin.ModelAdmin):
 
     list_display = (
         "book",
-        "value",
-        "proposal",
+        "formatted_value",
+        "formatted_min_price",
+        "proposal_status_badge",
     )
 
     search_fields = (
         "book__title",
+        "reason",
     )
 
     autocomplete_fields = (
         "book",
         "proposal",
     )
+
+    list_select_related = (
+        "book",
+        "proposal",
+    )
+
+    @admin.display(description="New Price", ordering="value")
+    def formatted_value(self, obj):
+        return mark_safe(f'<span class="currency-tag">{obj.value:,.0f} <span class="irr-unit">IRR</span></span>')
+
+    @admin.display(description="Min Price", ordering="min_price")
+    def formatted_min_price(self, obj):
+        if obj.min_price is not None:
+            return mark_safe(f'<span class="currency-tag">{obj.min_price:,.0f} <span class="irr-unit">IRR</span></span>')
+        return "-"
+
+    @admin.display(description="Status")
+    def proposal_status_badge(self, obj):
+        st = obj.proposal.status
+        badges = {
+            Proposal.Status.PENDING: "status-warning",
+            Proposal.Status.APPROVED: "status-info",
+            Proposal.Status.APPLIED: "status-success",
+            Proposal.Status.REJECTED: "status-danger",
+            Proposal.Status.WITHDRAWN: "status-neutral",
+        }
+        cls = badges.get(st, "status-neutral")
+        return mark_safe(f'<span class="status-badge {cls}">{obj.proposal.get_status_display()}</span>')

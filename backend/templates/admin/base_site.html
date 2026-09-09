@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('PageNet Admin Portal') }}{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}" class="pagenet-admin-brand">
+    <span class="brand-badge-icon">📖</span>
+    <span class="brand-title">PageNet</span>
+    <span class="brand-subtitle">Editorial & Commerce Operations</span>
+  </a>
+</div>
+{% endblock %}
