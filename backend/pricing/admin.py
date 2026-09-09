@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html, mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from .models import (Discount, DiscountCode, Price, SubscriptionPlan,
                      UserSubscription)
@@ -89,6 +90,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
 class UserSubscriptionAdmin(admin.ModelAdmin):
 
     list_display = (
+        "subscription_id",
         "user_display",
         "plan_badge",
         "status_badge",
@@ -96,6 +98,10 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
         "start_date",
         "end_date",
         "auto_renew",
+    )
+    list_display_links = (
+        "subscription_id",
+        "plan_badge",
     )
 
     list_filter = (
@@ -124,6 +130,11 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
         "user",
         "plan",
     )
+
+    @admin.display(description=_("Sub ID"), ordering="id")
+    def subscription_id(self, obj):
+        val_str = f"#{obj.id:05d}"
+        return format_html('<span class="order-id-tag">{}</span>', val_str)
 
     @admin.display(description="Customer", ordering="user__username")
     def user_display(self, obj):
@@ -218,6 +229,10 @@ class PriceAdmin(admin.ModelAdmin):
         "validity_badge",
         "effective_from",
         "effective_until",
+    )
+    list_display_links = (
+        "cover_thumb",
+        "formatted_value",
     )
 
     list_filter = (

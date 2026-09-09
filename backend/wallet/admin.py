@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.html import format_html, mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from .models.transaction import WalletTransaction
 from .models.wallet import Wallet
@@ -60,11 +61,16 @@ class WalletAdmin(admin.ModelAdmin):
     inlines = [WalletTransactionInline]
 
     list_display = (
+        "wallet_id",
         "user_display",
         "formatted_balance",
         "transaction_count",
         "updated_at",
         "created_at",
+    )
+    list_display_links = (
+        "wallet_id",
+        "formatted_balance",
     )
     search_fields = (
         "user__username",
@@ -92,7 +98,12 @@ class WalletAdmin(admin.ModelAdmin):
             .annotate(tx_total=Count("transactions"))
         )
 
-    @admin.display(description="Customer", ordering="user__username")
+    @admin.display(description=_("Wallet ID"), ordering="id")
+    def wallet_id(self, obj):
+        val_str = f"#{obj.id:05d}"
+        return format_html('<span class="order-id-tag">{}</span>', val_str)
+
+    @admin.display(description=_("Customer"), ordering="user__username")
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
@@ -102,13 +113,13 @@ class WalletAdmin(admin.ModelAdmin):
             obj.user.email,
         )
 
-    @admin.display(description="Balance", ordering="balance")
+    @admin.display(description=_("Balance"), ordering="balance")
     def formatted_balance(self, obj):
         return mark_safe(
             f'<span class="currency-tag" style="font-size:0.95rem; color:var(--pn-primary);">{obj.balance:,.0f} <span class="irr-unit">IRR</span></span>'
         )
 
-    @admin.display(description="Transactions", ordering="tx_total")
+    @admin.display(description=_("Transactions"), ordering="tx_total")
     def transaction_count(self, obj):
         return mark_safe(f'<span class="item-count-badge">{obj.tx_total} txns</span>')
 
@@ -116,12 +127,17 @@ class WalletAdmin(admin.ModelAdmin):
 @admin.register(WalletTransaction)
 class WalletTransactionAdmin(admin.ModelAdmin):
     list_display = (
+        "transaction_id",
+        "wallet_link",
         "wallet_user",
         "type_badge",
         "formatted_amount",
         "formatted_balance_after",
         "description",
         "created_at",
+    )
+    list_display_links = (
+        "transaction_id",
     )
     search_fields = (
         "wallet__user__username",
@@ -149,7 +165,18 @@ class WalletTransactionAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     list_per_page = 25
 
-    @admin.display(description="Customer", ordering="wallet__user__username")
+    @admin.display(description=_("Tx ID"), ordering="id")
+    def transaction_id(self, obj):
+        val_str = f"#{obj.id:05d}"
+        return format_html('<span class="order-id-tag">{}</span>', val_str)
+
+    @admin.display(description=_("Wallet"), ordering="wallet_id")
+    def wallet_link(self, obj):
+        url = reverse("admin:wallet_wallet_change", args=[obj.wallet.pk])
+        val_str = f"#{obj.wallet.pk:05d}"
+        return format_html('<a href="{}" class="admin-accent-link">Wallet {}</a>', url, val_str)
+
+    @admin.display(description=_("Customer"), ordering="wallet__user__username")
     def wallet_user(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.wallet.user.pk])
         return format_html(

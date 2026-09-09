@@ -9,6 +9,7 @@ from .models import License
 class LicenseAdmin(admin.ModelAdmin):
 
     list_display = (
+        "license_id",
         "cover_thumb",
         "user_display",
         "book_display",
@@ -17,6 +18,10 @@ class LicenseAdmin(admin.ModelAdmin):
         "status_badge",
         "valid_from",
         "valid_until",
+    )
+    list_display_links = (
+        "license_id",
+        "cover_thumb",
     )
 
     list_filter = (
@@ -61,6 +66,11 @@ class LicenseAdmin(admin.ModelAdmin):
     )
 
     list_per_page = 25
+
+    @admin.display(description="License ID", ordering="id")
+    def license_id(self, obj):
+        val_str = f"#{obj.id:05d}"
+        return format_html('<span class="order-id-tag">{}</span>', val_str)
 
     @admin.display(description="Cover")
     def cover_thumb(self, obj):

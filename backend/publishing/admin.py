@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.html import format_html, mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from .models import (AuthorCreateProposal, AuthorUpdateProposal,
                      BookCreateProposal, BookDeleteProposal,
@@ -116,11 +117,16 @@ class PublisherAdmin(admin.ModelAdmin):
 class PublisherMembershipAdmin(admin.ModelAdmin):
 
     list_display = (
+        "membership_id",
         "user_display",
         "publisher_display",
         "role_badge",
         "status_badge",
         "joined_at",
+    )
+    list_display_links = (
+        "membership_id",
+        "role_badge",
     )
 
     list_filter = (
@@ -153,6 +159,11 @@ class PublisherMembershipAdmin(admin.ModelAdmin):
         "publisher",
         "user",
     )
+
+    @admin.display(description=_("Membership ID"), ordering="id")
+    def membership_id(self, obj):
+        val_str = f"#{obj.id:05d}"
+        return format_html('<span class="order-id-tag">{}</span>', val_str)
 
     @admin.display(description="User", ordering="user__username")
     def user_display(self, obj):
@@ -472,6 +483,10 @@ class BookCreateProposalAdmin(admin.ModelAdmin):
         "created_book",
         "proposal_status_badge",
     )
+    list_display_links = (
+        "cover_preview",
+        "title",
+    )
 
     search_fields = (
         "title",
@@ -532,6 +547,10 @@ class BookUpdateProposalAdmin(admin.ModelAdmin):
         "title",
         "genre",
         "proposal_status_badge",
+    )
+    list_display_links = (
+        "book",
+        "title",
     )
 
     search_fields = (

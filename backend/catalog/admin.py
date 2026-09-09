@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import conditional_escape, format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from .models import Author, Book, BookFormat, Genre, Tag
@@ -18,30 +18,32 @@ class BookFormatInline(admin.TabularInline):
 class PriceInline(admin.TabularInline):
     model = Price
     extra = 0
-    fields = ("book_format", "value", "min_price", "effective_from", "effective_until")
-    ordering = ("-effective_from",)
+    fields = ("value", "min_price", "effective_from", "effective_until")
+    classes = ("collapse",)
 
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "normalized_name", "book_count", "created_at")
-    search_fields = ("name", "slug", "normalized_name")
+    list_display = ("name", "slug", "normalized_name", "book_count")
+    search_fields = ("name", "normalized_name", "description")
     prepopulated_fields = {"slug": ("name",)}
+    ordering = ("name",)
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(book_total=Count("books"))
 
-    @admin.display(ordering="book_total", description=_("Books"))
+    @admin.display(description=_("Books"), ordering="book_total")
     def book_count(self, obj):
-        count = getattr(obj, "book_total", obj.books.count())
+        count = obj.book_total
         return format_html('<span class="item-count-badge">{}</span>', count)
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ("name", "normalized_name", "language_badge", "book_count", "created_at")
+    list_display = ("name", "normalized_name", "language_badge", "book_count")
     search_fields = ("name", "normalized_name", "description")
     list_filter = ("language",)
+    ordering = ("name",)
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(book_total=Count("books"))
@@ -51,15 +53,16 @@ class TagAdmin(admin.ModelAdmin):
         pill_cls = "pill-fa" if obj.language == "fa" else "pill-en"
         return format_html('<span class="status-badge {}">{}</span>', pill_cls, obj.language.upper())
 
-    @admin.display(ordering="book_total", description=_("Books"))
+    @admin.display(description=_("Books"), ordering="book_total")
     def book_count(self, obj):
-        count = getattr(obj, "book_total", obj.books.count())
+        count = obj.book_total
         return format_html('<span class="item-count-badge">{}</span>', count)
 
 
 @admin.register(BookFormat)
 class BookFormatAdmin(admin.ModelAdmin):
     list_display = ("book", "format_badge", "is_available_badge", "price_display", "created_at")
+    list_display_links = ("book", "format_badge")
     list_filter = ("format_type", "is_available")
     search_fields = ("book__title", "book__isbn")
     autocomplete_fields = ("book",)
@@ -84,9 +87,10 @@ class BookFormatAdmin(admin.ModelAdmin):
     def price_display(self, obj):
         price = obj.prices.order_by("-effective_from").first()
         if price:
+            val_formatted = f"{price.value:,.0f}"
             return format_html(
-                '<span class="currency-tag">{:,.0f}<span class="irr-unit">IRR</span></span>',
-                price.value,
+                '<span class="currency-tag">{} <span class="irr-unit">IRR</span></span>',
+                val_formatted,
             )
         return "-"
 
@@ -253,11 +257,12 @@ class BookAdmin(admin.ModelAdmin):
     def formatted_price(self, obj):
         curr = obj.current_price
         if curr:
+            val_formatted = f"{curr.value:,.0f}"
             return format_html(
-                '<span class="currency-tag">{:,.0f}<span class="irr-unit">IRR</span></span>',
-                curr.value,
+                '<span class="currency-tag">{} <span class="irr-unit">IRR</span></span>',
+                val_formatted,
             )
-        return format_html('<span style="color:#94a3b8;">—</span>')
+        return format_html('<span class="cell-muted">—</span>')
 
     @admin.display(description=_("Formats"))
     def formats_badge(self, obj):
@@ -270,8 +275,8 @@ class BookAdmin(admin.ModelAdmin):
         if obj.is_audio:
             badges.append('<span class="status-badge status-warning" title="Audiobook">Audio</span>')
         if not badges:
-            return format_html('<span style="color:#94a3b8;">None</span>')
-        return format_html(" ".join(badges))
+            return format_html('<span class="cell-muted">None</span>')
+        return mark_safe(" ".join(badges))
 
     @admin.display(description=_("Semantic AI"))
     def semantic_status(self, obj):
@@ -296,13 +301,14 @@ class BookAdmin(admin.ModelAdmin):
         if not reasons:
             reasons.append("Meets all canonical semantic constraints.")
 
+        items = mark_safe("".join(f"<li>{conditional_escape(r)}</li>" for r in reasons))
         return format_html(
             '<div style="background:#f8fafc;padding:12px;border-radius:6px;border-left:4px solid {};">'
             '<strong style="color:{};">{}</strong><ul style="margin:6px 0 0 16px;padding:0;">{}</ul></div>',
             color,
             color,
             status_text,
-            "".join(f"<li>{r}</li>" for r in reasons),
+            items,
         )
 
     fieldsets = (

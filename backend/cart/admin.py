@@ -2,6 +2,7 @@ from django.contrib import admin, messages
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.html import format_html, mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from .models import Cart, CartItem, Order, OrderItem, WishlistItem
 
@@ -337,10 +338,14 @@ class CartAdmin(admin.ModelAdmin):
     ]
 
     list_display = (
+        "cart_id",
         "user_display",
         "item_count",
         "updated_at",
         "created_at",
+    )
+    list_display_links = (
+        "cart_id",
     )
 
     search_fields = (
@@ -383,6 +388,11 @@ class CartAdmin(admin.ModelAdmin):
         ),
     )
 
+    @admin.display(description=_("Cart ID"), ordering="id")
+    def cart_id(self, obj):
+        val_str = f"#{obj.id:05d}"
+        return format_html('<span class="order-id-tag">{}</span>', val_str)
+
     @admin.display(
         ordering="user__username",
         description="Customer",
@@ -423,11 +433,16 @@ class WishlistItemAdmin(admin.ModelAdmin):
     """
 
     list_display = (
+        "item_id",
         "cover_thumb",
         "user_display",
         "book_display",
         "author",
         "added_at",
+    )
+    list_display_links = (
+        "item_id",
+        "cover_thumb",
     )
 
     list_filter = (
@@ -461,6 +476,11 @@ class WishlistItemAdmin(admin.ModelAdmin):
     )
 
     list_per_page = 25
+
+    @admin.display(description=_("Item ID"), ordering="id")
+    def item_id(self, obj):
+        val_str = f"#{obj.id:05d}"
+        return format_html('<span class="order-id-tag">{}</span>', val_str)
 
     @admin.display(description="Cover")
     def cover_thumb(self, obj):

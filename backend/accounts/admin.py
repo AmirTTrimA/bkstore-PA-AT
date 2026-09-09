@@ -166,11 +166,14 @@ class UserAdmin(BaseUserAdmin):
 class OTPCodeAdmin(admin.ModelAdmin):
 
     list_display = (
-        "user_display",
         "code_pill",
+        "user_display",
         "valid_badge",
         "created_at",
         "expires_at",
+    )
+    list_display_links = (
+        "code_pill",
     )
 
     list_filter = (
@@ -232,13 +235,16 @@ class OTPCodeAdmin(admin.ModelAdmin):
 class AddressAdmin(admin.ModelAdmin):
 
     list_display = (
-        "user_display",
         "title",
+        "user_display",
         "recipient_name",
         "city",
         "phone_number",
         "default_badge",
         "created_at",
+    )
+    list_display_links = (
+        "title",
     )
 
     list_filter = (
