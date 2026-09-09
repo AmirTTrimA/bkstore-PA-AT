@@ -96,7 +96,7 @@ class WalletAdmin(admin.ModelAdmin):
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            '<a href="{}" class="admin-user-link">{} <span class="cell-muted">({})</span></a>',
             url,
             obj.user.get_full_name() or obj.user.username,
             obj.user.email,
@@ -153,7 +153,7 @@ class WalletTransactionAdmin(admin.ModelAdmin):
     def wallet_user(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.wallet.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{}</a>',
+            '<a href="{}" class="admin-user-link">{}</a>',
             url,
             obj.wallet.user.username,
         )

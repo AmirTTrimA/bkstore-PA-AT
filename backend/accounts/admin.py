@@ -113,7 +113,7 @@ class UserAdmin(BaseUserAdmin):
 
     @admin.display(description="Email", ordering="email")
     def email_display(self, obj):
-        return format_html('<span style="color:#475569;">{}</span>', obj.email)
+        return format_html('<span class="cell-secondary">{}</span>', obj.email)
 
     @admin.display(description="Role(s)")
     def role_badges(self, obj):
@@ -207,7 +207,7 @@ class OTPCodeAdmin(admin.ModelAdmin):
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{}</a>',
+            '<a href="{}" class="admin-user-link">{}</a>',
             url,
             obj.user.username,
         )
@@ -215,7 +215,7 @@ class OTPCodeAdmin(admin.ModelAdmin):
     @admin.display(description="OTP Code", ordering="code")
     def code_pill(self, obj):
         return format_html(
-            '<span style="font-family:monospace; font-weight:700; letter-spacing:2px; background:#f1f5f9; padding:2px 8px; border-radius:4px; border:1px solid #cbd5e1; color:#0f172a;">{}</span>',
+            '<span class="promo-code-pill" style="letter-spacing:2px;">{}</span>',
             obj.code,
         )
 
@@ -271,7 +271,7 @@ class AddressAdmin(admin.ModelAdmin):
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{}</a>',
+            '<a href="{}" class="admin-user-link">{}</a>',
             url,
             obj.user.username,
         )

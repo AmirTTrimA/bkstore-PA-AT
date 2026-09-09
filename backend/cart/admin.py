@@ -156,18 +156,19 @@ class OrderAdmin(admin.ModelAdmin):
 
     @admin.display(description="Order ID", ordering="id")
     def order_id_display(self, obj):
+        order_num = f"#{obj.id:05d}"
         return format_html(
-            '<span style="font-family:monospace; font-weight:700; color:#0f172a;">#{:05d}</span>',
-            obj.id,
+            '<span class="order-id-tag">{}</span>',
+            order_num,
         )
 
     @admin.display(description="Customer", ordering="user__username")
     def user_display(self, obj):
         if not obj.user:
-            return mark_safe('<span style="color:#94a3b8;">Guest / Deleted</span>')
+            return mark_safe('<span class="cell-muted">Guest / Deleted</span>')
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            '<a href="{}" class="admin-user-link">{} <span class="cell-muted">({})</span></a>',
             url,
             obj.user.get_full_name() or obj.user.username,
             obj.user.email,
@@ -388,10 +389,10 @@ class CartAdmin(admin.ModelAdmin):
     )
     def user_display(self, obj):
         if not obj.user:
-            return mark_safe('<span style="color:#94a3b8;">Guest</span>')
+            return mark_safe('<span class="cell-muted">Guest</span>')
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            '<a href="{}" class="admin-user-link">{} <span class="cell-muted">({})</span></a>',
             url,
             obj.user.get_full_name() or obj.user.username,
             obj.user.email,
@@ -477,7 +478,7 @@ class WishlistItemAdmin(admin.ModelAdmin):
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{}</a>',
+            '<a href="{}" class="admin-user-link">{}</a>',
             url,
             obj.user.username,
         )

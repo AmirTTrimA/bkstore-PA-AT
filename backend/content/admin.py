@@ -75,7 +75,7 @@ class LicenseAdmin(admin.ModelAdmin):
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            '<a href="{}" class="admin-user-link">{} <span class="cell-muted">({})</span></a>',
             url,
             obj.user.username,
             obj.user.email,
@@ -85,7 +85,7 @@ class LicenseAdmin(admin.ModelAdmin):
     def book_display(self, obj):
         url = reverse("admin:catalog_book_change", args=[obj.book.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:var(--pn-primary);">{}</a>',
+            '<a href="{}" class="admin-book-link">{}</a>',
             url,
             obj.book.title,
         )
@@ -101,12 +101,13 @@ class LicenseAdmin(admin.ModelAdmin):
     @admin.display(description="Order", ordering="order__id")
     def order_link(self, obj):
         if not obj.order:
-            return mark_safe('<span style="color:#94a3b8;">Manual / Grant</span>')
+            return mark_safe('<span class="cell-muted">Manual / Grant</span>')
         url = reverse("admin:cart_order_change", args=[obj.order.pk])
+        order_num = f"#{obj.order.id:05d}"
         return format_html(
-            '<a href="{}" style="font-family:monospace; font-weight:700; color:#0f172a;">#{:05d}</a>',
+            '<a href="{}" class="order-id-tag">{}</a>',
             url,
-            obj.order.id,
+            order_num,
         )
 
     @admin.display(description="License Status")

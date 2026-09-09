@@ -129,7 +129,7 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            '<a href="{}" class="admin-user-link">{} <span class="cell-muted">({})</span></a>',
             url,
             obj.user.get_full_name() or obj.user.username,
             obj.user.email,
@@ -292,7 +292,7 @@ class PriceAdmin(admin.ModelAdmin):
     def book_link(self, obj):
         url = reverse("admin:catalog_book_change", args=[obj.book.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{}</a>',
+            '<a href="{}" class="admin-book-link">{}</a>',
             url,
             obj.book.title,
         )
@@ -372,7 +372,7 @@ class DiscountCodeInline(admin.TabularInline):
         if not obj.pk:
             return "-"
         return format_html(
-            '<span style="font-family:monospace; font-weight:700; background:#f1f5f9; padding:2px 8px; border-radius:4px; border:1px solid #cbd5e1;">{}</span>',
+            '<span class="promo-code-pill">{}</span>',
             obj.code,
         )
 
@@ -545,7 +545,7 @@ class DiscountCodeAdmin(admin.ModelAdmin):
     @admin.display(description="Promo Code", ordering="code")
     def code_pill(self, obj):
         return format_html(
-            '<span style="font-family:monospace; font-weight:700; background:#f1f5f9; padding:3px 9px; border-radius:4px; border:1px solid #cbd5e1; color:#0f172a;">{}</span>',
+            '<span class="promo-code-pill">{}</span>',
             obj.code,
         )
 
@@ -553,7 +553,7 @@ class DiscountCodeAdmin(admin.ModelAdmin):
     def discount_link(self, obj):
         url = reverse("admin:pricing_discount_change", args=[obj.discount.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:var(--pn-primary);">{}</a>',
+            '<a href="{}" class="admin-accent-link">{}</a>',
             url,
             obj.discount.name,
         )

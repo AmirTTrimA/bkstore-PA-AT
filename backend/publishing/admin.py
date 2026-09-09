@@ -158,7 +158,7 @@ class PublisherMembershipAdmin(admin.ModelAdmin):
     def user_display(self, obj):
         url = reverse("admin:accounts_user_change", args=[obj.user.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:#1e293b;">{} <span style="color:#64748b; font-weight:normal;">({})</span></a>',
+            '<a href="{}" class="admin-user-link">{} <span class="cell-muted">({})</span></a>',
             url,
             obj.user.get_full_name() or obj.user.username,
             obj.user.email,
@@ -168,7 +168,7 @@ class PublisherMembershipAdmin(admin.ModelAdmin):
     def publisher_display(self, obj):
         url = reverse("admin:publishing_publisher_change", args=[obj.publisher.pk])
         return format_html(
-            '<a href="{}" style="font-weight:600; color:var(--pn-primary);">{}</a>',
+            '<a href="{}" class="admin-accent-link">{}</a>',
             url,
             obj.publisher.name,
         )
@@ -265,12 +265,12 @@ class ProposalAdmin(admin.ModelAdmin):
 
     @admin.display(description="Title", ordering="title")
     def title_display(self, obj):
-        return format_html('<span style="font-weight:700; color:#0f172a;">{}</span>', obj.title)
+        return format_html('<span class="admin-title-cell">{}</span>', obj.title)
 
     @admin.display(description="Publisher", ordering="publisher__name")
     def publisher_display(self, obj):
         return format_html(
-            '<span style="font-weight:600; color:#334155;">{}</span>',
+            '<span class="cell-secondary" style="font-weight:600;">{}</span>',
             obj.publisher.name,
         )
 
@@ -304,33 +304,33 @@ class ProposalAdmin(admin.ModelAdmin):
         try:
             if hasattr(obj, "book_create"):
                 return format_html(
-                    '<span style="font-size:0.85rem; color:#475569;">Book: <strong>{}</strong></span>',
+                    '<span class="cell-secondary">Book: <strong>{}</strong></span>',
                     obj.book_create.title,
                 )
             elif hasattr(obj, "book_update"):
                 return format_html(
-                    '<span style="font-size:0.85rem; color:#475569;">Book: <strong>{}</strong></span>',
+                    '<span class="cell-secondary">Book: <strong>{}</strong></span>',
                     obj.book_update.book.title,
                 )
             elif hasattr(obj, "book_delete"):
                 return format_html(
-                    '<span style="font-size:0.85rem; color:#b91c1c;">Book: <strong>{}</strong></span>',
+                    '<span style="font-size:0.85rem; color:#f87171;">Book: <strong>{}</strong></span>',
                     obj.book_delete.book.title,
                 )
             elif hasattr(obj, "author_create"):
                 return format_html(
-                    '<span style="font-size:0.85rem; color:#475569;">Author: <strong>{}</strong></span>',
+                    '<span class="cell-secondary">Author: <strong>{}</strong></span>',
                     obj.author_create.name,
                 )
             elif hasattr(obj, "author_update"):
                 return format_html(
-                    '<span style="font-size:0.85rem; color:#475569;">Author: <strong>{}</strong></span>',
+                    '<span class="cell-secondary">Author: <strong>{}</strong></span>',
                     obj.author_update.author.name,
                 )
             elif hasattr(obj, "price_change"):
                 val = f"{obj.price_change.value:,.0f}"
                 return mark_safe(
-                    f'<span style="font-size:0.85rem; color:#475569;">{obj.price_change.book.title} &rarr; '
+                    f'<span class="cell-secondary">{obj.price_change.book.title} &rarr; '
                     f'<span class="currency-tag">{val} <span class="irr-unit">IRR</span></span></span>'
                 )
         except Exception:
