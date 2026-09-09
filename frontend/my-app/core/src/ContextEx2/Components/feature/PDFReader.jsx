@@ -3,6 +3,7 @@ import { Document, Page } from "react-pdf";
 import { useNavigate, useLocation, useParams, Link } from "react-router-dom";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { LanguageToggle } from "../common/LanguageToggle";
+import { useLanguage } from "../../Context/LanguageContext";
 import BookService from "../../Services/BookService";
 
 import "../../../pdf-worker";
@@ -20,6 +21,7 @@ export default function PDFReader() {
   const navigate = useNavigate();
   const location = useLocation();
   const { bookId } = useParams();
+  const { t } = useLanguage();
 
   const containerRef = useRef(null);
 
@@ -62,13 +64,13 @@ export default function PDFReader() {
         })
         .catch((err) => {
           console.warn("Could not fetch book details:", err);
-          setBookError("Unable to load book details from server. Loading fallback document.");
+          setBookError(t("reader.loadError", "Unable to load book details from server. Loading fallback document."));
         })
         .finally(() => {
           setIsLoadingBook(false);
         });
     }
-  }, [book, bookId]);
+  }, [book, bookId, t]);
 
   // Derived state
   const isFirstPage = pageNumber <= 1;
@@ -88,7 +90,7 @@ export default function PDFReader() {
             setPageNumber(p);
             setJumpInput(String(p));
             if (p > 1) {
-              setResumeToast(`Resumed reading from page ${p}`);
+              setResumeToast(t("reader.resumedToast", "Resumed reading from page {page}", { page: p }));
               setTimeout(() => setResumeToast(""), 3500);
             }
             return;
@@ -98,7 +100,7 @@ export default function PDFReader() {
       setPageNumber(1);
       setJumpInput("1");
     },
-    [storageKey]
+    [storageKey, t]
   );
 
   const onDocumentLoadError = useCallback((error) => {
@@ -243,26 +245,26 @@ export default function PDFReader() {
               type="button"
               className="pdf-btn pdf-btn-secondary"
               onClick={() => navigate(-1)}
-              title="Go Back"
+              title={t("common.back", "Go Back")}
             >
-              ← Back
+              ← {t("common.back", "Back")}
             </button>
             <button
               type="button"
               className="pdf-btn pdf-btn-secondary"
               onClick={() => navigate("/dashboard")}
-              title="Return to Dashboard"
+              title={t("nav.dashboard", "Return to Dashboard")}
             >
-              Dashboard
+              {t("nav.dashboard", "Dashboard")}
             </button>
-            <Link to="/home" className="pdf-btn pdf-btn-secondary" title="Store Home">
-              Store
+            <Link to="/home" className="pdf-btn pdf-btn-secondary" title={t("reader.store", "Store Home")}>
+              {t("reader.store", "Store")}
             </Link>
           </div>
 
           <div className="pdf-title-block">
-            <h1 className="pdf-title">{book?.book_title || book?.title || "PDF Reader"}</h1>
-            {book?.author && <p className="pdf-author">by {book.author}</p>}
+            <h1 className="pdf-title">{book?.book_title || book?.title || t("reader.pdfReader", "PDF Reader")}</h1>
+            {book?.author && <p className="pdf-author">{t("book.by_author", "by {author}", { author: book.author })}</p>}
           </div>
 
           <div className="pdf-top-tools">
@@ -272,9 +274,9 @@ export default function PDFReader() {
               type="button"
               className="pdf-btn pdf-btn-icon"
               onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit Fullscreen (F)" : "Enter Fullscreen (F)"}
+              title={isFullscreen ? t("reader.exitFullscreen", "Exit Fullscreen (F)") : t("reader.fullscreen", "Enter Fullscreen (F)")}
             >
-              {isFullscreen ? "🗗 Exit" : "⛶ Fullscreen"}
+              {isFullscreen ? `🗗 ${t("reader.exit", "Exit")}` : `⛶ ${t("reader.fullscreen", "Fullscreen")}`}
             </button>
           </div>
         </header>
@@ -299,7 +301,7 @@ export default function PDFReader() {
               onClick={goToFirstPage}
               disabled={isFirstPage}
               className="pdf-btn pdf-btn-tool"
-              title="First Page (Home)"
+              title={t("reader.firstPage", "First Page (Home)")}
             >
               ⇤
             </button>
@@ -308,9 +310,9 @@ export default function PDFReader() {
               onClick={prevPage}
               disabled={isFirstPage}
               className="pdf-btn pdf-btn-tool"
-              title="Previous Page (←)"
+              title={t("reader.prevPage", "Previous Page (←)")}
             >
-              ◀ Prev
+              ◀ {t("common.prev", "Prev")}
             </button>
 
             <div className="pdf-page-jump">
@@ -325,7 +327,7 @@ export default function PDFReader() {
                 className="pdf-page-input"
                 aria-label="Current Page"
               />
-              <span className="pdf-page-total">of {numPages || "..."}</span>
+              <span className="pdf-page-total">{t("reader.pageOf", "of {total}", { total: numPages || "..." })}</span>
             </div>
 
             <button
@@ -333,16 +335,16 @@ export default function PDFReader() {
               onClick={nextPage}
               disabled={isLastPage}
               className="pdf-btn pdf-btn-tool"
-              title="Next Page (→)"
+              title={t("reader.nextPage", "Next Page (→)")}
             >
-              Next ▶
+              {t("common.next", "Next")} ▶
             </button>
             <button
               type="button"
               onClick={goToLastPage}
               disabled={isLastPage}
               className="pdf-btn pdf-btn-tool"
-              title="Last Page (End)"
+              title={t("reader.lastPage", "Last Page (End)")}
             >
               ⇥
             </button>
@@ -356,7 +358,7 @@ export default function PDFReader() {
               onClick={zoomOut}
               disabled={scale <= 0.6}
               className="pdf-btn pdf-btn-tool"
-              title="Zoom Out (-)"
+              title={t("reader.zoomOut", "Zoom Out (-)")}
             >
               −
             </button>
@@ -364,7 +366,7 @@ export default function PDFReader() {
               type="button"
               onClick={resetZoom}
               className="pdf-btn pdf-btn-tool zoom-val"
-              title="Reset Zoom (0)"
+              title={t("reader.resetZoom", "Reset Zoom (0)")}
             >
               {Math.round(scale * 100)}%
             </button>
@@ -373,7 +375,7 @@ export default function PDFReader() {
               onClick={zoomIn}
               disabled={scale >= 2.5}
               className="pdf-btn pdf-btn-tool"
-              title="Zoom In (+)"
+              title={t("reader.zoomIn", "Zoom In (+)")}
             >
               +
             </button>
@@ -385,7 +387,7 @@ export default function PDFReader() {
           {isLoadingBook ? (
             <div className="pdf-loading-state">
               <div className="pdf-spinner" />
-              <p>Fetching book details...</p>
+              <p>{t("common.loading", "Fetching book details...")}</p>
             </div>
           ) : (
             <Document
@@ -395,7 +397,7 @@ export default function PDFReader() {
               loading={
                 <div className="pdf-loading-state">
                   <div className="pdf-spinner" />
-                  <p>Loading document pages...</p>
+                  <p>{t("reader.loadingDoc", "Loading document pages...")}</p>
                 </div>
               }
             >
@@ -412,7 +414,7 @@ export default function PDFReader() {
           {isLoadingDoc && !isLoadingBook && (
             <div className="pdf-loading-state">
               <div className="pdf-spinner" />
-              <p>Rendering page {pageNumber}...</p>
+              <p>{t("reader.loadingDoc", "Rendering page {page}...", { page: pageNumber })}</p>
             </div>
           )}
         </div>

@@ -115,4 +115,125 @@ msgstr "کتاب"
 
 #: .\catalog\models.py:80
 msgid "Books"
-msgstr "کتاب ها"
+msgstr "کتاب‌ها"
+
+msgid "Tag"
+msgstr "برچسب"
+
+msgid "Tags"
+msgstr "برچسب‌ها"
+
+msgid "Tag Name"
+msgstr "نام برچسب"
+
+msgid "Normalized Name"
+msgstr "نام استاندارد"
+
+msgid "Genres"
+msgstr "ژانرها"
+
+msgid "Language"
+msgstr "زبان"
+
+msgid "English"
+msgstr "انگلیسی"
+
+msgid "Farsi"
+msgstr "فارسی"
+
+msgid "Persian"
+msgstr "فارسی"
+
+msgid "Format"
+msgstr "فرمت"
+
+msgid "Formats"
+msgstr "فرمت‌ها"
+
+msgid "Format Type"
+msgstr "نوع فرمت"
+
+msgid "Price"
+msgstr "قیمت"
+
+msgid "Prices"
+msgstr "قیمت‌ها"
+
+msgid "Order"
+msgstr "سفارش"
+
+msgid "Orders"
+msgstr "سفارش‌ها"
+
+msgid "Order Item"
+msgstr "آیتم سفارش"
+
+msgid "Order Items"
+msgstr "آیتم‌های سفارش"
+
+msgid "Basket"
+msgstr "سبد خرید"
+
+msgid "Baskets"
+msgstr "سبدهای خرید"
+
+msgid "Basket Item"
+msgstr "آیتم سبد خرید"
+
+msgid "Basket Items"
+msgstr "آیتم‌های سبد خرید"
+
+msgid "Wallet"
+msgstr "کیف پول"
+
+msgid "Wallets"
+msgstr "کیف‌های پول"
+
+msgid "Transaction"
+msgstr "تراکنش"
+
+msgid "Transactions"
+msgstr "تراکنش‌ها"
+
+msgid "Publisher"
+msgstr "ناشر"
+
+msgid "Publishers"
+msgstr "ناشران"
+
+msgid "Proposal"
+msgstr "پروپوزال"
+
+msgid "Proposals"
+msgstr "پروپوزال‌ها"
+
+msgid "User"
+msgstr "کاربر"
+
+msgid "Users"
+msgstr "کاربران"
+
+msgid "Address"
+msgstr "نشانی"
+
+msgid "Addresses"
+msgstr "نشانی‌ها"
+
+msgid "Payment"
+msgstr "پرداخت"
+
+msgid "Payments"
+msgstr "پرداخت‌ها"
+
+msgid "PageNet Admin Portal"
+msgstr "درگاه مدیریت پیج‌نت"
+
+msgid "PageNet Bookstore Administration"
+msgstr "مدیریت کتابفروشی پیج‌نت"
+
+msgid "Bookstore Management & Editorial Operations"
+msgstr "مدیریت کتابفروشی و امور تحریریه"
+
+msgid "Editorial & Commerce Operations"
+msgstr "مدیریت امور تحریریه و بازرگانی"
+

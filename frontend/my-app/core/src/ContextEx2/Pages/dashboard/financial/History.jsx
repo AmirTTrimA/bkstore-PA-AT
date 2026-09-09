@@ -14,6 +14,7 @@ import HeadphonesIcon from "@mui/icons-material/Headphones";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 
 import OrderService from "../../../Services/OrderService";
+import { useLanguage } from "../../../Context/LanguageContext";
 import { formatPrice } from "../../../utils/formatPrice";
 import { ppic14 } from "../../../Constants";
 
@@ -29,6 +30,7 @@ const STATUS_CONFIG = {
 };
 
 export default function History() {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,10 +93,10 @@ export default function History() {
       >
         <Inventory2Icon sx={{ fontSize: 56, color: "rgba(255, 255, 255, 0.3)", mb: 1.5 }} />
         <Typography variant="h6" sx={{ color: "#fff", mb: 1 }}>
-          No orders yet
+          {t("dashboard.noOrders", "No orders yet")}
         </Typography>
         <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
-          Your completed purchases and book orders will appear here.
+          {t("cart.emptySubtitle", "Your completed purchases and book orders will appear here.")}
         </Typography>
       </Box>
     );
@@ -124,10 +126,10 @@ export default function History() {
               <Box className="order-header-left">
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#fff" }}>
-                    Order #{order.id}
+                    {t("dashboard.orderPlaced", "Order #{id}", { id: order.id })}
                   </Typography>
                   <Chip
-                    label={statusMeta.label}
+                    label={t("common.status_" + (order.status || "").toLowerCase(), statusMeta.label)}
                     size="small"
                     sx={{
                       bgcolor: statusMeta.bg,
@@ -139,7 +141,7 @@ export default function History() {
                   />
                 </Box>
                 <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)", mt: 0.5, display: "block" }}>
-                  Placed on {new Date(order.created_at).toLocaleDateString()} at{" "}
+                  {new Date(order.created_at).toLocaleDateString()} •{" "}
                   {new Date(order.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </Typography>
               </Box>
@@ -147,7 +149,7 @@ export default function History() {
               <Box className="order-header-right">
                 <Box sx={{ textAlign: "right", mr: 1 }}>
                   <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)", display: "block" }}>
-                    {order.items?.length || 0} {order.items?.length === 1 ? "item" : "items"}
+                    {t("dashboard.itemsCount", "{count} Items", { count: order.items?.length || 0 })}
                   </Typography>
                   <Typography variant="subtitle1" className="order-total-price">
                     {formatPrice(order.total_amount)}
@@ -170,7 +172,7 @@ export default function History() {
             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
               <Box className="order-details-body">
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: "rgba(255, 255, 255, 0.9)" }}>
-                  Purchased Items
+                  {t("cart.item", "Purchased Items")}
                 </Typography>
 
                 {/* Items List */}
@@ -195,7 +197,7 @@ export default function History() {
                             {item.book_title}
                           </Typography>
                           <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                            By {item.author_name || "Author"}
+                            {t("book.author", "Author")}: {item.author_name || "Author"}
                           </Typography>
 
                           <Box sx={{ mt: 0.8, display: "flex", alignItems: "center", gap: 1 }}>
@@ -210,8 +212,11 @@ export default function History() {
                                 )
                               }
                               label={
-                                item.format_name ||
-                                (isAudio ? "Audiobook" : isPhysical ? "Physical Book" : "Digital (PDF)")
+                                isAudio
+                                  ? t("common.format_audio", "Audiobook")
+                                  : isPhysical
+                                  ? t("common.format_physical", "Physical Book")
+                                  : t("common.format_digital", "Digital (PDF)")
                               }
                               size="small"
                               sx={{
@@ -227,7 +232,7 @@ export default function History() {
                               }}
                             />
                             <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
-                              Qty: {item.quantity}
+                              {t("cart.quantity", "Qty")}: {item.quantity}
                             </Typography>
                           </Box>
                         </Box>
@@ -238,7 +243,7 @@ export default function History() {
                           </Typography>
                           {item.quantity > 1 && (
                             <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.4)", display: "block" }}>
-                              Total: {formatPrice(Number(item.snapshot_price) * item.quantity)}
+                              {t("cart.lineTotal", "Total")}: {formatPrice(Number(item.snapshot_price) * item.quantity)}
                             </Typography>
                           )}
                         </Box>
@@ -253,7 +258,7 @@ export default function History() {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                       <LocalShippingIcon sx={{ fontSize: 18, color: "#d17842" }} />
                       <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "#d17842" }}>
-                        Delivery Destination
+                        {t("cart.shippingAddress", "Delivery Destination")}
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "#eee" }}>
@@ -269,7 +274,7 @@ export default function History() {
                 <Box className="order-breakdown-footer">
                   <Box className="breakdown-line">
                     <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                      Subtotal
+                      {t("dashboard.subtotal", "Subtotal")}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#eee" }}>
                       {formatPrice(order.subtotal || order.total_amount)}
@@ -279,7 +284,7 @@ export default function History() {
                   {Number(order.discount_amount) > 0 && (
                     <Box className="breakdown-line discount">
                       <Typography variant="caption" sx={{ color: "#81c784" }}>
-                        Discount Applied
+                        {t("dashboard.discount", "Discount Applied")}
                       </Typography>
                       <Typography variant="body2" sx={{ color: "#81c784", fontWeight: 700 }}>
                         -{formatPrice(order.discount_amount)}
@@ -289,7 +294,7 @@ export default function History() {
 
                   <Box className="breakdown-line grand-total">
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#fff" }}>
-                      Total Paid
+                      {t("dashboard.totalPaid", "Total Paid")}
                     </Typography>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#d17842" }}>
                       {formatPrice(order.total_amount)}

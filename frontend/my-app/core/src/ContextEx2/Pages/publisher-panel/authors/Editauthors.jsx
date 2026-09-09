@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Notification from '../../../Components/feature/Notification';
+import { useLanguage } from '../../../Context/LanguageContext';
 import PublisherService from '../../../Services/PublisherService';
 
 import '../../../Styles/publisher-panel/Editauthors.css';
@@ -13,6 +14,7 @@ export default function Editauthors({
   currentPublisher,
   onProposalCreated,
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,10 +102,10 @@ export default function Editauthors({
     <div className="edit-authors-panel">
       <div className="edit-authors-header">
         <h3>
-          {isEditMode ? `Edit Author Proposal: ${authorToEdit.name}` : 'Propose New Author'}
+          {isEditMode ? `${t('publisher_panel.editAuthorProposal', 'Edit Author Proposal')}: ${authorToEdit.name}` : t('publisher_panel.proposeNewAuthor', 'Propose New Author')}
         </h3>
         <p>
-          Author profiles are catalog-wide entities. All author creations and edits require review by store administrators.
+          {t('publisher_panel.authorPolicyDesc', 'Author profiles are catalog-wide entities. All author creations and edits require review by store administrators.')}
         </p>
       </div>
 
@@ -118,7 +120,7 @@ export default function Editauthors({
       <form onSubmit={handleSubmit} className="author-form-body">
         <div className="author-form-field">
           <label htmlFor="author-name-input">
-            Author Full Name <span className="required">*</span>
+            {t('publisher_panel.authorFullName', 'Author Full Name')} <span className="required">*</span>
           </label>
           <input
             id="author-name-input"
@@ -134,18 +136,18 @@ export default function Editauthors({
 
         <div className="author-form-field">
           <label htmlFor="author-bio-textarea">
-            Biography & Summary <span className="required">*</span>
+            {t('publisher_panel.bioSummary', 'Biography & Summary')} <span className="required">*</span>
           </label>
           <textarea
             id="author-bio-textarea"
             className="editor-textarea"
             style={{ minHeight: 120 }}
-            placeholder="Write a comprehensive biography of the author, notable awards, and background..."
+            placeholder={t('publisher_panel.bioPlaceholder', 'Write a comprehensive biography of the author, notable awards, and background...')}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             required
           />
-          <span className="char-counter">{bio.length} characters (min {MIN_BIO_LENGTH})</span>
+          <span className="char-counter">{bio.length} {t('publisher_panel.charactersMin', 'characters (min {min})', { min: MIN_BIO_LENGTH })}</span>
         </div>
 
         <div className="author-form-actions">
@@ -155,7 +157,7 @@ export default function Editauthors({
             onClick={onEditComplete}
             disabled={isSubmitting}
           >
-            Cancel
+            {t('common.cancel', 'Cancel')}
           </button>
 
           <button
@@ -164,10 +166,10 @@ export default function Editauthors({
             disabled={isSubmitting}
           >
             {isSubmitting
-              ? 'Submitting Proposal...'
+              ? t('publisher_panel.submittingProposal', 'Submitting Proposal...')
               : isEditMode
-              ? 'Submit Author Update'
-              : 'Submit Author Proposal'}
+              ? t('publisher_panel.submitAuthorUpdate', 'Submit Author Update')
+              : t('publisher_panel.submitAuthorProposal', 'Submit Author Proposal')}
           </button>
         </div>
       </form>

@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import AuthService from '../../Services/AuthService';
 import Notification from '../../Components/feature/Notification';
+import { useLanguage } from '../../Context/LanguageContext';
 import '../../Styles/components/Login.css';
 import '../../Styles/components/Forgetpass.css';
 
 const MIN_PASSWORD_LENGTH = 8;
 
 export default function Forgetpass() {
+  const { t, isPersian } = useLanguage();
   const navigate = useNavigate();
   const { uid, token } = useParams();
   const notificationRef = useRef(null);
@@ -121,9 +123,9 @@ export default function Forgetpass() {
       <div className="forgetpass-card">
         {/* Navigation Header */}
         <div className="auth-header-nav">
-          <Link to="/home" className="auth-back-btn" title="Back to Bookstore">
-            <i className="fas fa-arrow-left"></i>
-            <span>Back to Store</span>
+          <Link to="/home" className="auth-back-btn" title={isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}>
+            <i className={isPersian ? 'fas fa-arrow-right' : 'fas fa-arrow-left'}></i>
+            <span>{isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}</span>
           </Link>
           <Link to="/home" className="auth-brand">
             Page<span>Net</span>
@@ -137,9 +139,9 @@ export default function Forgetpass() {
 
         {/* Title Section */}
         <div className="auth-title-section">
-          <h1 className="auth-main-title">Set New Password</h1>
+          <h1 className="auth-main-title">{t('auth.setNewPassword')}</h1>
           <p className="auth-subtitle">
-            Create a secure new password for your PageNet account.
+            {t('auth.setNewPasswordSubtitle')}
           </p>
         </div>
 
@@ -147,22 +149,21 @@ export default function Forgetpass() {
         {isTokenMissing ? (
           <div className="forgetpass-missing-token">
             <i className="fas fa-exclamation-triangle forgetpass-missing-icon"></i>
-            <h2 className="forgetpass-missing-title">Missing or Incomplete Link</h2>
+            <h2 className="forgetpass-missing-title">{t('auth.missingLinkTitle')}</h2>
             <p className="forgetpass-missing-text">
-              Password reset links require unique authentication tokens provided in your email.
-              If you arrived here directly, please request a fresh reset link below.
+              {t('auth.missingLinkText')}
             </p>
             <Link
               to="/confirmemail"
               className="auth-submit-btn"
               style={{ marginTop: '1.25rem', textDecoration: 'none' }}
             >
-              <span>Request Reset Link</span>
-              <i className="fas fa-arrow-right"></i>
+              <span>{t('auth.requestResetLink')}</span>
+              <i className={isPersian ? 'fas fa-arrow-left' : 'fas fa-arrow-right'}></i>
             </Link>
             <div style={{ marginTop: '1rem' }}>
               <Link to="/login" className="confirm-subtle-link">
-                Return to Login
+                {t('auth.returnToLogin')}
               </Link>
             </div>
           </div>
@@ -170,17 +171,17 @@ export default function Forgetpass() {
           /* Success Banner */
           <div className="forgetpass-success-box">
             <i className="fas fa-check-circle forgetpass-success-icon"></i>
-            <h2 className="forgetpass-success-title">Password Successfully Reset!</h2>
+            <h2 className="forgetpass-success-title">{t('auth.resetSuccessTitle')}</h2>
             <p className="forgetpass-success-text">
-              Your password has been updated. You will be redirected to the sign in page in a moment...
+              {t('auth.resetSuccessText')}
             </p>
             <Link
               to="/login"
               className="auth-submit-btn"
               style={{ marginTop: '1.25rem', textDecoration: 'none' }}
             >
-              <span>Go to Sign In</span>
-              <i className="fas fa-arrow-right"></i>
+              <span>{t('auth.goToSignIn')}</span>
+              <i className={isPersian ? 'fas fa-arrow-left' : 'fas fa-arrow-right'}></i>
             </Link>
           </div>
         ) : (
@@ -195,7 +196,7 @@ export default function Forgetpass() {
 
             <div className="auth-form-group">
               <label className="auth-label" htmlFor="new-password">
-                New Password
+                {t('auth.newPassword')}
               </label>
               <div className="auth-input-wrapper">
                 <i className="fas fa-lock auth-input-icon"></i>
@@ -208,7 +209,7 @@ export default function Forgetpass() {
                     setPassword(e.target.value);
                     if (error) setError('');
                   }}
-                  placeholder="At least 8 characters"
+                  placeholder={t('auth.minCharacters', { count: MIN_PASSWORD_LENGTH })}
                   required
                   className="auth-input has-toggle"
                   autoComplete="new-password"
@@ -229,7 +230,7 @@ export default function Forgetpass() {
 
             <div className="auth-form-group">
               <label className="auth-label" htmlFor="confirm-new-password">
-                Confirm New Password
+                {t('auth.confirmNewPassword')}
               </label>
               <div className="auth-input-wrapper">
                 <i className="fas fa-lock auth-input-icon"></i>
@@ -242,7 +243,7 @@ export default function Forgetpass() {
                     setPassword2(e.target.value);
                     if (error) setError('');
                   }}
-                  placeholder="Re-enter new password"
+                  placeholder={t('auth.reenterNewPassword')}
                   required
                   className="auth-input has-toggle"
                   autoComplete="new-password"
@@ -279,8 +280,8 @@ export default function Forgetpass() {
                   ></i>
                   <span>
                     {isPasswordsMatch
-                      ? 'Passwords match'
-                      : 'Passwords do not match'}
+                      ? t('auth.passwordsMatch')
+                      : t('auth.passwordsDoNotMatch')}
                   </span>
                 </div>
               )}
@@ -295,11 +296,11 @@ export default function Forgetpass() {
               {isLoading ? (
                 <>
                   <i className="fas fa-spinner fa-spin"></i>
-                  <span>Resetting Password...</span>
+                  <span>{t('auth.resettingPassword')}</span>
                 </>
               ) : (
                 <>
-                  <span>Reset Password</span>
+                  <span>{t('auth.resetPassword')}</span>
                   <i className="fas fa-check"></i>
                 </>
               )}
@@ -307,7 +308,7 @@ export default function Forgetpass() {
 
             <div className="auth-card-footer" style={{ borderTop: 'none', marginTop: '1rem', paddingTop: '0.5rem' }}>
               <Link to="/login" className="confirm-subtle-link">
-                Remember your password? Back to Login
+                {t('auth.rememberPasswordBack')}
               </Link>
             </div>
           </form>

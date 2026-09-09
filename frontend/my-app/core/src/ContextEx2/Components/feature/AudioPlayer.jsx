@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation, useParams, Link } from "react-router-dom";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { LanguageToggle } from "../common/LanguageToggle";
+import { useLanguage } from "../../Context/LanguageContext";
 import BookService from "../../Services/BookService";
 import { ppic14 } from "../../Constants";
 import "../../Styles/components/AudioPlayer.css";
@@ -13,6 +14,7 @@ export default function AudioPlayer() {
   const navigate = useNavigate();
   const location = useLocation();
   const { bookId } = useParams();
+  const { t } = useLanguage();
 
   const audioRef = useRef(null);
   const lastSavedTimeRef = useRef(0);
@@ -282,29 +284,29 @@ export default function AudioPlayer() {
               type="button"
               className="audio-nav-btn"
               onClick={() => navigate(-1)}
-              title="Go Back"
+              title={t("common.back", "Go Back")}
             >
-              ← Back
+              ← {t("common.back", "Back")}
             </button>
             <button
               type="button"
               className="audio-nav-btn"
               onClick={() => navigate("/dashboard")}
-              title="Back to Dashboard"
+              title={t("nav.dashboard", "Back to Dashboard")}
             >
-              Dashboard
+              {t("nav.dashboard", "Dashboard")}
             </button>
-            <Link to="/home" className="audio-nav-btn" title="Store Home">
-              Store
+            <Link to="/home" className="audio-nav-btn" title={t("reader.store", "Store Home")}>
+              {t("reader.store", "Store")}
             </Link>
           </div>
-          <span className="player-format-tag">AUDIOBOOK</span>
+          <span className="player-format-tag">{t("book.audiobook", "AUDIOBOOK")}</span>
         </div>
 
         {/* Notices */}
         {isLoadingBook && (
           <div className="audio-notice-badge info">
-            <span>Loading audiobook metadata...</span>
+            <span>{t("audio.loadingAudio", "Loading audiobook metadata...")}</span>
           </div>
         )}
         {bookError && (
@@ -376,7 +378,7 @@ export default function AudioPlayer() {
             type="button"
             className="audio-control-btn skip-btn"
             onClick={() => skip(-15)}
-            title="Rewind 15 seconds"
+            title={t("audio.skip15Back", "Rewind 15 seconds")}
           >
             -15s
           </button>
@@ -403,7 +405,7 @@ export default function AudioPlayer() {
             type="button"
             className="audio-control-btn skip-btn"
             onClick={() => skip(15)}
-            title="Fast Forward 15 seconds"
+            title={t("audio.skip15Forward", "Fast Forward 15 seconds")}
           >
             +15s
           </button>
@@ -413,7 +415,7 @@ export default function AudioPlayer() {
         <div className="audio-secondary-controls">
           {/* Speed Selector */}
           <div className="speed-selector">
-            <span className="control-label">Speed:</span>
+            <span className="control-label">{t("audio.speed", "Speed:")}</span>
             {PLAYBACK_SPEED_OPTIONS.map((rate) => (
               <button
                 key={rate}
@@ -428,8 +430,8 @@ export default function AudioPlayer() {
 
           {/* Sleep Timer */}
           <div className="sleep-timer-selector">
-            <span className="control-label" title="Sleep Timer">
-              🌙 Sleep:
+            <span className="control-label" title={t("audio.sleepTimer", "Sleep Timer")}>
+              🌙 {t("audio.sleepTimer", "Sleep:")}
             </span>
             {SLEEP_TIMER_OPTIONS.map((min) => (
               <button
@@ -439,7 +441,7 @@ export default function AudioPlayer() {
                 onClick={() => handleSetSleepTimer(min)}
                 title={min === 0 ? "Turn sleep timer off" : `Pause playback after ${min} mins`}
               >
-                {min === 0 ? "Off" : `${min}m`}
+                {min === 0 ? t("audio.off", "Off") : t("audio.mins", `${min}m`, { count: min })}
               </button>
             ))}
             {sleepRemainingSeconds > 0 && (
@@ -455,7 +457,7 @@ export default function AudioPlayer() {
               type="button"
               className="audio-control-btn vol-btn"
               onClick={toggleMute}
-              title={isMuted ? "Unmute" : "Mute"}
+              title={isMuted ? t("audio.unmute", "Unmute") : t("audio.mute", "Mute")}
             >
               {isMuted || volume === 0 ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -487,7 +489,7 @@ export default function AudioPlayer() {
             className={`narration-btn ${isNarrating ? "speaking" : ""}`}
             onClick={toggleNarration}
           >
-            {isNarrating ? "⏹ Stop Voice Narration" : "🗣 Read Synopsis via AI Voice"}
+            {isNarrating ? t("audio.aiNarrationStop", "⏹ Stop Voice Narration") : t("audio.aiNarrationStart", "🗣 Read Synopsis via AI Voice")}
           </button>
         </div>
 

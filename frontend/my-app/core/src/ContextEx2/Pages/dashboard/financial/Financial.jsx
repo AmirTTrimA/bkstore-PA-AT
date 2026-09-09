@@ -15,8 +15,10 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import Wallet from "./Wallet";
 import History from "./History";
 import Transactions from "./Transactions";
+import { useLanguage } from "../../../Context/LanguageContext";
 
 export default function Financial({ open, onClose, defaultTab = 0 }) {
+  const { t } = useLanguage();
   const [value, setValue] = useState(defaultTab);
 
   const handleTabChange = useCallback((_, newValue) => {
@@ -61,7 +63,7 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
             component="h2"
             sx={{ fontWeight: "800", color: "#fff", letterSpacing: "0.5px" }}
           >
-            💳 Financial Hub
+            💳 {t("dashboard.financialHub", "Financial Hub")}
           </Typography>
           <IconButton
             onClick={onClose}
@@ -104,17 +106,17 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
           <Tab
             icon={<AccountBalanceWalletIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            label="Wallet & Top-up"
+            label={t("dashboard.walletTopup", "Wallet & Top-up")}
           />
           <Tab
             icon={<ShoppingBagIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            label="Order History"
+            label={t("dashboard.orderHistory", "Order History")}
           />
           <Tab
             icon={<ReceiptLongIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            label="Transactions"
+            label={t("dashboard.transactions", "Transactions")}
           />
         </Tabs>
 

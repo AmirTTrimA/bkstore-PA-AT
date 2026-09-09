@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../Context/AuthContext";
+import { useLanguage } from "../../Context/LanguageContext";
 import BasketService from "../../Services/BasketService";
 import AddressService from "../../Services/AddressService";
 import Navbar from "../../Components/Navbar";
@@ -19,6 +20,7 @@ import "../../Styles/components/Basket.css";
 export default function Basket() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+  const { t } = useLanguage();
   const notificationRef = useRef();
 
   // ==============================
@@ -261,15 +263,15 @@ export default function Basket() {
             type="button"
             className="basket-continue-btn"
             onClick={() => navigate("/library")}
-            title="Browse more books"
+            title={t("cart.browseStore", "Browse more books")}
           >
-            ← Continue Shopping
+            ← {t("cart.browseStore", "Continue Shopping")}
           </button>
 
           <div className="basket-breadcrumbs">
-            <Link to="/home">Home</Link>
+            <Link to="/home">{t("nav.home", "Home")}</Link>
             <span>/</span>
-            <span className="current">Shopping Basket</span>
+            <span className="current">{t("cart.title", "Shopping Basket")}</span>
           </div>
         </div>
 
@@ -277,7 +279,7 @@ export default function Basket() {
         {loading && (
           <div className="basket-state-box">
             <div className="basket-spinner" />
-            <p>Loading your shopping basket...</p>
+            <p>{t("common.loading", "Loading your shopping basket...")}</p>
           </div>
         )}
 
@@ -290,7 +292,7 @@ export default function Basket() {
               className="basket-retry-btn"
               onClick={loadBasket}
             >
-              Retry
+              {t("common.retry", "Retry")}
             </button>
           </div>
         )}
@@ -301,14 +303,14 @@ export default function Basket() {
             <div className="empty-state-icon">
               <i className="fa-solid fa-cart-arrow-down"></i>
             </div>
-            <h3>Your basket is empty</h3>
-            <p>Explore our vast collection and find books you love!</p>
+            <h3>{t("cart.emptyCart", "Your basket is empty")}</h3>
+            <p>{t("cart.emptySubtitle", "Explore our vast collection and find books you love!")}</p>
             <button
               type="button"
               className="shop-button"
               onClick={() => navigate("/library")}
             >
-              Explore Catalog
+              {t("cart.browseStore", "Explore Catalog")}
             </button>
           </div>
         )}
@@ -317,9 +319,9 @@ export default function Basket() {
         {!loading && !error && !isEmpty && (
           <div className="cart-list">
             <div className="cart-header-row">
-              <h2>Shopping Basket</h2>
+              <h2>{t("cart.title", "Shopping Basket")}</h2>
               <span className="cart-items-count">
-                {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                {cartItems.length} {cartItems.length === 1 ? t("cart.item", "item") : t("cart.item", "items")}
               </span>
             </div>
 
@@ -422,10 +424,10 @@ export default function Basket() {
                         type="button"
                         onClick={() => removeItems(item)}
                         className="remove-btn"
-                        title="Remove from cart"
+                        title={t("cart.remove", "Remove from cart")}
                       >
                         <i className="fas fa-trash-alt"></i>
-                        <span>Remove</span>
+                        <span>{t("cart.remove", "Remove")}</span>
                       </button>
                     </div>
                   </div>
@@ -437,7 +439,7 @@ export default function Basket() {
             <div className="promo-code-card">
               <div className="promo-header">
                 <i className="fa-solid fa-ticket"></i>
-                <h4>Have a Promo Code or Voucher?</h4>
+                <h4>{t("cart.promoCode", "Have a Promo Code or Voucher?")}</h4>
               </div>
 
               {appliedCoupon ? (
@@ -459,14 +461,14 @@ export default function Basket() {
                     className="promo-remove-btn"
                     onClick={handleRemovePromo}
                   >
-                    Remove
+                    {t("cart.remove", "Remove")}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleApplyPromo} className="promo-input-group">
                   <input
                     type="text"
-                    placeholder="Enter discount code (e.g. WELCOME20)"
+                    placeholder={t("cart.promoPlaceholder", "Enter discount coupon...")}
                     value={promoCodeInput}
                     onChange={(e) => setPromoCodeInput(e.target.value)}
                     className="promo-input"
@@ -476,7 +478,7 @@ export default function Basket() {
                     className="promo-apply-btn"
                     disabled={validatingPromo || !promoCodeInput.trim()}
                   >
-                    {validatingPromo ? "Checking..." : "Apply Code"}
+                    {validatingPromo ? t("common.loading", "Checking...") : t("cart.applyCode", "Apply Code")}
                   </button>
                 </form>
               )}
@@ -491,28 +493,28 @@ export default function Basket() {
               {discountSavings > 0 && (
                 <>
                   <div className="discount-summary-row muted">
-                    <span>Original Catalog Subtotal:</span>
+                    <span>{t("cart.subtotal", "Catalog Subtotal")}:</span>
                     <span className="strikethrough">
                       {formatPrice(originalSubtotal)}
                     </span>
                   </div>
 
                   <div className="discount-summary-row savings">
-                    <span>Catalog Savings:</span>
+                    <span>{t("cart.discount", "Catalog Savings")}:</span>
                     <span>-{formatPrice(discountSavings)}</span>
                   </div>
                 </>
               )}
 
               <div className="discount-summary-row">
-                <span>Subtotal:</span>
+                <span>{t("cart.subtotal", "Subtotal")}:</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
 
               {appliedCoupon && couponDiscountAmount > 0 && (
                 <div className="discount-summary-row promo-savings">
                   <span>
-                    Voucher Discount ({appliedCoupon.code}
+                    {t("cart.discount", "Voucher Discount")} ({appliedCoupon.code}
                     {isPercentDiscount(appliedCoupon) ? ` - ${appliedCoupon.value}%` : ""}):
                   </span>
                   <span>-{formatPrice(couponDiscountAmount)}</span>
@@ -523,7 +525,7 @@ export default function Basket() {
             {/* Total & Checkout Bar */}
             <div className="cart-footer">
               <div className="total">
-                <span className="total-label">Final Total:</span>
+                <span className="total-label">{t("cart.total", "Final Total")}:</span>
                 <span className="total-amount">
                   {formatPrice(finalTotal)}
                 </span>
@@ -534,7 +536,7 @@ export default function Basket() {
                 className="checkout-btn"
                 onClick={handleCheckout}
               >
-                Proceed to Checkout →
+                {t("cart.checkout", "Proceed to Checkout")} →
               </button>
             </div>
           </div>
@@ -548,23 +550,23 @@ export default function Basket() {
         <nav className="bottom-navbar">
           <Link to="/" className="nav-item">
             <i className="fas fa-home"></i>
-            <span>Home</span>
+            <span>{t("nav.home", "Home")}</span>
           </Link>
           <Link to="/favorites" className="nav-item">
             <i className="fa-solid fa-heart"></i>
-            <span>Favorites</span>
+            <span>{t("library.wishlistTitle", "Favorites")}</span>
           </Link>
           <Link to="/library" className="nav-item">
             <i className="fa-solid fa-book"></i>
-            <span>Catalog</span>
+            <span>{t("nav.explore", "Catalog")}</span>
           </Link>
           <Link to="/subscription" className="nav-item">
             <i className="fa-solid fa-bolt"></i>
-            <span>Plans</span>
+            <span>{t("nav.subscription", "Plans")}</span>
           </Link>
           <Link to="/basket" className="nav-item active">
             <i className="fa-solid fa-cart-shopping"></i>
-            <span>Cart</span>
+            <span>{t("nav.cart", "Cart")}</span>
           </Link>
         </nav>
       </div>

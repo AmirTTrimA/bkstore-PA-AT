@@ -5,6 +5,7 @@ import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
 import { useAuth } from "../../Context/AuthContext";
+import { useLanguage } from "../../Context/LanguageContext";
 import Notification from "../../Components/feature/Notification";
 import SubscriptionService from "../../Services/SubscriptionService";
 import { formatPrice } from "../../utils/formatPrice";
@@ -18,6 +19,7 @@ import "../../Styles/components/Subscription.css";
 export default function Subscription() {
     const navigate = useNavigate();
     const { isLoggedIn } = useAuth();
+    const { t } = useLanguage();
     const notificationRef = useRef(null);
 
     // -------------------------
@@ -183,23 +185,23 @@ export default function Subscription() {
                         type="button"
                         onClick={() => navigate(-1)}
                         className="subscription-back-btn"
-                        title="Go Back"
+                        title={t("common.back", "Go Back")}
                     >
-                        ← Back
+                        ← {t("common.back", "Back")}
                     </button>
 
                     <div className="subscription-breadcrumbs">
-                        <Link to="/home">Home</Link>
+                        <Link to="/home">{t("nav.home", "Home")}</Link>
                         <span>/</span>
-                        <span className="current">Subscriptions</span>
+                        <span className="current">{t("nav.subscription", "Subscriptions")}</span>
                     </div>
                 </div>
 
                 {/* Page Title */}
                 <div className="subscription-hero">
-                    <h1 className="sub-main-title">Subscription Plans</h1>
+                    <h1 className="sub-main-title">{t("library.vipPlans", "Subscription Plans")}</h1>
                     <p className="sub-main-subtitle">
-                        Unlock massive discounts on digital and audio books with an active reader membership.
+                        {t("library.vipSubtitle", "Unlock massive discounts on digital and audio books with an active reader membership.")}
                     </p>
                 </div>
 
@@ -207,7 +209,7 @@ export default function Subscription() {
                 {loading && (
                     <div className="subscription-state-box">
                         <div className="subscription-spinner" />
-                        <p>Loading subscription plans & status...</p>
+                        <p>{t("common.loading", "Loading subscription plans & status...")}</p>
                     </div>
                 )}
 
@@ -220,7 +222,7 @@ export default function Subscription() {
                             onClick={loadData}
                             className="sub-retry-btn"
                         >
-                            Retry
+                            {t("common.retry", "Retry")}
                         </button>
                     </div>
                 )}
@@ -233,22 +235,22 @@ export default function Subscription() {
                             <div className="sub-status-card active-status">
                                 <div className="sub-status-header">
                                     <div className="sub-status-title-wrap">
-                                        <span className="sub-status-pill active">Active Membership</span>
+                                        <span className="sub-status-pill active">{t("library.activeMembership", "Active Membership")}</span>
                                         <h3>{activeSubscription.plan?.name}</h3>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => openCancelModal(activeSubscription)}
                                         className="sub-cancel-btn"
-                                        title="Cancel this active subscription"
+                                        title={t("library.cancelSubscription", "Cancel this active subscription")}
                                     >
-                                        Cancel Subscription
+                                        {t("library.cancelSubscription", "Cancel Subscription")}
                                     </button>
                                 </div>
 
                                 <div className="sub-status-grid">
                                     <div className="sub-status-item">
-                                        <span className="sub-label">Valid Until</span>
+                                        <span className="sub-label">{t("library.validUntil", "Valid Until")}</span>
                                         <span className="sub-val">
                                             {new Date(activeSubscription.end_date).toLocaleDateString(undefined, {
                                                 year: "numeric",
@@ -258,15 +260,15 @@ export default function Subscription() {
                                         </span>
                                     </div>
                                     <div className="sub-status-item">
-                                        <span className="sub-label">Digital Discount</span>
+                                        <span className="sub-label">{t("library.digitalDiscount", "Digital Discount")}</span>
                                         <span className="sub-val highlight">
                                             {activeSubscription.plan?.digital_discount_percent}% OFF
                                         </span>
                                     </div>
                                     <div className="sub-status-item">
-                                        <span className="sub-label">Auto-Renew</span>
+                                        <span className="sub-label">{t("library.autoRenew", "Auto-Renew")}</span>
                                         <span className="sub-val">
-                                            {activeSubscription.auto_renew ? "Enabled" : "Disabled"}
+                                            {activeSubscription.auto_renew ? t("common.enabled", "Enabled") : t("common.disabled", "Disabled")}
                                         </span>
                                     </div>
                                 </div>
@@ -278,22 +280,22 @@ export default function Subscription() {
                             <div className="sub-status-card reserved-status">
                                 <div className="sub-status-header">
                                     <div className="sub-status-title-wrap">
-                                        <span className="sub-status-pill reserved">Scheduled Plan</span>
+                                        <span className="sub-status-pill reserved">{t("library.scheduledPlan", "Scheduled Plan")}</span>
                                         <h3>{reservedSubscription.plan?.name}</h3>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => openCancelModal(reservedSubscription)}
                                         className="sub-cancel-btn"
-                                        title="Cancel this scheduled subscription"
+                                        title={t("library.cancelScheduledPlan", "Cancel this scheduled subscription")}
                                     >
-                                        Cancel Scheduled Plan
+                                        {t("library.cancelScheduledPlan", "Cancel Scheduled Plan")}
                                     </button>
                                 </div>
 
                                 <div className="sub-status-grid">
                                     <div className="sub-status-item">
-                                        <span className="sub-label">Starts On</span>
+                                        <span className="sub-label">{t("library.startsOn", "Starts On")}</span>
                                         <span className="sub-val">
                                             {new Date(reservedSubscription.start_date).toLocaleDateString(undefined, {
                                                 year: "numeric",
@@ -303,7 +305,7 @@ export default function Subscription() {
                                         </span>
                                     </div>
                                     <div className="sub-status-item">
-                                        <span className="sub-label">Digital Discount</span>
+                                        <span className="sub-label">{t("library.digitalDiscount", "Digital Discount")}</span>
                                         <span className="sub-val highlight">
                                             {reservedSubscription.plan?.digital_discount_percent}% OFF
                                         </span>
@@ -320,12 +322,12 @@ export default function Subscription() {
                                     checked={autoRenew}
                                     onChange={e => setAutoRenew(e.target.checked)}
                                 />
-                                <span>Automatically renew subscription each month</span>
+                                <span>{t("library.autoRenewMonthly", "Automatically renew subscription each month")}</span>
                             </label>
                             <p className="auto-renew-help">
                                 {autoRenew
-                                    ? "Your subscription will automatically extend at the end of each billing cycle."
-                                    : "Auto-renew is off. Your benefits will expire at the end of the current term."
+                                    ? t("library.autoRenewOnHelp", "Your subscription will automatically extend at the end of each billing cycle.")
+                                    : t("library.autoRenewOffHelp", "Auto-renew is off. Your benefits will expire at the end of the current term.")
                                 }
                             </p>
                         </div>
@@ -342,7 +344,7 @@ export default function Subscription() {
                                         className={`plan-card plan-tier-${(index % 3) + 1} ${isCurrent ? "current-tier" : ""}`}
                                     >
                                         {isCurrent && (
-                                            <span className="current-plan-badge">Current Plan</span>
+                                            <span className="current-plan-badge">{t("library.currentPlan", "Current Plan")}</span>
                                         )}
 
                                         <div className="plan-card-header">
@@ -358,7 +360,7 @@ export default function Subscription() {
                                             <span className="plan-price-val">
                                                 {formatPrice(plan.monthly_price)}
                                             </span>
-                                            <span className="plan-price-unit">/ month</span>
+                                            <span className="plan-price-unit">/ {t("library.month", "month")}</span>
                                         </div>
 
                                         <ul className="plan-perks-list">
@@ -387,12 +389,12 @@ export default function Subscription() {
                                             onClick={() => handlePlanAction(plan)}
                                         >
                                             {isBusy
-                                                ? "Processing..."
+                                                ? t("common.processing", "Processing...")
                                                 : isCurrent
-                                                    ? "Active Plan"
+                                                    ? t("library.activePlan", "Active Plan")
                                                     : hasActiveSubscription
-                                                        ? "Upgrade to this Plan"
-                                                        : "Subscribe Now"}
+                                                        ? t("library.upgradePlan", "Upgrade to this Plan")
+                                                        : t("library.subscribeNow", "Subscribe Now")}
                                         </button>
                                     </div>
                                 );
@@ -410,7 +412,7 @@ export default function Subscription() {
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="cancel-modal-header">
-                            <h3>Cancel Subscription</h3>
+                            <h3>{t("library.cancelConfirmTitle", "Cancel Subscription")}</h3>
                             <button
                                 type="button"
                                 className="modal-close-btn"
@@ -426,11 +428,12 @@ export default function Subscription() {
                                 <i className="fas fa-exclamation-triangle"></i>
                             </div>
                             <p className="cancel-modal-text">
-                                Are you sure you want to cancel your <strong>{subToCancel.plan?.name}</strong>{" "}
-                                {subToCancel.status === "RESERVED" ? "scheduled plan" : "subscription"}?
+                                {t("library.cancelConfirmDesc", "Are you sure you want to cancel your {name} subscription?", {
+                                    name: subToCancel.plan?.name
+                                })}
                             </p>
                             <p className="cancel-modal-subtext">
-                                Any unused or scheduled prepaid balance will be <strong>automatically refunded to your wallet</strong> immediately.
+                                {t("library.cancelRefundSubtext", "Any unused or scheduled prepaid balance will be automatically refunded to your wallet immediately.")}
                             </p>
                         </div>
 
@@ -441,7 +444,7 @@ export default function Subscription() {
                                 onClick={closeCancelModal}
                                 disabled={cancelling}
                             >
-                                Keep Subscription
+                                {t("library.keepSubscription", "Keep Subscription")}
                             </button>
                             <button
                                 type="button"
@@ -449,7 +452,7 @@ export default function Subscription() {
                                 onClick={handleConfirmCancel}
                                 disabled={cancelling}
                             >
-                                {cancelling ? "Cancelling..." : "Confirm & Refund"}
+                                {cancelling ? t("library.cancelling", "Cancelling...") : t("library.confirmAndRefund", "Confirm & Refund")}
                             </button>
                         </div>
                     </div>
@@ -463,23 +466,23 @@ export default function Subscription() {
                 <nav className="bottom-navbar">
                     <Link to="/" className="nav-item">
                         <i className="fas fa-home"></i>
-                        <span>Home</span>
+                        <span>{t("nav.home", "Home")}</span>
                     </Link>
                     <Link to="/favorites" className="nav-item">
                         <i className="fa-solid fa-heart"></i>
-                        <span>Favorites</span>
+                        <span>{t("library.favorites", "Favorites")}</span>
                     </Link>
                     <Link to="/library" className="nav-item">
                         <i className="fa-solid fa-book"></i>
-                        <span>Catalog</span>
+                        <span>{t("nav.explore", "Catalog")}</span>
                     </Link>
                     <Link to="/subscription" className="nav-item active">
                         <i className="fa-solid fa-bolt"></i>
-                        <span>Plans</span>
+                        <span>{t("nav.subscription", "Plans")}</span>
                     </Link>
                     <Link to="/basket" className="nav-item">
                         <i className="fa-solid fa-cart-shopping"></i>
-                        <span>Cart</span>
+                        <span>{t("nav.cart", "Cart")}</span>
                     </Link>
                 </nav>
             </div>

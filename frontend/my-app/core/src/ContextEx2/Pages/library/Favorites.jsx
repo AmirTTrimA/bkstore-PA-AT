@@ -5,6 +5,7 @@ import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
 import { useAuth } from "../../Context/AuthContext";
+import { useLanguage } from "../../Context/LanguageContext";
 import WishlistService from "../../Services/WishlistService";
 import { formatPrice } from "../../utils/formatPrice";
 
@@ -17,6 +18,7 @@ import "../../Styles/components/Favorites.css";
 export default function Favorites() {
     const navigate = useNavigate();
     const { isLoggedIn } = useAuth();
+    const { t } = useLanguage();
 
     // ============================================
     //      State
@@ -77,7 +79,7 @@ export default function Favorites() {
             return;
         }
 
-        if (!window.confirm("Are you sure you want to clear all your favorites?")) {
+        if (!window.confirm(t("library.confirmClearWishlist", "Are you sure you want to clear all your favorites?"))) {
             return;
         }
 
@@ -137,15 +139,15 @@ export default function Favorites() {
                         type="button"
                         onClick={() => navigate(-1)}
                         className="favorites-back-btn"
-                        title="Go Back"
+                        title={t("common.back", "Go Back")}
                     >
-                        ← Back
+                        ← {t("common.back", "Back")}
                     </button>
 
                     <div className="favorites-breadcrumbs">
-                        <Link to="/home">Home</Link>
+                        <Link to="/home">{t("nav.home", "Home")}</Link>
                         <span>/</span>
-                        <span className="current">Favorites</span>
+                        <span className="current">{t("library.favorites", "Favorites")}</span>
                     </div>
 
                     {!isEmpty && (
@@ -154,20 +156,20 @@ export default function Favorites() {
                             onClick={clearFavorites}
                             className="clear-all-fav-btn"
                             disabled={clearing}
-                            title="Clear all favorites"
+                            title={t("library.clearAll", "Clear All")}
                         >
                             <i className="fas fa-trash-alt"></i>
-                            <span>{clearing ? "Clearing..." : "Clear All"}</span>
+                            <span>{clearing ? t("library.clearing", "Clearing...") : t("library.clearAll", "Clear All")}</span>
                         </button>
                     )}
                 </div>
 
                 {/* Header */}
                 <div className="favorites-header-section">
-                    <h1 className="favorites-page-title">My Wishlist</h1>
+                    <h1 className="favorites-page-title">{t("library.wishlistTitle", "My Wishlist")}</h1>
                     {!loading && !isEmpty && (
                         <span className="favorites-count-badge">
-                            {favItems.length} {favItems.length === 1 ? "book" : "books"}
+                            {favItems.length} {t("library.bookCount", favItems.length === 1 ? "book" : "books", { count: favItems.length })}
                         </span>
                     )}
                 </div>
@@ -176,7 +178,7 @@ export default function Favorites() {
                 {loading && (
                     <div className="favorites-state-box">
                         <div className="favorites-spinner" />
-                        <p>Loading your saved books...</p>
+                        <p>{t("common.loading", "Loading your saved books...")}</p>
                     </div>
                 )}
 
@@ -189,7 +191,7 @@ export default function Favorites() {
                             onClick={loadFavorites}
                             className="favorites-cta-btn"
                         >
-                            Try Again
+                            {t("common.retry", "Try Again")}
                         </button>
                     </div>
                 )}
@@ -200,14 +202,14 @@ export default function Favorites() {
                         <div className="favorites-empty-icon">
                             <i className="fa-regular fa-heart"></i>
                         </div>
-                        <h2>Your wishlist is empty</h2>
-                        <p>Explore our catalog to discover and save books you love.</p>
+                        <h2>{t("library.emptyWishlist", "Your wishlist is empty")}</h2>
+                        <p>{t("library.emptyWishlistDesc", "Explore our catalog to discover and save books you love.")}</p>
                         <button
                             type="button"
                             onClick={() => navigate("/library")}
                             className="favorites-cta-btn"
                         >
-                            Explore Catalog
+                            {t("library.exploreCatalog", "Explore Catalog")}
                         </button>
                     </div>
                 )}
@@ -264,7 +266,7 @@ export default function Favorites() {
                                                 {item.title}
                                             </h3>
                                             <p className="fav-card-author">
-                                                {item.author_name || "Unknown Author"}
+                                                {item.author_name || t("book.unknownAuthor", "Unknown Author")}
                                             </p>
 
                                             <div className="fav-card-pricing">
@@ -279,7 +281,7 @@ export default function Favorites() {
                                                     </div>
                                                 ) : (
                                                     <span className="fav-price-final">
-                                                        {price != null ? formatPrice(price) : "View Book"}
+                                                        {price != null ? formatPrice(price) : t("library.viewBook", "View Book")}
                                                     </span>
                                                 )}
                                             </div>
@@ -299,23 +301,23 @@ export default function Favorites() {
                 <nav className="bottom-navbar">
                     <Link to="/" className="nav-item">
                         <i className="fas fa-home"></i>
-                        <span>Home</span>
+                        <span>{t("nav.home", "Home")}</span>
                     </Link>
                     <Link to="/favorites" className="nav-item active">
                         <i className="fa-solid fa-heart"></i>
-                        <span>Favorites</span>
+                        <span>{t("library.favorites", "Favorites")}</span>
                     </Link>
                     <Link to="/library" className="nav-item">
                         <i className="fa-solid fa-book"></i>
-                        <span>Catalog</span>
+                        <span>{t("nav.explore", "Catalog")}</span>
                     </Link>
                     <Link to="/subscription" className="nav-item">
                         <i className="fa-solid fa-bolt"></i>
-                        <span>Plans</span>
+                        <span>{t("nav.subscription", "Plans")}</span>
                     </Link>
                     <Link to="/basket" className="nav-item">
                         <i className="fa-solid fa-cart-shopping"></i>
-                        <span>Cart</span>
+                        <span>{t("nav.cart", "Cart")}</span>
                     </Link>
                 </nav>
             </div>

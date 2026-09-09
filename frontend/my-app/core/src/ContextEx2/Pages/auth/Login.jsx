@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
 import Notification from '../../Components/feature/Notification';
 import '../../Styles/components/Login.css';
 
@@ -9,6 +10,7 @@ const OTP_COUNTDOWN_SECONDS = 60;
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const notificationRef = useRef(null);
   const digitInputRefs = useRef([]);
 
@@ -235,7 +237,7 @@ export default function Login() {
             }}
           >
             <i className="fas fa-key"></i>
-            Password
+            {t("auth.modePassword", "Password")}
           </button>
           <button
             type="button"
@@ -246,7 +248,7 @@ export default function Login() {
             }}
           >
             <i className="fas fa-shield-alt"></i>
-            OTP Code
+            {t("auth.modeOtp", "OTP Code")}
           </button>
         </div>
 
@@ -263,7 +265,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} noValidate>
             <div className="auth-form-group">
               <label className="auth-label" htmlFor="login-username">
-                Username or Email
+                {t("auth.username", "Username or Email")}
               </label>
               <div className="auth-input-wrapper">
                 <i className="fas fa-user auth-input-icon"></i>
@@ -284,7 +286,7 @@ export default function Login() {
 
             <div className="auth-form-group">
               <label className="auth-label" htmlFor="login-password">
-                Password
+                {t("auth.password", "Password")}
               </label>
               <div className="auth-input-wrapper">
                 <i className="fas fa-lock auth-input-icon"></i>
@@ -313,10 +315,10 @@ export default function Login() {
 
             <div className="auth-actions-row">
               <Link to="/confirmemail" className="auth-link">
-                Forgot password?
+                {t("auth.forgotPassword", "Forgot password?")}
               </Link>
               <Link to="/signup" className="auth-link">
-                Need an account?
+                {t("auth.noAccount", "Need an account?")}
               </Link>
             </div>
 
@@ -328,11 +330,11 @@ export default function Login() {
               {submitting ? (
                 <>
                   <i className="fas fa-spinner fa-spin"></i>
-                  <span>Signing In...</span>
+                  <span>{t("common.loading", "Signing In...")}</span>
                 </>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>{t("nav.login", "Sign In")}</span>
                   <i className="fas fa-arrow-right"></i>
                 </>
               )}
@@ -380,11 +382,11 @@ export default function Login() {
                   {otpLoading ? (
                     <>
                       <i className="fas fa-spinner fa-spin"></i>
-                      <span>Sending Code...</span>
+                      <span>{t("common.loading", "Sending Code...")}</span>
                     </>
                   ) : (
                     <>
-                      <span>Send Verification Code</span>
+                      <span>{t("auth.requestOtp", "Send Verification Code")}</span>
                       <i className="fas fa-paper-plane"></i>
                     </>
                   )}
@@ -422,7 +424,7 @@ export default function Login() {
                     onClick={handleRequestOtp}
                     disabled={countdown > 0 || otpLoading}
                   >
-                    {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
+                    {countdown > 0 ? t("auth.resendIn", `Resend in ${countdown}s`, { seconds: countdown }) : t("auth.resendOtp", "Resend Code")}
                   </button>
                 </div>
 
@@ -435,11 +437,11 @@ export default function Login() {
                   {otpLoading ? (
                     <>
                       <i className="fas fa-spinner fa-spin"></i>
-                      <span>Verifying...</span>
+                      <span>{t("common.loading", "Verifying...")}</span>
                     </>
                   ) : (
                     <>
-                      <span>Verify & Sign In</span>
+                      <span>{t("auth.verifyOtp", "Verify & Sign In")}</span>
                       <i className="fas fa-check"></i>
                     </>
                   )}

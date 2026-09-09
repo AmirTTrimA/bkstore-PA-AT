@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Notification from '../../Components/feature/Notification';
+import { useLanguage } from '../../Context/LanguageContext';
 import PublisherService from '../../Services/PublisherService';
 import { ppic14 } from '../../Constants';
 import { formatPrice } from '../../utils/formatPrice';
@@ -26,6 +27,7 @@ export default function Upload({
   currentPublisher,
   onProposalCreated,
 }) {
+  const { t } = useLanguage();
   const notificationRef = useRef();
 
   // Core metadata state
@@ -340,15 +342,15 @@ export default function Upload({
       <div className="upload-editor-header">
         <div className="upload-editor-title-group">
           <h2>
-            {isEditMode ? `Edit Book Proposal: ${bookToEdit.name || bookToEdit.title}` : 'Propose New Book'}
+            {isEditMode ? `${t('publisher_panel.editBookFormats', 'Edit Book Proposal')}: ${bookToEdit.name || bookToEdit.title}` : t('publisher_panel.proposeNewBook', 'Propose New Book')}
             <span className={`upload-mode-badge ${isEditMode ? 'edit' : 'create'}`}>
-              {isEditMode ? 'Update Mode' : 'New Creation'}
+              {isEditMode ? t('publisher_panel.updateMode', 'Update Mode') : t('publisher_panel.newCreation', 'New Creation')}
             </span>
           </h2>
           <p>
             {isEditMode
-              ? 'Modify book details or propose format price changes. All submissions require administrator approval.'
-              : 'Submit a new book creation proposal to store administrators with multi-format pricing and media.'}
+              ? t('publisher_panel.editSubtitle', 'Modify book details or propose format price changes. All submissions require administrator approval.')
+              : t('publisher_panel.createSubtitle', 'Submit a new book creation proposal to store administrators with multi-format pricing and media.')}
           </p>
         </div>
 
@@ -361,7 +363,7 @@ export default function Upload({
               if (PageChanger) PageChanger('mybook');
             }}
           >
-            ← Back to Published Books
+            ← {t('publisher_panel.backToPublished', 'Back to Published Books')}
           </button>
         )}
       </div>
@@ -388,13 +390,13 @@ export default function Upload({
             ) : (
               <div className="upload-cover-placeholder">
                 <span style={{ fontSize: '2.5rem' }}>📖</span>
-                <span>Enter cover URL below to preview cover art</span>
+                <span>{t('publisher_panel.previewPlaceholder', 'Enter cover URL below to preview cover art')}</span>
               </div>
             )}
           </div>
 
           <div className="upload-cover-input-group">
-            <label htmlFor="cover-url-input">Cover Image URL</label>
+            <label htmlFor="cover-url-input">{t('publisher_panel.coverUrl', 'Cover Image URL')}</label>
             <input
               id="cover-url-input"
               type="url"
@@ -412,7 +414,7 @@ export default function Upload({
           <div className="form-row-2col">
             <div className="form-field-group">
               <label htmlFor="book-title-input">
-                Book Title <span className="required">*</span>
+                {t('publisher_panel.bookTitle', 'Book Title')} <span className="required">*</span>
               </label>
               <input
                 id="book-title-input"
@@ -427,7 +429,7 @@ export default function Upload({
 
             <div className="form-field-group">
               <label htmlFor="book-isbn-input">
-                ISBN Code {!isEditMode && <span className="required">*</span>}
+                {t('publisher_panel.isbnCode', 'ISBN Code')} {!isEditMode && <span className="required">*</span>}
               </label>
               <input
                 id="book-isbn-input"
@@ -447,7 +449,7 @@ export default function Upload({
           <div className="form-row-2col">
             <div className="form-field-group">
               <label htmlFor="book-author-select">
-                Author <span className="required">*</span>
+                {t('common.author', 'Author')} <span className="required">*</span>
               </label>
               <select
                 id="book-author-select"
@@ -458,7 +460,7 @@ export default function Upload({
                 required
               >
                 {loadingAuthors ? (
-                  <option value="">Loading authors...</option>
+                  <option value="">{t('common.loading', 'Loading authors...')}</option>
                 ) : (
                   authors.map((auth) => (
                     <option key={auth.id} value={auth.id}>
@@ -470,7 +472,7 @@ export default function Upload({
             </div>
 
             <div className="form-field-group">
-              <label htmlFor="book-genre-select">Genre Category</label>
+              <label htmlFor="book-genre-select">{t('publisher_panel.genreCategory', 'Genre Category')}</label>
               <select
                 id="book-genre-select"
                 className="editor-select"
@@ -489,12 +491,12 @@ export default function Upload({
           {/* Description */}
           <div className="form-field-group">
             <label htmlFor="book-desc-textarea">
-              Description & Synopsis <span className="required">*</span>
+              {t('publisher_panel.descSynopsis', 'Description & Synopsis')} <span className="required">*</span>
             </label>
             <textarea
               id="book-desc-textarea"
               className="editor-textarea"
-              placeholder="Provide a compelling synopsis of the book..."
+              placeholder={t('publisher_panel.descPlaceholder', 'Provide a compelling synopsis of the book...')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
@@ -506,28 +508,28 @@ export default function Upload({
              -------------------------------------------- */}
           <div className="formats-section-container">
             <h3 className="formats-section-title">
-              <span>📚 Offered Editions & Format Pricing</span>
+              <span>📚 {t('publisher_panel.offeredEditionsPricing', 'Offered Editions & Format Pricing')}</span>
             </h3>
 
             <div className="format-instances-grid">
               {/* Format 1: Physical Print */}
               <div className={`format-instance-card ${formats.physical.enabled ? 'enabled' : ''}`}>
                 <div className="format-card-header">
-                  <span className="format-type-label">📦 Physical Edition</span>
+                  <span className="format-type-label">📦 {t('book.physicalBook', 'Physical Edition')}</span>
                   <label className="format-toggle-label">
                     <input
                       type="checkbox"
                       checked={formats.physical.enabled}
                       onChange={() => handleToggleFormat('physical')}
                     />
-                    <span>Available</span>
+                    <span>{t('publisher_panel.available', 'Available')}</span>
                   </label>
                 </div>
 
                 {formats.physical.enabled && (
                   <div className="format-card-body">
                     <div className="form-field-group">
-                      <label>Retail Price</label>
+                      <label>{t('publisher_panel.retailPrice', 'Retail Price')}</label>
                       <div className="price-input-wrapper">
                         <input
                           type="number"
@@ -544,14 +546,14 @@ export default function Upload({
                     {isEditMode && (
                       <div className="price-change-action-bar">
                         <span className="current-price-badge">
-                          Current: <strong>{formatPrice(formats.physical.price)}</strong>
+                          {t('publisher_panel.currentPrice', 'Current')}: <strong>{formatPrice(formats.physical.price)}</strong>
                         </span>
                         <button
                           type="button"
                           className="modify-price-btn"
                           onClick={() => handleOpenPriceModal('physical', 'Physical Edition')}
                         >
-                          Modify Price
+                          {t('publisher_panel.modifyPrice', 'Modify Price')}
                         </button>
                       </div>
                     )}
@@ -562,21 +564,21 @@ export default function Upload({
               {/* Format 2: Digital E-Book */}
               <div className={`format-instance-card ${formats.digital.enabled ? 'enabled' : ''}`}>
                 <div className="format-card-header">
-                  <span className="format-type-label">📄 Digital (E-Book/PDF)</span>
+                  <span className="format-type-label">📄 {t('book.digitalPdf', 'Digital (E-Book/PDF)')}</span>
                   <label className="format-toggle-label">
                     <input
                       type="checkbox"
                       checked={formats.digital.enabled}
                       onChange={() => handleToggleFormat('digital')}
                     />
-                    <span>Available</span>
+                    <span>{t('publisher_panel.available', 'Available')}</span>
                   </label>
                 </div>
 
                 {formats.digital.enabled && (
                   <div className="format-card-body">
                     <div className="form-field-group">
-                      <label>E-Book Price</label>
+                      <label>{t('publisher_panel.ebookPrice', 'E-Book Price')}</label>
                       <div className="price-input-wrapper">
                         <input
                           type="number"
@@ -591,7 +593,7 @@ export default function Upload({
                     </div>
 
                     <div className="form-field-group">
-                      <label>Digital File Path / URL</label>
+                      <label>{t('publisher_panel.digitalFilePath', 'Digital File Path / URL')}</label>
                       <input
                         type="text"
                         className="editor-input"
@@ -604,14 +606,14 @@ export default function Upload({
                     {isEditMode && (
                       <div className="price-change-action-bar">
                         <span className="current-price-badge">
-                          Current: <strong>{formatPrice(formats.digital.price || 0)}</strong>
+                          {t('publisher_panel.currentPrice', 'Current')}: <strong>{formatPrice(formats.digital.price || 0)}</strong>
                         </span>
                         <button
                           type="button"
                           className="modify-price-btn"
                           onClick={() => handleOpenPriceModal('digital', 'Digital E-Book')}
                         >
-                          Modify Price
+                          {t('publisher_panel.modifyPrice', 'Modify Price')}
                         </button>
                       </div>
                     )}
@@ -622,21 +624,21 @@ export default function Upload({
               {/* Format 3: Audiobook */}
               <div className={`format-instance-card ${formats.audio.enabled ? 'enabled' : ''}`}>
                 <div className="format-card-header">
-                  <span className="format-type-label">🎧 Audiobook</span>
+                  <span className="format-type-label">🎧 {t('book.audiobook', 'Audiobook')}</span>
                   <label className="format-toggle-label">
                     <input
                       type="checkbox"
                       checked={formats.audio.enabled}
                       onChange={() => handleToggleFormat('audio')}
                     />
-                    <span>Available</span>
+                    <span>{t('publisher_panel.available', 'Available')}</span>
                   </label>
                 </div>
 
                 {formats.audio.enabled && (
                   <div className="format-card-body">
                     <div className="form-field-group">
-                      <label>Audiobook Price</label>
+                      <label>{t('publisher_panel.audiobookPrice', 'Audiobook Price')}</label>
                       <div className="price-input-wrapper">
                         <input
                           type="number"
@@ -651,7 +653,7 @@ export default function Upload({
                     </div>
 
                     <div className="form-field-group">
-                      <label>Audio Stream / File URL</label>
+                      <label>{t('publisher_panel.audioStreamUrl', 'Audio Stream / File URL')}</label>
                       <input
                         type="text"
                         className="editor-input"
@@ -664,14 +666,14 @@ export default function Upload({
                     {isEditMode && (
                       <div className="price-change-action-bar">
                         <span className="current-price-badge">
-                          Current: <strong>{formatPrice(formats.audio.price || 0)}</strong>
+                          {t('publisher_panel.currentPrice', 'Current')}: <strong>{formatPrice(formats.audio.price || 0)}</strong>
                         </span>
                         <button
                           type="button"
                           className="modify-price-btn"
                           onClick={() => handleOpenPriceModal('audio', 'Audiobook')}
                         >
-                          Modify Price
+                          {t('publisher_panel.modifyPrice', 'Modify Price')}
                         </button>
                       </div>
                     )}
@@ -692,7 +694,7 @@ export default function Upload({
                   if (PageChanger) PageChanger('mybook');
                 }}
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
             )}
             <button
@@ -701,10 +703,10 @@ export default function Upload({
               disabled={isSubmitting}
             >
               {isSubmitting
-                ? 'Submitting Proposal...'
+                ? t('publisher_panel.submittingProposal', 'Submitting Proposal...')
                 : isEditMode
-                ? 'Submit Book Update Proposal'
-                : 'Submit Book Proposal'}
+                ? t('publisher_panel.submitBookUpdate', 'Submit Book Update Proposal')
+                : t('publisher_panel.submitBookProposal', 'Submit Book Proposal')}
             </button>
           </div>
         </div>
@@ -715,7 +717,7 @@ export default function Upload({
         <div className="price-modal-backdrop" onClick={handleClosePriceModal}>
           <div className="price-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="price-modal-header">
-              <h3>💰 Propose Price Change ({priceModal.formatLabel})</h3>
+              <h3>💰 {t('publisher_panel.proposePriceChange', 'Propose Price Change')} ({priceModal.formatLabel})</h3>
               <button
                 type="button"
                 className="pdash-btn"
@@ -727,13 +729,13 @@ export default function Upload({
             </div>
 
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primarys)', opacity: 0.8 }}>
-              Current Price: <strong>{formatPrice(priceModal.currentPrice)}</strong>
+              {t('publisher_panel.currentPrice', 'Current Price')}: <strong>{formatPrice(priceModal.currentPrice)}</strong>
             </p>
 
             <form onSubmit={handleSubmitPriceProposal} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="form-field-group">
                 <label htmlFor="new-price-input">
-                  Proposed New Price (IRR) <span className="required">*</span>
+                  {t('publisher_panel.proposedNewPrice', 'Proposed New Price (IRR)')} <span className="required">*</span>
                 </label>
                 <div className="price-input-wrapper">
                   <input
@@ -751,12 +753,12 @@ export default function Upload({
               </div>
 
               <div className="form-field-group">
-                <label htmlFor="price-reason-textarea">Justification / Reason</label>
+                <label htmlFor="price-reason-textarea">{t('publisher_panel.justificationReason', 'Justification / Reason')}</label>
                 <textarea
                   id="price-reason-textarea"
                   className="editor-textarea"
                   style={{ minHeight: 70 }}
-                  placeholder="e.g. Seasonal promotion, production cost change, or VIP discount alignment..."
+                  placeholder={t('publisher_panel.reasonPlaceholder', 'e.g. Seasonal promotion, production cost change, or VIP discount alignment...')}
                   value={priceModal.reason}
                   onChange={(e) => setPriceModal((prev) => ({ ...prev, reason: e.target.value }))}
                 />
@@ -768,14 +770,14 @@ export default function Upload({
                   className="editor-cancel-btn"
                   onClick={handleClosePriceModal}
                 >
-                  Cancel
+                  {t('common.cancel', 'Cancel')}
                 </button>
                 <button
                   type="submit"
                   className="editor-submit-btn"
                   disabled={priceModal.submitting}
                 >
-                  {priceModal.submitting ? 'Submitting...' : 'Submit Price Proposal'}
+                  {priceModal.submitting ? t('common.loading', 'Submitting...') : t('publisher_panel.submitPriceProposal', 'Submit Price Proposal')}
                 </button>
               </div>
             </form>

@@ -11,11 +11,13 @@ import ReplayIcon from "@mui/icons-material/Replay";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
 import WalletService from "../../../Services/WalletService";
+import { useLanguage } from "../../../Context/LanguageContext";
 import { formatPrice } from "../../../utils/formatPrice";
 
 import "../../../Styles/components/History.css";
 
 export default function Transactions() {
+  const { t } = useLanguage();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,10 +71,10 @@ export default function Transactions() {
       >
         <ReceiptLongIcon sx={{ fontSize: 56, color: "rgba(255, 255, 255, 0.3)", mb: 1.5 }} />
         <Typography variant="h6" sx={{ color: "#fff", mb: 1 }}>
-          No wallet activity yet
+          {t("dashboard.noTransactions", "No wallet activity yet")}
         </Typography>
         <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
-          Deposits, book purchases, and refunds made with your wallet will appear here.
+          {t("dashboard.noTransactionsSubtitle", "Deposits, book purchases, and refunds made with your wallet will appear here.")}
         </Typography>
       </Box>
     );
@@ -99,6 +101,12 @@ export default function Transactions() {
           ? "rgba(76, 175, 80, 0.15)"
           : "rgba(239, 83, 80, 0.15)";
 
+        const txTypeLabel = isRefund
+          ? t("dashboard.txRefund", "Refund (+)")
+          : isPositive
+          ? t("dashboard.txDeposit", "Deposit (+)")
+          : t("dashboard.txPurchase", "Order Purchase (-)");
+
         return (
           <Box key={tx.id} className="transaction-item-card">
             <Box className="tx-left">
@@ -116,7 +124,7 @@ export default function Transactions() {
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: "#fff" }}>
-                    {tx.transaction_type_display || tx.transaction_type || "Transaction"}
+                    {txTypeLabel}
                   </Typography>
                   <Chip
                     label={`#${tx.id}`}
@@ -163,7 +171,7 @@ export default function Transactions() {
 
               {tx.balance_after !== undefined && (
                 <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)", display: "block" }}>
-                  Balance: {formatPrice(tx.balance_after)}
+                  {t("dashboard.balanceAfter", "Balance After: {balance}", { balance: formatPrice(tx.balance_after) })}
                 </Typography>
               )}
             </Box>

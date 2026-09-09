@@ -3,6 +3,7 @@ import { Modal, Box, Typography, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import Manually from "./Manually";
 import Notification from "../../../Components/feature/Notification";
+import { useLanguage } from "../../../Context/LanguageContext";
 
 export default function NewAddresses({
   open,
@@ -11,6 +12,7 @@ export default function NewAddresses({
   editingAddress,
   saving = false
 }) {
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const notificationRef = useRef();
@@ -71,7 +73,7 @@ export default function NewAddresses({
               component="h2"
               sx={{ fontWeight: "700", color: "#fff" }}
             >
-              {isEditing ? "✏️ Edit Address" : "📍 Add New Address"}
+              {isEditing ? `✏️ ${t("common.edit", "Edit Address")}` : `📍 ${t("dashboard.addNewAddress", "Add New Address")}`}
             </Typography>
             <IconButton
               onClick={onClose}

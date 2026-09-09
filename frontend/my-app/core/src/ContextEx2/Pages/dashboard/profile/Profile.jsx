@@ -11,6 +11,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SecurityIcon from "@mui/icons-material/Security";
 
+import { useLanguage } from "../../../Context/LanguageContext";
 import Accountpart from "./Accountpart";
 import Passwordpart from "./Passwordpart";
 import Notification from "../../../Components/feature/Notification";
@@ -23,6 +24,7 @@ export default function Profile({
   profileData,
   onProfileUpdated
 }) {
+  const { t } = useLanguage();
   const [value, setValue] = useState(0);
   const notificationRef = useRef(null);
 
@@ -69,7 +71,7 @@ export default function Profile({
               component="h2"
               sx={{ fontWeight: "800", color: "#fff", letterSpacing: "0.5px" }}
             >
-              ⚙️ Profile & Security
+              ⚙️ {t("dashboard.profileSecurity", "Profile & Security")}
             </Typography>
             <IconButton
               onClick={onClose}
@@ -112,12 +114,12 @@ export default function Profile({
             <Tab
               icon={<PersonOutlineIcon sx={{ fontSize: 18 }} />}
               iconPosition="start"
-              label="Account Details"
+              label={t("dashboard.accountDetails", "Account Details")}
             />
             <Tab
               icon={<SecurityIcon sx={{ fontSize: 18 }} />}
               iconPosition="start"
-              label="Security & Password"
+              label={t("dashboard.securityPassword", "Security & Password")}
             />
           </Tabs>
 

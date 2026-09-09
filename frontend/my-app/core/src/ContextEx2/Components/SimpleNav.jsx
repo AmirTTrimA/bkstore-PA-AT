@@ -3,6 +3,7 @@ import React from 'react'
 
 import { useState,useRef,useEffect } from 'react';
 import { useNavigate , Link } from 'react-router-dom';
+import { useLanguage } from '../Context/LanguageContext';
 
 
 import {
@@ -35,7 +36,7 @@ const MAX_RECENT_SEARCHES = 10;
 const SEARCH_MIN_LENGTH = 2;
 
 export default function SimpleNav() {
-
+  const { t, isPersian } = useLanguage();
   const navigate=useNavigate();
   const inputRef= useRef(null);
 
@@ -178,22 +179,22 @@ export default function SimpleNav() {
           <nav className='simple-navbar'>
             {/* Left Side Navigation */}
             <div className="left">
-                <button onClick={()=>navigate(-1)} className="items" id='back' >
-                    <i className="fas fa-angle-left"></i>
+                <button onClick={()=>navigate(-1)} className="items" id='back' title={isPersian ? 'بازگشت' : 'Back'}>
+                    <i className={isPersian ? "fas fa-angle-right" : "fas fa-angle-left"}></i>
                 </button>
-                <button onClick={()=>navigate('/home')} className="items" id='back' >
+                <button onClick={()=>navigate('/home')} className="items" id='back' title={t('nav.home')}>
                     <i className="fas fa-home"></i>
                 </button>
             </div>
             {/* Right Side Navigation */}
             <div className="right">
-                <Link to="/basket" className="items">
+                <Link to="/basket" className="items" title={t('nav.cart')}>
                       <svg className="cart-icon" viewBox="0 -966 960 960" width="40" height="30">
                         <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z"/>
                       </svg>
                 </Link>
 
-                  <button className='items' id='silent-search' onClick={handleOpen}>
+                  <button className='items' id='silent-search' onClick={handleOpen} title={t('nav.search')}>
                     <svg xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 24 24" width="40" height="30">
                       <path  d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
                       </svg>
@@ -210,13 +211,14 @@ export default function SimpleNav() {
         >
               <Box 
                 className='mod-box mod-special mod-search '
+                sx={{ direction: isPersian ? 'rtl' : 'ltr' }}
               >
                       <Typography 
                         variant="h4"
                         color='black'
                         style={{textAlign:'center',fontWeight:'700'}}
                       >
-                         Search
+                         {t('nav.search')}
                       </Typography>
                 
                         <div style={{marginBottom:'20px'}}>
@@ -224,7 +226,7 @@ export default function SimpleNav() {
                                   <TextField
                                     fullWidth
                                     size="medium"
-                                    placeholder="Search by name, category, or author..."
+                                    placeholder={isPersian ? "جستجو بر اساس نام کتاب، دسته‌بندی، یا نویسنده..." : "Search by name, category, or author..."}
                                     name="search"
                                     type="search"
                                     inputRef={inputRef}
@@ -249,7 +251,7 @@ export default function SimpleNav() {
                                   <Box sx={{ mb: 3 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                                       <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <History fontSize="small" /> Recent Searches
+                                        <History fontSize="small" /> {isPersian ? 'جستجوهای اخیر' : 'Recent Searches'}
                                       </Typography>
                                       <Button size="small" onClick={clearAllRecentSearches} color="error">
                                         <Delete/>

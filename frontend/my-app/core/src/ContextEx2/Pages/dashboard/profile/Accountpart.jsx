@@ -19,6 +19,7 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 
 import UserService from "../../../Services/UserService";
+import { useLanguage } from "../../../Context/LanguageContext";
 import {
   ppic1, ppic2, ppic3, ppic4, ppic5, ppic6, ppic7,
   ppic8, ppic9, ppic10, ppic11, ppic12, ppic13, ppic14
@@ -36,6 +37,7 @@ export default function Accountpart({
   onProfileUpdated,
   notificationRef
 }) {
+  const { t } = useLanguage();
   const [userAccount, setUserAccount] = useState({
     username: "",
     first_name: "",
@@ -224,7 +226,7 @@ export default function Accountpart({
             "&:hover": { borderColor: "#d17842", color: "#d17842" }
           }}
         >
-          Change Avatar
+          {t("dashboard.changeAvatar", "Change Avatar")}
         </Button>
       </Box>
 
@@ -235,7 +237,7 @@ export default function Accountpart({
           <TextField
             fullWidth
             required
-            label="Username"
+            label={t("dashboard.username", "Username")}
             name="username"
             value={userAccount.username}
             onChange={handleChange}
@@ -249,7 +251,7 @@ export default function Accountpart({
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Email Address"
+            label={t("dashboard.email", "Email Address")}
             name="email"
             value={userAccount.email}
             disabled
@@ -278,7 +280,7 @@ export default function Accountpart({
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="First Name"
+            label={t("dashboard.firstName", "First Name")}
             name="first_name"
             value={userAccount.first_name}
             onChange={handleChange}
@@ -293,7 +295,7 @@ export default function Accountpart({
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Last Name"
+            label={t("dashboard.lastName", "Last Name")}
             name="last_name"
             value={userAccount.last_name}
             onChange={handleChange}
@@ -308,7 +310,7 @@ export default function Accountpart({
         <Grid item xs={12}>
           <TextField
             fullWidth
-            label="Occupation / Major"
+            label={t("dashboard.jobOrMajor", "Occupation / Major")}
             name="job_or_major"
             value={userAccount.job_or_major}
             onChange={handleChange}
@@ -323,7 +325,7 @@ export default function Accountpart({
             fullWidth
             multiline
             minRows={3}
-            label="Reading Interests & Hobbies"
+            label={t("dashboard.interests", "Reading Interests & Hobbies")}
             name="hobbies_or_likings"
             value={userAccount.hobbies_or_likings}
             onChange={handleChange}
@@ -352,10 +354,10 @@ export default function Accountpart({
           {saving ? (
             <>
               <CircularProgress size={18} sx={{ color: "#fff", mr: 1 }} />
-              Saving...
+              {t("common.saving", "Saving...")}
             </>
           ) : (
-            "Save Changes"
+            t("dashboard.saveChanges", "Save Changes")
           )}
         </Button>
       </Box>
@@ -378,7 +380,7 @@ export default function Accountpart({
       >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Choose Profile Avatar
+            {t("dashboard.avatarDialogTitle", "Choose Profile Avatar")}
           </Typography>
           <IconButton size="small" onClick={() => setAvatarDialogOpen(false)} sx={{ color: "#aaa" }}>
             <CloseIcon />

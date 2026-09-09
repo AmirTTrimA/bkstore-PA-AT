@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useLanguage } from "../../../Context/LanguageContext";
 import WishlistService from "../../../Services/WishlistService";
 import { formatPrice } from "../../../utils/formatPrice";
 
@@ -7,6 +8,7 @@ import "../../../Styles/components/Favorites.css";
 
 export default function FavoritesView() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [favItems, setFavItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export default function FavoritesView() {
 
   const clearFavorites = async () => {
     if (clearing || favItems.length === 0) return;
-    if (!window.confirm("Are you sure you want to clear all your favorites?")) return;
+    if (!window.confirm(t("library.confirmClearWishlist", "Are you sure you want to clear all your favorites?"))) return;
 
     setClearing(true);
     try {
@@ -76,10 +78,10 @@ export default function FavoritesView() {
       <div className="favorites-header-section" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div>
           <h2 className="favorites-page-title" style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: 700 }}>
-            ⭐️ My Wishlist & Saved Books
+            ⭐️ {t("library.wishlistTitle", "My Wishlist & Saved Books")}
           </h2>
           <p style={{ margin: "4px 0 0 0", color: "rgba(255,255,255,0.6)", fontSize: "0.85rem" }}>
-            Titles you've marked as favorites for future reading and purchase.
+            {t("library.wishlistSubtitle", "Titles you've marked as favorites for future reading and purchase.")}
           </p>
         </div>
 
@@ -89,10 +91,10 @@ export default function FavoritesView() {
             onClick={clearFavorites}
             className="clear-all-fav-btn"
             disabled={clearing}
-            title="Clear all favorites"
+            title={t("library.clearAll", "Clear All")}
           >
             <i className="fas fa-trash-alt" style={{ marginRight: 6 }}></i>
-            <span>{clearing ? "Clearing..." : "Clear All"}</span>
+            <span>{clearing ? t("library.clearing", "Clearing...") : t("library.clearAll", "Clear All")}</span>
           </button>
         )}
       </div>
@@ -101,7 +103,7 @@ export default function FavoritesView() {
       {loading && (
         <div className="favorites-state-box">
           <div className="favorites-spinner" />
-          <p>Loading your saved books...</p>
+          <p>{t("common.loading", "Loading...")}</p>
         </div>
       )}
 
@@ -114,7 +116,7 @@ export default function FavoritesView() {
             onClick={loadFavorites}
             className="favorites-cta-btn"
           >
-            Try Again
+            {t("common.retry", "Try Again")}
           </button>
         </div>
       )}
@@ -125,14 +127,14 @@ export default function FavoritesView() {
           <div className="favorites-empty-icon">
             <i className="fa-regular fa-heart"></i>
           </div>
-          <h2>Your wishlist is empty</h2>
-          <p>Explore our catalog to discover and save books you love.</p>
+          <h2>{t("library.emptyWishlist", "Your wishlist is empty")}</h2>
+          <p>{t("library.emptyWishlistDesc", "Explore our catalog to discover and save books you love.")}</p>
           <button
             type="button"
             onClick={() => navigate("/library")}
             className="favorites-cta-btn"
           >
-            Explore Catalog →
+            {t("library.exploreCatalog", "Explore Catalog")} →
           </button>
         </div>
       )}
@@ -189,7 +191,7 @@ export default function FavoritesView() {
                       {item.title}
                     </h3>
                     <p className="fav-card-author">
-                      {item.author_name || "Unknown Author"}
+                      {item.author_name || t("book.unknownAuthor", "Unknown Author")}
                     </p>
 
                     <div className="fav-card-pricing">
@@ -204,7 +206,7 @@ export default function FavoritesView() {
                         </div>
                       ) : (
                         <span className="fav-price-final">
-                          {price != null ? formatPrice(price) : "View Book"}
+                          {price != null ? formatPrice(price) : t("library.viewBook", "View Book")}
                         </span>
                       )}
                     </div>

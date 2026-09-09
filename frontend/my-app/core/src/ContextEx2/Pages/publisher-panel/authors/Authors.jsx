@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
+import { useLanguage } from '../../../Context/LanguageContext';
 import Editauthors from './Editauthors';
 import Allauthor from './Allauthor';
 
 import '../../../Styles/publisher-panel/Authors.css';
 
 export default function Authors({ currentPublisher, onProposalCreated }) {
+  const { t } = useLanguage();
   // 0: Roster List, 1: Propose New / Edit
   const [tabIndex, setTabIndex] = useState(0);
   const [authorToEdit, setAuthorToEdit] = useState(null);
@@ -36,7 +38,7 @@ export default function Authors({ currentPublisher, onProposalCreated }) {
             setTabIndex(0);
           }}
         >
-          👥 Authors Roster
+          👥 {t('publisher_panel.authorsRoster', 'Authors Roster')}
         </button>
 
         <button
@@ -44,7 +46,7 @@ export default function Authors({ currentPublisher, onProposalCreated }) {
           className={`author-tab-btn ${tabIndex === 1 ? 'active' : ''}`}
           onClick={handleNewAuthor}
         >
-          {authorToEdit ? `✏️ Edit: ${authorToEdit.name}` : '✍️ Propose New Author'}
+          {authorToEdit ? `✏️ ${t('common.edit', 'Edit')}: ${authorToEdit.name}` : `✍️ ${t('publisher_panel.proposeNewAuthor', 'Propose New Author')}`}
         </button>
       </div>
 

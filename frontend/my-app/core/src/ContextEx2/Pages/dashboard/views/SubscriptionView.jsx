@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useLanguage } from "../../../Context/LanguageContext";
 import Notification from "../../../Components/feature/Notification";
 import SubscriptionService from "../../../Services/SubscriptionService";
 import { formatPrice } from "../../../utils/formatPrice";
@@ -6,6 +7,7 @@ import { formatPrice } from "../../../utils/formatPrice";
 import "../../../Styles/components/Subscription.css";
 
 export default function SubscriptionView() {
+  const { t } = useLanguage();
   const notificationRef = useRef(null);
 
   const [plans, setPlans] = useState([]);
@@ -114,10 +116,10 @@ export default function SubscriptionView() {
     <div className="dashboard-subscription-embed">
       <div className="subscription-hero" style={{ textAlign: "left", marginBottom: "24px" }}>
         <h2 className="sub-main-title" style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: 700 }}>
-          💎 VIP Subscription & Reader Plans
+          💎 {t("library.vipPlans", "VIP Subscription & Reader Plans")}
         </h2>
         <p className="sub-main-subtitle" style={{ margin: "4px 0 0 0", color: "rgba(255,255,255,0.6)", fontSize: "0.85rem" }}>
-          Unlock exclusive percentage discounts on all digital and audiobooks with an active VIP membership.
+          {t("library.vipSubtitle", "Unlock exclusive percentage discounts on all digital and audiobooks with an active VIP membership.")}
         </p>
       </div>
 
@@ -125,7 +127,7 @@ export default function SubscriptionView() {
       {loading && (
         <div className="subscription-state-box">
           <div className="subscription-spinner" />
-          <p>Loading subscription plans & status...</p>
+          <p>{t("common.loading", "Loading subscription plans & status...")}</p>
         </div>
       )}
 
@@ -134,7 +136,7 @@ export default function SubscriptionView() {
         <div className="subscription-state-box sub-error">
           <p>{error}</p>
           <button type="button" onClick={loadData} className="sub-retry-btn">
-            Retry
+            {t("common.retry", "Retry")}
           </button>
         </div>
       )}
@@ -147,22 +149,22 @@ export default function SubscriptionView() {
             <div className="sub-status-card active-status">
               <div className="sub-status-header">
                 <div className="sub-status-title-wrap">
-                  <span className="sub-status-pill active">Active Membership</span>
+                  <span className="sub-status-pill active">{t("library.activeMembership", "Active Membership")}</span>
                   <h3>{activeSubscription.plan?.name}</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => openCancelModal(activeSubscription)}
                   className="sub-cancel-btn"
-                  title="Cancel this active subscription"
+                  title={t("library.cancelSubscription", "Cancel this active subscription")}
                 >
-                  Cancel Subscription
+                  {t("library.cancelSubscription", "Cancel Subscription")}
                 </button>
               </div>
 
               <div className="sub-status-grid">
                 <div className="sub-status-item">
-                  <span className="sub-label">Valid Until</span>
+                  <span className="sub-label">{t("library.validUntil", "Valid Until")}</span>
                   <span className="sub-val">
                     {new Date(activeSubscription.end_date).toLocaleDateString(undefined, {
                       year: "numeric",
@@ -172,15 +174,15 @@ export default function SubscriptionView() {
                   </span>
                 </div>
                 <div className="sub-status-item">
-                  <span className="sub-label">Digital Discount</span>
+                  <span className="sub-label">{t("library.digitalDiscount", "Digital Discount")}</span>
                   <span className="sub-val highlight">
                     {activeSubscription.plan?.digital_discount_percent}% OFF
                   </span>
                 </div>
                 <div className="sub-status-item">
-                  <span className="sub-label">Auto-Renew</span>
+                  <span className="sub-label">{t("library.autoRenew", "Auto-Renew")}</span>
                   <span className="sub-val">
-                    {activeSubscription.auto_renew ? "Enabled" : "Disabled"}
+                    {activeSubscription.auto_renew ? t("common.enabled", "Enabled") : t("common.disabled", "Disabled")}
                   </span>
                 </div>
               </div>
@@ -192,22 +194,22 @@ export default function SubscriptionView() {
             <div className="sub-status-card reserved-status">
               <div className="sub-status-header">
                 <div className="sub-status-title-wrap">
-                  <span className="sub-status-pill reserved">Scheduled Plan</span>
+                  <span className="sub-status-pill reserved">{t("library.scheduledPlan", "Scheduled Plan")}</span>
                   <h3>{reservedSubscription.plan?.name}</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => openCancelModal(reservedSubscription)}
                   className="sub-cancel-btn"
-                  title="Cancel this scheduled subscription"
+                  title={t("library.cancelScheduledPlan", "Cancel this scheduled subscription")}
                 >
-                  Cancel Scheduled Plan
+                  {t("library.cancelScheduledPlan", "Cancel Scheduled Plan")}
                 </button>
               </div>
 
               <div className="sub-status-grid">
                 <div className="sub-status-item">
-                  <span className="sub-label">Starts On</span>
+                  <span className="sub-label">{t("library.startsOn", "Starts On")}</span>
                   <span className="sub-val">
                     {new Date(reservedSubscription.start_date).toLocaleDateString(undefined, {
                       year: "numeric",
@@ -217,7 +219,7 @@ export default function SubscriptionView() {
                   </span>
                 </div>
                 <div className="sub-status-item">
-                  <span className="sub-label">Digital Discount</span>
+                  <span className="sub-label">{t("library.digitalDiscount", "Digital Discount")}</span>
                   <span className="sub-val highlight">
                     {reservedSubscription.plan?.digital_discount_percent}% OFF
                   </span>
@@ -234,12 +236,12 @@ export default function SubscriptionView() {
                 checked={autoRenew}
                 onChange={(e) => setAutoRenew(e.target.checked)}
               />
-              <span>Automatically renew subscription each month</span>
+              <span>{t("library.autoRenewMonthly", "Automatically renew subscription each month")}</span>
             </label>
             <p className="auto-renew-help">
               {autoRenew
-                ? "Your subscription will automatically extend at the end of each billing cycle."
-                : "Auto-renew is off. Your benefits will expire at the end of the current term."}
+                ? t("library.autoRenewOnHelp", "Your subscription will automatically extend at the end of each billing cycle.")
+                : t("library.autoRenewOffHelp", "Auto-renew is off. Your benefits will expire at the end of the current term.")}
             </p>
           </div>
 
@@ -255,7 +257,7 @@ export default function SubscriptionView() {
                   className={`plan-card plan-tier-${(index % 3) + 1} ${isCurrent ? "current-tier" : ""}`}
                 >
                   {isCurrent && (
-                    <span className="current-plan-badge">Current Plan</span>
+                    <span className="current-plan-badge">{t("library.currentPlan", "Current Plan")}</span>
                   )}
 
                   <div className="plan-card-header">
@@ -271,7 +273,7 @@ export default function SubscriptionView() {
                     <span className="plan-price-val">
                       {formatPrice(plan.price)}
                     </span>
-                    <span className="plan-duration">/ {plan.duration_days} days</span>
+                    <span className="plan-duration">/ {plan.duration_days} {t("library.days", "days")}</span>
                   </div>
 
                   {plan.description && (
@@ -295,7 +297,7 @@ export default function SubscriptionView() {
                     </li>
                     <li>
                       <i className="fa-solid fa-check"></i>
-                      <span>Valid for {plan.duration_days} days</span>
+                      <span>Valid for {plan.duration_days} {t("library.days", "days")}</span>
                     </li>
                   </ul>
 
@@ -307,12 +309,12 @@ export default function SubscriptionView() {
                   >
                     {isBusy ? (
                       <span>
-                        <i className="fas fa-spinner fa-spin"></i> Processing...
+                        <i className="fas fa-spinner fa-spin"></i> {t("common.processing", "Processing...")}
                       </span>
                     ) : isCurrent ? (
-                      "Active Plan"
+                      t("library.activePlan", "Active Plan")
                     ) : (
-                      "Subscribe Now"
+                      t("library.subscribeNow", "Subscribe Now")
                     )}
                   </button>
                 </div>
@@ -333,7 +335,7 @@ export default function SubscriptionView() {
             aria-labelledby="cancel-modal-title"
           >
             <div className="sub-modal-header">
-              <h3 id="cancel-modal-title">Cancel Subscription?</h3>
+              <h3 id="cancel-modal-title">{t("library.cancelConfirmTitle", "Cancel Subscription?")}</h3>
               <button
                 type="button"
                 className="sub-modal-close-btn"
@@ -346,17 +348,14 @@ export default function SubscriptionView() {
 
             <div className="sub-modal-body">
               <p>
-                Are you sure you want to cancel your{" "}
-                <strong>{subToCancel?.plan?.name}</strong> subscription?
+                {t("library.cancelConfirmDesc", "Are you sure you want to cancel your {name} subscription?", {
+                  name: subToCancel?.plan?.name
+                })}
               </p>
               <p className="sub-modal-warning">
-                Your benefits will remain active until the end of the current term on{" "}
-                <strong>
-                  {subToCancel?.end_date
-                    ? new Date(subToCancel.end_date).toLocaleDateString()
-                    : "the expiration date"}
-                </strong>
-                . After that, your digital discount will no longer apply.
+                {t("library.cancelConfirmWarning", "Your benefits will remain active until the end of the current term on {date}. After that, your digital discount will no longer apply.", {
+                  date: subToCancel?.end_date ? new Date(subToCancel.end_date).toLocaleDateString() : "the expiration date"
+                })}
               </p>
             </div>
 
@@ -367,7 +366,7 @@ export default function SubscriptionView() {
                 onClick={closeCancelModal}
                 disabled={cancelling}
               >
-                Keep Subscription
+                {t("library.keepSubscription", "Keep Subscription")}
               </button>
               <button
                 type="button"
@@ -377,10 +376,10 @@ export default function SubscriptionView() {
               >
                 {cancelling ? (
                   <span>
-                    <i className="fas fa-spinner fa-spin"></i> Cancelling...
+                    <i className="fas fa-spinner fa-spin"></i> {t("library.cancelling", "Cancelling...")}
                   </span>
                 ) : (
-                  "Yes, Cancel It"
+                  t("library.confirmCancelBtn", "Yes, Cancel It")
                 )}
               </button>
             </div>

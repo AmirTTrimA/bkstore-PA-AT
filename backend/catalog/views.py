@@ -107,8 +107,12 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         is_audio = self.request.query_params.get("is_audio")
         publisher = self.request.query_params.get("publisher")
         format_param = self.request.query_params.get("format") or self.request.query_params.get("book_format")
+        language = self.request.query_params.get("language")
 
         queryset = self.queryset
+
+        if language:
+            queryset = queryset.filter(language=language.lower())
 
         if genre:
             queryset = queryset.filter(genre__iexact=genre)

@@ -24,8 +24,10 @@ import AddIcon from "@mui/icons-material/Add";
 import NewAddresses from "./NewAddresses";
 import Notification from "../../../Components/feature/Notification";
 import AddressService from "../../../Services/AddressService";
+import { useLanguage } from "../../../Context/LanguageContext";
 
 export default function Addresses() {
+  const { t } = useLanguage();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -142,10 +144,10 @@ export default function Addresses() {
       >
         <div>
           <Typography variant="h5" sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
-            📍 Saved Addresses
+            📍 {t("dashboard.deliveryAddresses", "Saved Addresses")}
           </Typography>
           <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mt: 0.5 }}>
-            Manage delivery locations for physical book orders.
+            {t("dashboard.deliveryAddressesSubtitle", "Manage delivery locations for physical book orders.")}
           </Typography>
         </div>
 
@@ -164,7 +166,7 @@ export default function Addresses() {
             "&:hover": { backgroundColor: "#b35e2e" }
           }}
         >
-          Add New Address
+          {t("dashboard.addNewAddress", "Add New Address")}
         </Button>
       </Box>
 
@@ -194,7 +196,7 @@ export default function Addresses() {
             size="small"
             sx={{ mt: 2, color: "#ef5350", borderColor: "#ef5350" }}
           >
-            Retry
+            {t("common.retry", "Retry")}
           </Button>
         </Box>
       )}
@@ -213,10 +215,10 @@ export default function Addresses() {
         >
           <LocationOnIcon sx={{ fontSize: 56, color: "rgba(255, 255, 255, 0.3)", mb: 1.5 }} />
           <Typography variant="h6" sx={{ color: "#fff", mb: 1 }}>
-            No delivery addresses saved yet
+            {t("dashboard.noAddresses", "No delivery addresses saved yet")}
           </Typography>
           <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mb: 3 }}>
-            Add your shipping address so you can order physical books without retyping during checkout.
+            {t("dashboard.noAddressesSubtitle", "Add your shipping address so you can order physical books without retyping during checkout.")}
           </Typography>
           <Button
             variant="contained"
@@ -229,7 +231,7 @@ export default function Addresses() {
               "&:hover": { backgroundColor: "#b35e2e" }
             }}
           >
-            Add Address Now
+            {t("dashboard.addNewAddress", "Add Address Now")}
           </Button>
         </Box>
       )}
@@ -287,7 +289,7 @@ export default function Addresses() {
                     {address.is_default && (
                       <Chip
                         icon={<CheckCircleIcon sx={{ fontSize: "14px !important" }} />}
-                        label="Default"
+                        label={t("dashboard.defaultBadge", "Default")}
                         size="small"
                         sx={{
                           bgcolor: "rgba(209, 120, 66, 0.2)",
@@ -310,7 +312,7 @@ export default function Addresses() {
                         color: "rgba(255, 255, 255, 0.6)",
                         "&:hover": { color: "#d17842", bgcolor: "rgba(209, 120, 66, 0.1)" }
                       }}
-                      title="Edit Address"
+                      title={t("common.edit", "Edit Address")}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
@@ -321,7 +323,7 @@ export default function Addresses() {
                         color: "rgba(255, 255, 255, 0.6)",
                         "&:hover": { color: "#ef5350", bgcolor: "rgba(239, 83, 80, 0.1)" }
                       }}
-                      title="Delete Address"
+                      title={t("common.delete", "Delete Address")}
                     >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
@@ -369,7 +371,7 @@ export default function Addresses() {
                       variant="caption"
                       sx={{ display: "block", color: "rgba(255, 255, 255, 0.5)", mt: 0.5 }}
                     >
-                      Postal Code: {address.postal_code}
+                      {t("dashboard.postalCode", "Postal Code")}: {address.postal_code}
                     </Typography>
                   )}
                 </Box>
@@ -388,7 +390,7 @@ export default function Addresses() {
                       "&:hover": { background: "none", textDecoration: "underline" }
                     }}
                   >
-                    ★ Set as Default Address
+                    {t("dashboard.setAsDefault", "★ Set as Default Address")}
                   </Button>
                 )}
               </CardContent>
@@ -421,10 +423,12 @@ export default function Addresses() {
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>Delete Address?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {t("common.delete", "Delete Address")}?
+        </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: "rgba(255,255,255,0.7)" }}>
-            Are you sure you want to remove this saved shipping address? This action cannot be undone.
+            {t("dashboard.deleteAddressConfirm", "Are you sure you want to remove this saved shipping address? This action cannot be undone.")}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -432,7 +436,7 @@ export default function Addresses() {
             onClick={() => setDeleteConfirmId(null)}
             sx={{ color: "#aaa" }}
           >
-            Cancel
+            {t("common.cancel", "Cancel")}
           </Button>
           <Button
             onClick={() => handleDelete(deleteConfirmId)}
@@ -440,7 +444,7 @@ export default function Addresses() {
             color="error"
             sx={{ fontWeight: 600 }}
           >
-            Delete
+            {t("common.delete", "Delete")}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,6 +1,6 @@
-// ✅
 import React, { useState,useRef,useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../Context/LanguageContext';
 import '../../Styles/components/Faq.css';
 
 
@@ -8,6 +8,14 @@ import '../../Styles/components/Faq.css';
 // ============================================
 //      Constants
 // ============================================
+const CATEGORIES = [
+  { id: 'All', en: 'All', fa: 'همه' },
+  { id: 'Purchasing', en: 'Purchasing', fa: 'خرید و پرداخت' },
+  { id: 'Account', en: 'Account', fa: 'حساب کاربری' },
+  { id: 'Reading', en: 'Reading', fa: 'مطالعه و کتاب‌ها' },
+  { id: 'Shipping', en: 'Shipping', fa: 'ارسال و تحویل' },
+];
+
 const FAQ_DATA = [
     {
         question: "How do I purchase a book?",
@@ -72,14 +80,74 @@ const FAQ_DATA = [
     }
 ];
 
-
-
-
+const FAQ_DATA_FA = [
+    {
+        question: "چگونه می‌توانم یک کتاب خریداری کنم؟",
+        answer: "کافی است مجموعه کتاب‌ها را بررسی کنید، کتاب مورد نظر خود را انتخاب کرده و روی «افزودن به سبد» کلیک کنید. سپس با ورود به سبد خرید فرایند تسویه و پرداخت را نهایی کنید.",
+        category: 'Purchasing'
+    },
+    {
+        question: "از چه روش‌های پرداختی پشتیبانی می‌شود؟",
+        answer: "کلیه کارت‌های شتاب بانکی از طریق درگاه امن شاپرک و همچنین اعتبار کیف پول درون‌برنامه‌ای پذیرفته می‌شوند.",
+        category: 'Purchasing'
+    },
+    {
+        question: "چگونه به کتاب‌های الکترونیکی و صوتی خریداری‌شده دسترسی داشته باشم؟",
+        answer: "پس از پرداخت، کتاب‌ها فوراً در بخش «کتابخانه من» و داشبورد کاربری در دسترس خواهند بود و در کتاب‌خوان و پخش‌کننده آنلاین قابل اجرا هستند.",
+        category: 'Reading'
+    },
+    {
+        question: "آیا امکان بازگشت یا تعویض کتاب وجود دارد؟",
+        answer: "کتاب‌های چاپی تا ۷ روز پس از تحویل در صورت سلامت فیزیکی قابل مرجوعی هستند. محصولات دیجیتال تنها در صورت نقص فنی غیرقابل رفع بازپرداخت می‌شوند.",
+        category: 'Purchasing'
+    },
+    {
+        question: "چگونه یک حساب کاربری جدید ایجاد کنم؟",
+        answer: "به صفحه «ثبت نام» بروید، نام کاربری و ایمیل خود را وارد نمایید و حساب کاربری خود را فعال کنید.",
+        category: 'Account'
+    },
+    {
+        question: "چگونه رمز عبور خود را بازنشانی کنم؟",
+        answer: "در صفحه ورود، روی «فراموشی رمز عبور» کلیک کنید، آدرس ایمیل خود را درج کرده تا لینک بازیابی ارسال شود.",
+        category: 'Account'
+    },
+    {
+        question: "آیا تخفیف دانشجویی ارائه می‌دهید؟",
+        answer: "بله! دانشجویان با ارسال مدارک تحصیلی از ۲۰ درصد تخفیف همیشگی روی کلیه کتاب‌های دیجیتال بهره‌مند خواهند شد.",
+        category: 'Account'
+    },
+    {
+        question: "چگونه برای کتاب‌ها دیدگاه و امتیاز ثبت کنم؟",
+        answer: "در صفحه اختصاصی هر کتاب، در بخش نظرات می‌توانید نقد و نظر خود را بنویسید (نیاز به ورود به حساب کاربری دارد).",
+        category: 'Reading'
+    },
+    {
+        question: "آیا آخرین صفحه مطالعه‌شده ذخیره می‌شود؟",
+        answer: "بله! کتاب‌خوان هوشمند پیج‌نت آخرین صفحه مطالعه‌شده و یادداشت‌های شما را در سرور ذخیره و همگام می‌کند.",
+        category: 'Reading'
+    },
+    {
+        question: "مدت زمان ارسال کتاب‌های فیزیکی چقدر است؟",
+        answer: "سفارش‌های فیزیکی طی ۲ الی ۳ روز کاری بسته‌بندی شده و با پست پیشتاز تحویل داده می‌شوند.",
+        category: 'Shipping'
+    },
+    {
+        question: "آیا امکان تهیه اشتراک نامحدود وجود دارد؟",
+        answer: "بله! با اشتراک باشگاه کتاب پیج‌نت دسترسی نامحدود به کاتالوگ عظیم کتاب‌های الکترونیکی و صوتی خواهید داشت.",
+        category: 'Purchasing'
+    },
+    {
+        question: "چگونه با پشتیبانی سامانه تماس بگیرم؟",
+        answer: "شما می‌توانید به نشانی support@pagenet.com ایمیل بزنید یا از بخش تیکت پشتیبانی داشبورد پیام دهید.",
+        category: 'Account'
+    }
+];
 
 // ============================================
 //      Main
 // ============================================
 const FAQ = () => {
+    const { isPersian } = useLanguage();
 
     // ---State---
     const [openIndex, setOpenIndex] = useState(null);
@@ -87,7 +155,7 @@ const FAQ = () => {
     const faqRef = useRef([]);
 
     // ---Memoized Data---
-    const faqs = useMemo(() => FAQ_DATA, []);
+    const faqs = useMemo(() => isPersian ? FAQ_DATA_FA : FAQ_DATA, [isPersian]);
 
 
 
@@ -154,52 +222,29 @@ const FAQ = () => {
 
 
     return (
-        <div className="faq-container">
+        <div className="faq-container" style={{ direction: isPersian ? 'rtl' : 'ltr' }}>
             <div className="faq-content">
                 {/* Header */}
                 <div className="faq-header">
-                    <Link to="/home" className="faq-back-home">Back to Home</Link>
-                    <h1>Frequently Asked Questions</h1>
-                    <p>Find answers to common questions about our bookstore</p>
+                    <Link to="/home" className="faq-back-home">
+                        {isPersian ? 'بازگشت به خانه' : 'Back to Home'}
+                    </Link>
+                    <h1>{isPersian ? 'پرسش‌های متداول' : 'Frequently Asked Questions'}</h1>
+                    <p>{isPersian ? 'پاسخ به سوالات پرتکرار کاربران درباره خرید و استفاده از سامانه' : 'Find answers to common questions about our bookstore'}</p>
                 </div>
 
                 
-                {/* Catrgories */}
+                {/* Categories */}
                 <div className="faq-categories">
-                    <button 
-                        className={`faq-category-btn ${activeCategory === 'All' ? 'active' : ''}`}
-                        onClick={() => handleCategoryClick('All')}
-                    >
-                        All
-                    </button>
-                    
-                    <button 
-                        className={`faq-category-btn ${activeCategory === 'Purchasing' ? 'active' : ''}`}
-                        onClick={() => handleCategoryClick('Purchasing')}
-                    >
-                        Purchasing
-                    </button>
-                    
-                    <button 
-                        className={`faq-category-btn ${activeCategory === 'Account' ? 'active' : ''}`}
-                        onClick={() => handleCategoryClick('Account')}
-                    >
-                        Account
-                    </button>
-
-                    <button 
-                        className={`faq-category-btn ${activeCategory === 'Reading' ? 'active' : ''}`}
-                        onClick={() => handleCategoryClick('Reading')}
-                    >
-                        Reading
-                    </button>
-
-                    <button 
-                        className={`faq-category-btn ${activeCategory === 'Shipping' ? 'active' : ''}`}
-                        onClick={() => handleCategoryClick('Shipping')}
-                    >
-                        Shipping
-                    </button>
+                    {CATEGORIES.map(cat => (
+                        <button
+                            key={cat.id}
+                            className={`faq-category-btn ${activeCategory === cat.id ? 'active' : ''}`}
+                            onClick={() => handleCategoryClick(cat.id)}
+                        >
+                            {cat[isPersian ? 'fa' : 'en']}
+                        </button>
+                    ))}
                 </div>
 
                 {/* FAQ List */}
@@ -233,8 +278,10 @@ const FAQ = () => {
 
                 {/* Footer */}
                 <div className="faq-footer">
-                    <p>Still have questions?</p>
-                    <Link to="/contact" className="faq-contact-btn">Admin Support</Link>
+                    <p>{isPersian ? 'هنوز سوال دیگری دارید؟' : 'Still have questions?'}</p>
+                    <Link to="/contact" className="faq-contact-btn">
+                        {isPersian ? 'ارتباط با پشتیبانی' : 'Admin Support'}
+                    </Link>
                 </div>
             </div>
         </div>

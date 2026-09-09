@@ -13,6 +13,7 @@ import {
   CircularProgress
 } from "@mui/material";
 import { IRAN_PROVINCES, IRAN_CITIES_BY_PROVINCE } from "../../../utils/iranLocations";
+import { useLanguage } from "../../../Context/LanguageContext";
 
 const PHONE_REGEX = /^09\d{9}$/;
 const POSTCODE_REGEX = /^\d{10}$/;
@@ -27,6 +28,7 @@ export default function Manually({
   onCancel,
   saving = false
 }) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     title: "",
     recipient_name: "",
@@ -150,11 +152,11 @@ export default function Manually({
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
       <Grid container spacing={2}>
-        {/* Title */}
+        {/* Address Title */}
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Address Title (e.g. Home, Office)"
+            label={t("dashboard.addressTitle", "Address Title (e.g. Home, Office)")}
             name="title"
             value={formData.title}
             onChange={handleChange}
@@ -168,7 +170,7 @@ export default function Manually({
           <TextField
             fullWidth
             required
-            label="Recipient Full Name"
+            label={t("dashboard.recipient", "Recipient Full Name")}
             name="recipient_name"
             value={formData.recipient_name}
             onChange={handleChange}
@@ -182,7 +184,7 @@ export default function Manually({
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Phone Number"
+            label={t("dashboard.phone", "Phone Number")}
             name="phone_number"
             value={formData.phone_number}
             onChange={handleChange}
@@ -197,7 +199,7 @@ export default function Manually({
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Postal Code (10 digits)"
+            label={t("dashboard.postalCode", "Postal Code (10 digits)")}
             name="postal_code"
             value={formData.postal_code}
             onChange={handleChange}
@@ -211,17 +213,17 @@ export default function Manually({
         {/* Province Select */}
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth size="small" error={Boolean(errors.province)} required>
-            <InputLabel id="province-select-label">Province</InputLabel>
+            <InputLabel id="province-select-label">{t("dashboard.province", "Province")}</InputLabel>
             <Select
               labelId="province-select-label"
               id="province-select"
               name="province"
               value={formData.province}
-              label="Province"
+              label={t("dashboard.province", "Province")}
               onChange={handleChange}
             >
               <MenuItem value="" disabled>
-                <em>Select Province</em>
+                <em>{t("dashboard.selectProvince", "Select Province")}</em>
               </MenuItem>
               {IRAN_PROVINCES.map((prov) => (
                 <MenuItem key={prov.id} value={prov.id}>
@@ -240,21 +242,21 @@ export default function Manually({
         {/* City Select */}
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth size="small" error={Boolean(errors.city)} required>
-            <InputLabel id="city-select-label">City</InputLabel>
+            <InputLabel id="city-select-label">{t("dashboard.city", "City")}</InputLabel>
             <Select
               labelId="city-select-label"
               id="city-select"
               name="city"
               value={formData.city}
-              label="City"
+              label={t("dashboard.city", "City")}
               onChange={handleChange}
               disabled={!formData.province || availableCities.length === 0}
             >
               <MenuItem value="" disabled>
                 <em>
                   {!formData.province
-                    ? "Select province first"
-                    : "Select City"}
+                    ? t("dashboard.selectProvinceFirst", "Select province first")
+                    : t("dashboard.selectCity", "Select City")}
                 </em>
               </MenuItem>
               {availableCities.map((cityName) => (
@@ -278,7 +280,7 @@ export default function Manually({
             required
             multiline
             minRows={2}
-            label="Street Address / Alley / Unit / Plate"
+            label={t("dashboard.street", "Street Address / Alley / Unit / Plate")}
             name="address_line"
             value={formData.address_line}
             onChange={handleChange}
@@ -303,7 +305,7 @@ export default function Manually({
                 }}
               />
             }
-            label="Set as default shipping address"
+            label={t("dashboard.setAsDefault", "Set as default shipping address")}
           />
         </Grid>
       </Grid>
@@ -322,7 +324,7 @@ export default function Manually({
               "&:hover": { borderColor: "rgba(255,255,255,0.4)" }
             }}
           >
-            Cancel
+            {t("common.cancel", "Cancel")}
           </Button>
         )}
         <Button
@@ -340,12 +342,12 @@ export default function Manually({
           {saving ? (
             <>
               <CircularProgress size={18} sx={{ color: "white", mr: 1 }} />
-              Saving...
+              {t("common.saving", "Saving...")}
             </>
           ) : isEditing ? (
-            "Update Address"
+            t("common.save", "Update Address")
           ) : (
-            "Save Address"
+            t("common.save", "Save Address")
           )}
         </Button>
       </Box>

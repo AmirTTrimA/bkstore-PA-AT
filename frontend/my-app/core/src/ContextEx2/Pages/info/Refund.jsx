@@ -1,6 +1,6 @@
-// ✅
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../Context/LanguageContext';
 import '../../Styles/components/Refund.css';
 
 
@@ -11,6 +11,145 @@ import '../../Styles/components/Refund.css';
 
 export default function Refund() {
   const navigate = useNavigate();
+  const { isPersian } = useLanguage();
+
+  if (isPersian) {
+    return (
+      <div className="refund-container" style={{ direction: 'rtl' }}>
+        {/* Header */}
+        <div className="refund-header">
+          <button className="refund-back-btn" onClick={() => navigate('/home')}>
+            بازگشت به خانه
+          </button>
+          <h1>قوانین استرداد و بازگشت وجه</h1>
+          <p>آخرین به‌روزرسانی: خرداد ۱۴۰۵</p>
+        </div>
+
+        <div className="refund-content">
+          {/* Section1 */}
+          <section className="refund-section">
+            <h2>۱. تعهد ما به کاربران</h2>
+            <p>
+              در پیج‌نت هدف ما ارائه لذت‌بخش‌ترین تجربه مطالعه دیجیتال و تهیه کتاب است. 
+              در صورت بروز هرگونه مشکل یا عدم رضایت، تیم پشتیبانی ما آماده رفع دغدغه شماست.
+            </p>
+          </section>
+
+          {/* Section2 */}
+          <section className="refund-section">
+            <h2>۲. کتب دیجیتال و صوتی</h2>
+            <p>
+              برای محصولات دیجیتال (کتاب‌های الکترونیکی، فایل‌های صوتی و اشتراک)، 
+              <strong>ضمانت بازگشت وجه تا ۷ روز</strong> بر اساس شرایط زیر لحاظ می‌شود:
+            </p>
+            <ul>
+              <li>✅ بازپرداخت کامل در صورت عدم تطابق مشخصات یا خرابی فایل</li>
+              <li>✅ بازپرداخت نسبی یا اصلاح فایل در صورت بروز نقص فنی</li>
+              <li>❌ عدم امکان بازگشت وجه پس از دانلود و مطالعه کامل فایل سالم</li>
+            </ul>
+          </section>
+
+          {/* Section3 */}
+          <section className="refund-section">
+            <h2>۳. طرح‌های اشتراک کتابخوانی</h2>
+            <div className="refund-grid">
+              <div className="refund-card">
+                <h3>اشتراک ماهانه</h3>
+                <p>امکان لغو در هر زمان قبل از تاریخ تمدید خودکار</p>
+                <span className="refund-badge">محاسبه به نسبت روزهای باقیمانده</span>
+              </div>
+              <div className="refund-card">
+                <h3>اشتراک سالانه</h3>
+                <p>امکان استرداد کامل تا ۳۰ روز اول اشتراک</p>
+                <span className="refund-badge">استرداد نسبی پس از ۳۰ روز</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Section4 */}
+          <section className="refund-section">
+            <h2>۴. مراحل ثبت درخواست بازگشت وجه</h2>
+            <ol className="refund-steps">
+              <li>
+                <span className="refund-step-number">۱</span>
+                <div>
+                  <h4>ارتباط با پشتیبانی</h4>
+                  <p>ارسال ایمیل به <a href="mailto:support@pagenet.com">support@pagenet.com</a> یا ثبت تیکت در داشبورد</p>
+                </div>
+              </li>
+              <li>
+                <span className="refund-step-number">۲</span>
+                <div>
+                  <h4>ارائه مشخصات خرید</h4>
+                  <p>ذکر شماره فاکتور، کد پیگیری سفارش و توضیح علت درخواست</p>
+                </div>
+              </li>
+              <li>
+                <span className="refund-step-number">۳</span>
+                <div>
+                  <h4>بررسی و تسویه</h4>
+                  <p>پاسخگویی کارشناسان ظرف ۲۴ الی ۴۸ ساعت کاری</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          {/* Section5 */}
+          <section className="refund-section">
+            <h2>۵. زمان و نحوه عودت مبالغ</h2>
+            <ul>
+              <li>مبالغ تأییدشده ظرف ۲۴ تا ۷۲ ساعت کاری به کیف پول کاربری یا شماره شبا واریز می‌گردد.</li>
+              <li>در صورت شارژ کیف پول، اعتبار بلافاصله جهت سفارش‌های بعدی قابل استفاده است.</li>
+            </ul>
+          </section>
+
+          {/* Section6 */}
+          <section className="refund-section">
+            <h2>۶. استثنائات استرداد</h2>
+            <div className="refund-exception-box">
+              <p><strong>موارد عدم شمول بازپرداخت:</strong></p>
+              <ul>
+                <li>سفارش‌هایی که بیش از ۳۰ روز از ثبت آن‌ها گذشته باشد</li>
+                <li>کتاب‌های چاپی که دچار آسیب فیزیکی توسط خریدار شده باشند</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* Section7 */}
+          <section className="refund-section contact-section">
+            <h2>۷. نیاز به راهنمایی بیشتر دارید؟</h2>
+            <div className="refund-contact-options">
+              <button 
+                className="refund-contact-btn privacy"
+                onClick={()=> navigate('/privacy-policy')}
+              >
+                حفظ حریم خصوصی
+              </button>
+              <button 
+                className="refund-contact-btn about" 
+                onClick={()=> navigate('/about-us')}
+              >
+                درباره ما
+              </button>
+              <button 
+                className="refund-contact-btn faq" 
+                onClick={()=> navigate('/faq')}
+              >
+                 پرسش‌های متداول
+              </button>
+            </div>
+          </section>
+        </div>
+
+        {/* Footer */}
+        <div className="refund-footer-note">
+          <p>
+            <strong>نکته:</strong> این آیین‌نامه بر تمامی سفارش‌های ثبت‌شده در سامانه پیج‌نت حاکم است.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -17,10 +17,12 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import LockResetIcon from "@mui/icons-material/LockReset";
 
 import UserService from "../../../Services/UserService";
+import { useLanguage } from "../../../Context/LanguageContext";
 
 const MIN_PASSWORD_LENGTH = 8;
 
 export default function Passwordpart({ notificationRef }) {
+  const { t } = useLanguage();
   const [passwordData, setPasswordData] = useState({
     current_password: "",
     new_password: "",
@@ -139,10 +141,10 @@ export default function Passwordpart({ notificationRef }) {
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 1 }}>
           <LockResetIcon sx={{ color: "#d17842" }} />
-          Change Password
+          {t("dashboard.changePassword", "Change Password")}
         </Typography>
         <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mt: 0.5 }}>
-          Update your password to keep your account safe and secure.
+          {t("dashboard.security", "Security & Password")}
         </Typography>
       </Box>
 
@@ -169,7 +171,7 @@ export default function Passwordpart({ notificationRef }) {
             fullWidth
             required
             type={showCurrent ? "text" : "password"}
-            label="Current Password"
+            label={t("dashboard.currentPassword", "Current Password")}
             name="current_password"
             value={passwordData.current_password}
             onChange={handleChange}
@@ -197,7 +199,7 @@ export default function Passwordpart({ notificationRef }) {
             fullWidth
             required
             type={showNew ? "text" : "password"}
-            label="New Password"
+            label={t("dashboard.newPassword", "New Password")}
             name="new_password"
             value={passwordData.new_password}
             onChange={handleChange}
@@ -225,13 +227,13 @@ export default function Passwordpart({ notificationRef }) {
             fullWidth
             required
             type={showRepeat ? "text" : "password"}
-            label="Confirm New Password"
+            label={t("dashboard.confirmNewPassword", "Confirm New Password")}
             name="repeat_password"
             value={passwordData.repeat_password}
             onChange={handleChange}
             size="small"
             error={!passwordsMatch}
-            helperText={!passwordsMatch ? "Passwords do not match." : ""}
+            helperText={!passwordsMatch ? t("auth.passMismatch", "Passwords do not match.") : ""}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -348,10 +350,10 @@ export default function Passwordpart({ notificationRef }) {
           {saving ? (
             <>
               <CircularProgress size={18} sx={{ color: "#fff", mr: 1 }} />
-              Updating...
+              {t("common.saving", "Updating...")}
             </>
           ) : (
-            "Update Password"
+            t("dashboard.updatePassword", "Update Password")
           )}
         </Button>
       </Box>

@@ -825,3 +825,28 @@ html[data-theme="dark"] .status-badge.status-success,
   font-weight: 700 !important;
 }
 
+/* --------------------------------------------------------------------------
+   13. BILINGUAL & RTL ADMIN SUPPORT
+   -------------------------------------------------------------------------- */
+.lang-switch-container button {
+  transition: all 0.2s ease;
+}
+
+.lang-switch-container button:hover {
+  filter: brightness(1.2);
+}
+
+html[dir="rtl"], body.rtl {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Vazirmatn, Shabnam, Tahoma, sans-serif !important;
+}
+
+html[dir="rtl"] #user-tools {
+  text-align: left !important;
+  float: left !important;
+}
+
+html[dir="rtl"] .pagenet-admin-brand {
+  flex-direction: row-reverse;
+}
+
+

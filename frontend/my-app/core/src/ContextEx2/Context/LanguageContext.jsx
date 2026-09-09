@@ -78,19 +78,34 @@ export const LanguageProvider = ({ children }) => {
     setLanguageState((prev) => (prev === 'fa' ? 'en' : 'fa'));
   }, []);
 
-  // Translation helper: resolves dot path with fallback to English then path itself
+  // Translation helper: resolves dot path with fallback to English and parameter interpolation
   const t = useCallback(
-    (path, fallback = '') => {
+    (path, fallback = '', params = {}) => {
+      let actualFallback = fallback;
+      let actualParams = params;
+      if (typeof fallback === 'object' && fallback !== null && !Array.isArray(fallback)) {
+        actualParams = fallback;
+        actualFallback = '';
+      }
+
       const currentDict = translations[language] || {};
       const fallbackDict = translations[DEFAULT_LANGUAGE] || {};
 
-      const value = resolveKey(currentDict, path);
-      if (value !== undefined) return value;
+      let result = resolveKey(currentDict, path);
+      if (result === undefined) {
+        result = resolveKey(fallbackDict, path);
+      }
+      if (result === undefined) {
+        result = actualFallback || path;
+      }
 
-      const fallbackValue = resolveKey(fallbackDict, path);
-      if (fallbackValue !== undefined) return fallbackValue;
+      if (typeof result === 'string' && actualParams && typeof actualParams === 'object') {
+        Object.entries(actualParams).forEach(([key, val]) => {
+          result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val ?? ''));
+        });
+      }
 
-      return fallback || path;
+      return result;
     },
     [language]
   );

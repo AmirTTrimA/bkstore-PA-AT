@@ -1,9 +1,9 @@
-// ✅
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import Navbar from '../../Components/Navbar';
 import SimpleNav from '../../Components/SimpleNav';
 import Footer from '../../Components/Footer';
+import { useLanguage } from '../../Context/LanguageContext';
 import PublisherService from '../../Services/PublisherService';
 import BookService from '../../Services/BookService';
 import { formatPrice } from '../../utils/formatPrice';
@@ -13,6 +13,7 @@ import "../../Styles/components/Publisher.css";
 export default function Publisher() {
   const navigate = useNavigate();
   const { pubId } = useParams();
+  const { t } = useLanguage();
 
   // --- State ---
   const [publisher, setPublisher] = useState(null);
@@ -126,7 +127,7 @@ export default function Publisher() {
         </div>
         <div className="publisher-container publisher-loading-box">
           <div className="publisher-spinner"></div>
-          <p>Loading publisher information...</p>
+          <p>{t("common.loading", "Loading publisher information...")}</p>
         </div>
         <Footer />
       </div>
@@ -147,9 +148,9 @@ export default function Publisher() {
           <div className="publisher-error-icon">
             <i className="fas fa-landmark"></i>
           </div>
-          <h2>{error || "Publisher Not Found"}</h2>
+          <h2>{error || t("publisher.notFound", "Publisher Not Found")}</h2>
           <p>
-            The requested publisher could not be found or has not published catalog entries yet.
+            {t("publisher.notFoundDesc", "The requested publisher could not be found or has not published catalog entries yet.")}
           </p>
           <div className="publisher-error-actions">
             <button
@@ -157,14 +158,14 @@ export default function Publisher() {
               className="publisher-primary-btn"
               type="button"
             >
-              Browse All Publishers
+              {t("publisher.browseAll", "Browse All Publishers")}
             </button>
             <button
               onClick={() => navigate('/home')}
               className="publisher-secondary-btn"
               type="button"
             >
-              Back to Home
+              {t("common.backToHome", "Back to Home")}
             </button>
           </div>
         </div>
@@ -196,13 +197,14 @@ export default function Publisher() {
             onClick={() => navigate(-1)}
             className="publisher-back-btn"
             type="button"
+            title={t("common.back", "Go Back")}
           >
-            ← Back
+            ← {t("common.back", "Back")}
           </button>
           <div className="publisher-breadcrumbs">
-            <Link to="/home">Home</Link>
+            <Link to="/home">{t("nav.home", "Home")}</Link>
             <span>/</span>
-            <Link to="/all-publisher">Publishers</Link>
+            <Link to="/all-publisher">{t("publisher.publishers", "Publishers")}</Link>
             <span>/</span>
             <span className="current">{publisher.name}</span>
           </div>
@@ -221,7 +223,7 @@ export default function Publisher() {
           <div className="publisher-hero-content">
             <div className="publisher-hero-header">
               <span className="publisher-verified-pill">
-                <i className="fas fa-check-circle"></i> Authorized Publisher
+                <i className="fas fa-check-circle"></i> {t("publisher.authorizedPublisher", "Authorized Publisher")}
               </span>
               <h1 className="publisher-hero-name">{publisher.name}</h1>
             </div>
@@ -229,11 +231,11 @@ export default function Publisher() {
             <div className="publisher-stats-row">
               <span className="pub-stat-chip">
                 <i className="fas fa-book"></i>
-                <strong>{publisher.books_count || books.length}</strong> Publications
+                <strong>{publisher.books_count || books.length}</strong> {t("publisher.publications", "Publications")}
               </span>
               <span className="pub-stat-chip">
                 <i className="fas fa-user-edit"></i>
-                <strong>{uniqueAuthorsCount}</strong> Authors
+                <strong>{uniqueAuthorsCount}</strong> {t("publisher.authors", "Authors")}
               </span>
               {publisher.website && (
                 <a
@@ -242,7 +244,7 @@ export default function Publisher() {
                   rel="noopener noreferrer"
                   className="pub-stat-chip pub-website-chip"
                 >
-                  <i className="fas fa-globe"></i> Official Website{" "}
+                  <i className="fas fa-globe"></i> {t("publisher.officialWebsite", "Official Website")}{" "}
                   <i className="fas fa-external-link-alt" style={{ fontSize: "0.75rem" }}></i>
                 </a>
               )}
@@ -261,7 +263,7 @@ export default function Publisher() {
                     className="publisher-desc-toggle-btn"
                     onClick={() => setIsDescExpanded((prev) => !prev)}
                   >
-                    {isDescExpanded ? "Show Less ↑" : "Show More ↓"}
+                    {isDescExpanded ? t("common.showLess", "Show Less ↑") : t("common.showMore", "Show More ↓")}
                   </button>
                 )}
               </div>
@@ -273,9 +275,9 @@ export default function Publisher() {
         <div className="publisher-catalog-section">
           <div className="publisher-catalog-header">
             <div className="publisher-catalog-title-wrap">
-              <h2>Publications by {publisher.name}</h2>
+              <h2>{t("publisher.publicationsBy", "Publications by {name}", { name: publisher.name })}</h2>
               <span className="publisher-catalog-total-tag">
-                {books.length} {books.length === 1 ? "Book" : "Books"} in Catalog
+                {books.length} {t("publisher.booksInCatalog", books.length === 1 ? "Book in Catalog" : "Books in Catalog", { count: books.length })}
               </span>
             </div>
 
@@ -287,7 +289,7 @@ export default function Publisher() {
                   className={`format-tab-btn ${formatFilter === 'ALL' ? 'active' : ''}`}
                   onClick={() => setFormatFilter('ALL')}
                 >
-                  All ({formatCounts.all})
+                  {t("common.all", "All")} ({formatCounts.all})
                 </button>
                 {formatCounts.physical > 0 && (
                   <button
@@ -295,7 +297,7 @@ export default function Publisher() {
                     className={`format-tab-btn ${formatFilter === 'PHYSICAL' ? 'active' : ''}`}
                     onClick={() => setFormatFilter('PHYSICAL')}
                   >
-                    Physical ({formatCounts.physical})
+                    {t("book.physical", "Physical")} ({formatCounts.physical})
                   </button>
                 )}
                 {formatCounts.digital > 0 && (
@@ -304,7 +306,7 @@ export default function Publisher() {
                     className={`format-tab-btn ${formatFilter === 'DIGITAL' ? 'active' : ''}`}
                     onClick={() => setFormatFilter('DIGITAL')}
                   >
-                    E-Books / PDF ({formatCounts.digital})
+                    {t("book.digital", "E-Books / PDF")} ({formatCounts.digital})
                   </button>
                 )}
                 {formatCounts.audio > 0 && (
@@ -313,7 +315,7 @@ export default function Publisher() {
                     className={`format-tab-btn ${formatFilter === 'AUDIO' ? 'active' : ''}`}
                     onClick={() => setFormatFilter('AUDIO')}
                   >
-                    Audiobooks ({formatCounts.audio})
+                    {t("book.audio", "Audiobooks")} ({formatCounts.audio})
                   </button>
                 )}
               </div>
@@ -324,14 +326,14 @@ export default function Publisher() {
           {filteredBooks.length === 0 ? (
             <div className="publisher-books-empty">
               <i className="fas fa-book-open publisher-empty-icon"></i>
-              <h3>No books found for this format filter</h3>
-              <p>Try selecting "All" or exploring our general bookstore catalog.</p>
+              <h3>{t("publisher.noFormatBooks", "No books found for this format filter")}</h3>
+              <p>{t("publisher.noFormatBooksDesc", "Try selecting \"All\" or exploring our general bookstore catalog.")}</p>
               <button
                 type="button"
                 className="publisher-clear-filter-btn"
                 onClick={() => setFormatFilter('ALL')}
               >
-                Show All Formats
+                {t("publisher.showAllFormats", "Show All Formats")}
               </button>
             </div>
           ) : (
@@ -346,7 +348,7 @@ export default function Publisher() {
                   "/default-book.png";
                 const hasDiscount = Boolean(book.has_discount);
                 const discountPercent = book.discount_percent || 0;
-                const authorName = book.author?.name || book.author_name || "Unknown Author";
+                const authorName = book.author?.name || book.author_name || t("book.unknownAuthor", "Unknown Author");
                 const authorId = book.author_id || book.author?.id;
 
                 return (
@@ -408,7 +410,7 @@ export default function Publisher() {
                       </div>
 
                       <Link to={`/book/${bookId}`} className="pub-book-action-btn">
-                        View Details →
+                        {t("book.viewDetails", "View Details")} →
                       </Link>
                     </div>
                   </div>

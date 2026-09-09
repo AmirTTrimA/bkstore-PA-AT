@@ -199,14 +199,14 @@ export default function PDashboard() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDING':
-        return <span className="proposal-status-chip pending">⏳ Under Review</span>;
+        return <span className="proposal-status-chip pending">⏳ {t('publisher_panel.underReview', 'Under Review')}</span>;
       case 'APPROVED':
       case 'APPLIED':
-        return <span className="proposal-status-chip approved">✅ Approved</span>;
+        return <span className="proposal-status-chip approved">✅ {t('publisher_panel.approved', 'Approved')}</span>;
       case 'REJECTED':
-        return <span className="proposal-status-chip rejected">❌ Rejected</span>;
+        return <span className="proposal-status-chip rejected">❌ {t('publisher_panel.rejected', 'Rejected')}</span>;
       case 'WITHDRAWN':
-        return <span className="proposal-status-chip withdrawn">↩️ Withdrawn</span>;
+        return <span className="proposal-status-chip withdrawn">↩️ {t('publisher_panel.withdrawn', 'Withdrawn')}</span>;
       default:
         return <span className="proposal-status-chip">{status}</span>;
     }
@@ -220,12 +220,12 @@ export default function PDashboard() {
       <header className="pdashboard-topbar">
         {/* Left: PageNet Branding & Publisher Switcher */}
         <div className="pdashboard-topbar-left">
-          <Link to="/home" className="pdashboard-logo" title="Back to Storefront">
+          <Link to="/home" className="pdashboard-logo" title={t('publisher_panel.backStorefront', 'Back to Storefront')}>
             PageNet
           </Link>
 
           <div className="pdashboard-user-greeting">
-            Welcome, <strong>{username}</strong>
+            {t('publisher_panel.welcome', 'Welcome, {name}', { name: username })}
           </div>
 
           {currentPublisher && (
@@ -261,7 +261,7 @@ export default function PDashboard() {
         {/* Right: Actions, Notifications, Profile, Theme, Logout */}
         <div className="pdashboard-topbar-right">
           <Link to="/home" className="pdash-btn" title="Return to Customer Storefront">
-            ← Storefront
+            {t('publisher_panel.storefront', '← Storefront')}
           </Link>
 
           {/* Notifications Bell */}
@@ -324,7 +324,7 @@ export default function PDashboard() {
           <div className="kpi-card">
             <div className="kpi-icon-wrapper">📚</div>
             <div className="kpi-info-col">
-              <span className="kpi-label">Published Titles</span>
+              <span className="kpi-label">{t('publisher_panel.publishedTitles', 'Published Titles')}</span>
               <span className="kpi-value">{allbooks.length}</span>
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function PDashboard() {
           <div className="kpi-card">
             <div className="kpi-icon-wrapper">⏳</div>
             <div className="kpi-info-col">
-              <span className="kpi-label">Pending Proposals</span>
+              <span className="kpi-label">{t('publisher_panel.pendingProposals', 'Pending Proposals')}</span>
               <span className="kpi-value">{pendingCount}</span>
             </div>
           </div>
@@ -340,7 +340,7 @@ export default function PDashboard() {
           <div className="kpi-card">
             <div className="kpi-icon-wrapper">✍️</div>
             <div className="kpi-info-col">
-              <span className="kpi-label">Roster Authors</span>
+              <span className="kpi-label">{t('publisher_panel.rosterAuthors', 'Roster Authors')}</span>
               <span className="kpi-value">
                 {currentPublisher?.authors_count ?? '—'}
               </span>
@@ -350,7 +350,7 @@ export default function PDashboard() {
           <div className="kpi-card">
             <div className="kpi-icon-wrapper">🏢</div>
             <div className="kpi-info-col">
-              <span className="kpi-label">Publisher Role</span>
+              <span className="kpi-label">{t('publisher_panel.publisherRole', 'Publisher Role')}</span>
               <span className="kpi-value" style={{ fontSize: '1.15rem' }}>
                 {currentPublisher?.role || 'Owner'}
               </span>
@@ -368,7 +368,7 @@ export default function PDashboard() {
               setActiveTab('mybook');
             }}
           >
-            📚 Published Books
+            📚 {t('publisher_panel.publishedBooks', 'Published Books')}
             <span className="tab-badge">{allbooks.length}</span>
           </button>
 
@@ -377,7 +377,7 @@ export default function PDashboard() {
             className={`pdash-tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
             onClick={() => setActiveTab('upload')}
           >
-            {bookToEdit ? '✏️ Edit Book & Formats' : '📤 Book Proposal & Editor'}
+            {bookToEdit ? `✏️ ${t('publisher_panel.editBookFormats', 'Edit Book & Formats')}` : `📤 ${t('publisher_panel.bookProposalEditor', 'Book Proposal & Editor')}`}
           </button>
 
           <button
@@ -385,7 +385,7 @@ export default function PDashboard() {
             className={`pdash-tab-btn ${activeTab === 'authors' ? 'active' : ''}`}
             onClick={() => setActiveTab('authors')}
           >
-            ✍️ Authors Management
+            ✍️ {t('publisher_panel.authorsManagement', 'Authors Management')}
           </button>
 
           <button
@@ -393,7 +393,7 @@ export default function PDashboard() {
             className={`pdash-tab-btn ${activeTab === 'proposals' ? 'active' : ''}`}
             onClick={() => setActiveTab('proposals')}
           >
-            ⏳ Proposals Waiting List
+            ⏳ {t('publisher_panel.proposalsWaitingList', 'Proposals Waiting List')}
             {pendingCount > 0 && <span className="tab-badge">{pendingCount}</span>}
           </button>
         </nav>
@@ -405,14 +405,14 @@ export default function PDashboard() {
           <div className="pdash-card">
             <div className="pdash-card-header">
               <h2 className="pdash-card-title">
-                <span>📚 Catalog Books for {currentPublisher?.name || 'Publisher'}</span>
+                <span>📚 {t('publisher_panel.catalogFor', 'Catalog Books for {name}', { name: currentPublisher?.name || 'Publisher' })}</span>
               </h2>
 
               <div className="pdash-table-search">
                 <span>🔍</span>
                 <input
                   type="text"
-                  placeholder="Filter by title, author, isbn..."
+                  placeholder={t('publisher_panel.filterPlaceholder', 'Filter by title, author, isbn...')}
                   value={searchInputValue}
                   onChange={(e) => setSearchInputValue(e.target.value)}
                 />
@@ -423,11 +423,11 @@ export default function PDashboard() {
               <table className="pdash-table">
                 <thead>
                   <tr>
-                    <th>Book</th>
-                    <th>Author</th>
-                    <th>Formats Offered</th>
-                    <th>Base Price</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
+                    <th>{t('publisher_panel.bookCol', 'Book')}</th>
+                    <th>{t('publisher_panel.authorCol', 'Author')}</th>
+                    <th>{t('publisher_panel.formatsOffered', 'Formats Offered')}</th>
+                    <th>{t('publisher_panel.basePrice', 'Base Price')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('publisher_panel.actions', 'Actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -435,8 +435,8 @@ export default function PDashboard() {
                     <tr>
                       <td colSpan="5" style={{ textAlign: 'center', padding: '40px 20px' }}>
                         {searchInputValue
-                          ? `No books matching "${searchInputValue}".`
-                          : 'No books found for this publisher. Submit a new book creation proposal to get started!'}
+                          ? t('publisher_panel.noBooksMatching', 'No books matching "{query}".', { query: searchInputValue })
+                          : t('publisher_panel.noBooksSubmit', 'No books found for this publisher. Submit a new book creation proposal to get started!')}
                       </td>
                     </tr>
                   ) : (
@@ -481,9 +481,9 @@ export default function PDashboard() {
 
                           <td>
                             <div className="format-tags-row">
-                              {hasPhysical && <span className="format-pill physical">📦 Print</span>}
-                              {hasDigital && <span className="format-pill digital">📄 Digital</span>}
-                              {hasAudio && <span className="format-pill audio">🎧 Audio</span>}
+                              {hasPhysical && <span className="format-pill physical">📦 {t('book.physical', 'Print')}</span>}
+                              {hasDigital && <span className="format-pill digital">📄 {t('book.digital', 'Digital')}</span>}
+                              {hasAudio && <span className="format-pill audio">🎧 {t('book.audio', 'Audio')}</span>}
                             </div>
                           </td>
 
@@ -496,9 +496,9 @@ export default function PDashboard() {
                               type="button"
                               className="table-action-btn"
                               onClick={() => handleEditBook(book)}
-                              title="Modify details or format prices"
+                              title={t('publisher_panel.editDetailsTitle', 'Modify details or format prices')}
                             >
-                              ✏️ Edit & Formats
+                              ✏️ {t('publisher_panel.editAndFormats', 'Edit & Formats')}
                             </button>
                           </td>
                         </tr>
@@ -556,7 +556,7 @@ export default function PDashboard() {
           <div className="pdash-card">
             <div className="pdash-card-header">
               <h2 className="pdash-card-title">
-                <span>⏳ Proposals Waiting List & Activity</span>
+                <span>⏳ {t('publisher_panel.proposalsWaitingList', 'Proposals Waiting List & Activity')}</span>
               </h2>
 
               <div className="proposals-filter-strip" style={{ margin: 0 }}>
@@ -565,28 +565,28 @@ export default function PDashboard() {
                   className={`proposal-filter-chip ${proposalFilter === 'ALL' ? 'active' : ''}`}
                   onClick={() => setProposalFilter('ALL')}
                 >
-                  All ({proposals.length})
+                  {t('common.all', 'All')} ({proposals.length})
                 </button>
                 <button
                   type="button"
                   className={`proposal-filter-chip ${proposalFilter === 'PENDING' ? 'active' : ''}`}
                   onClick={() => setProposalFilter('PENDING')}
                 >
-                  ⏳ Pending ({pendingCount})
+                  ⏳ {t('publisher_panel.pending', 'Pending')} ({pendingCount})
                 </button>
                 <button
                   type="button"
                   className={`proposal-filter-chip ${proposalFilter === 'APPROVED' ? 'active' : ''}`}
                   onClick={() => setProposalFilter('APPROVED')}
                 >
-                  ✅ Approved ({proposals.filter((p) => p.status === 'APPROVED' || p.status === 'APPLIED').length})
+                  ✅ {t('publisher_panel.approved', 'Approved')} ({proposals.filter((p) => p.status === 'APPROVED' || p.status === 'APPLIED').length})
                 </button>
                 <button
                   type="button"
                   className={`proposal-filter-chip ${proposalFilter === 'REJECTED' ? 'active' : ''}`}
                   onClick={() => setProposalFilter('REJECTED')}
                 >
-                  ❌ Rejected ({proposals.filter((p) => p.status === 'REJECTED').length})
+                  ❌ {t('publisher_panel.rejected', 'Rejected')} ({proposals.filter((p) => p.status === 'REJECTED').length})
                 </button>
               </div>
             </div>
@@ -594,7 +594,7 @@ export default function PDashboard() {
             <div className="proposals-cards-list">
               {filteredProposals.length === 0 ? (
                 <div className="empty-roster-state" style={{ margin: '30px 0' }}>
-                  <p>No proposals found in this category.</p>
+                  <p>{t('publisher_panel.noProposals', 'No proposals found in this category.')}</p>
                 </div>
               ) : (
                 filteredProposals.map((item) => {
@@ -623,13 +623,13 @@ export default function PDashboard() {
                       <div>
                         <h4 className="proposal-item-title">{item.title}</h4>
                         <div className="proposal-item-meta" style={{ marginTop: 6 }}>
-                          <span>📅 Submitted: {formattedDate}</span>
+                          <span>📅 {t('publisher_panel.submitted', 'Submitted')}: {formattedDate}</span>
                           {item.submitted_by_username && (
-                            <span>👤 Submitter: {item.submitted_by_username}</span>
+                            <span>👤 {t('publisher_panel.submitter', 'Submitter')}: {item.submitted_by_username}</span>
                           )}
                           {item.proposal_type === 'PRICE_CHANGE' && item.details?.value && (
                             <span>
-                              💰 Proposed Price: <strong>{formatPrice(item.details.value)}</strong>
+                              💰 {t('publisher_panel.proposedPrice', 'Proposed Price')}: <strong>{formatPrice(item.details.value)}</strong>
                             </span>
                           )}
                         </div>
@@ -642,7 +642,7 @@ export default function PDashboard() {
                             item.status === 'REJECTED' ? 'rejected-box' : ''
                           }`}
                         >
-                          <strong>Editorial Feedback:</strong> {item.review_notes}
+                          <strong>{t('publisher_panel.editorialFeedback', 'Editorial Feedback')}:</strong> {item.review_notes}
                         </div>
                       )}
 
@@ -652,7 +652,7 @@ export default function PDashboard() {
                           {confirmWithdrawId === item.id ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontSize: '0.8rem', color: '#f87171' }}>
-                                Confirm withdrawal?
+                                {t('publisher_panel.confirmWithdrawal', 'Confirm withdrawal?')}
                               </span>
                               <button
                                 type="button"
@@ -661,7 +661,7 @@ export default function PDashboard() {
                                 onClick={() => handleWithdrawProposal(item.id)}
                                 disabled={isWithdrawing}
                               >
-                                {isWithdrawing ? 'Withdrawing...' : 'Yes, Withdraw'}
+                                {isWithdrawing ? t('common.loading', 'Withdrawing...') : t('publisher_panel.yesWithdraw', 'Yes, Withdraw')}
                               </button>
                               <button
                                 type="button"
@@ -669,7 +669,7 @@ export default function PDashboard() {
                                 style={{ padding: '4px 8px', fontSize: '0.8rem' }}
                                 onClick={() => setConfirmWithdrawId(null)}
                               >
-                                Cancel
+                                {t('common.cancel', 'Cancel')}
                               </button>
                             </div>
                           ) : (
@@ -677,9 +677,9 @@ export default function PDashboard() {
                               type="button"
                               className="withdraw-btn"
                               onClick={() => setConfirmWithdrawId(item.id)}
-                              title="Withdraw proposal from admin review queue"
+                              title={t('publisher_panel.withdrawTitle', 'Withdraw proposal from admin review queue')}
                             >
-                              Withdraw Proposal
+                              {t('publisher_panel.withdrawProposal', 'Withdraw Proposal')}
                             </button>
                           )}
                         </div>

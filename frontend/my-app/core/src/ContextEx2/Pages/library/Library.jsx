@@ -5,6 +5,7 @@ import BookService from "../../Services/BookService";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
+import { useLanguage } from "../../Context/LanguageContext";
 import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Library.css";
@@ -15,6 +16,7 @@ import "../../Styles/components/Library.css";
 
 export default function Library() {
     const navigate = useNavigate();
+    const { t } = useLanguage();
 
     // ============================================
     //      State
@@ -205,21 +207,21 @@ export default function Library() {
                         type="button"
                         onClick={() => navigate(-1)}
                         className="library-back-btn"
-                        title="Go Back"
+                        title={t("common.back", "Go Back")}
                     >
-                        ← Back
+                        ← {t("common.back", "Back")}
                     </button>
                     <div className="library-breadcrumbs">
-                        <Link to="/home">Home</Link>
+                        <Link to="/home">{t("nav.home", "Home")}</Link>
                         <span>/</span>
-                        <span className="current">Book Catalog</span>
+                        <span className="current">{t("library.bookCatalog", "Book Catalog")}</span>
                     </div>
                 </div>
 
                 {/* Header */}
                 <div className="head">
                     <p className="head-txt">
-                        Explore Catalog
+                        {t("library.exploreCatalog", "Explore Catalog")}
                     </p>
                 </div>
 
@@ -232,7 +234,7 @@ export default function Library() {
                             onClick={() => loadBooks(1)}
                             className="library-retry-btn"
                         >
-                            Retry
+                            {t("common.retry", "Retry")}
                         </button>
                     </div>
                 )}
@@ -240,8 +242,8 @@ export default function Library() {
                 {/* Empty */}
                 {!error && books.length === 0 && (
                     <div className="library-message">
-                        <h2>No books found</h2>
-                        <p>There are no books available in the catalog yet.</p>
+                        <h2>{t("library.noBooksFound", "No books found")}</h2>
+                        <p>{t("library.noBooksDesc", "There are no books available in the catalog yet.")}</p>
                     </div>
                 )}
 
@@ -301,7 +303,7 @@ export default function Library() {
                                         <p className="library-card-author">
                                             {book.author_name ||
                                                 book.author?.name ||
-                                                "Unknown Author"}
+                                                t("book.unknownAuthor", "Unknown Author")}
                                         </p>
 
                                         {book.genre && (
@@ -344,7 +346,7 @@ export default function Library() {
                 {loadingMore && (
                     <div className="library-loading-more">
                         <div className="library-spinner small" />
-                        <p>Loading more books...</p>
+                        <p>{t("common.loading", "Loading more books...")}</p>
                     </div>
                 )}
 
@@ -352,7 +354,7 @@ export default function Library() {
                 {!hasMore && books.length > 0 && (
                     <div className="library-end">
                         <span />
-                        <p>You reached the end of the catalog.</p>
+                        <p>{t("library.endOfCatalog", "You reached the end of the catalog.")}</p>
                         <span />
                     </div>
                 )}
@@ -365,23 +367,23 @@ export default function Library() {
                 <nav className="bottom-navbar">
                     <Link to="/" className="nav-item">
                         <i className="fas fa-home"></i>
-                        <span>Home</span>
+                        <span>{t("nav.home", "Home")}</span>
                     </Link>
                     <Link to="/favorites" className="nav-item">
                         <i className="fa-solid fa-heart"></i>
-                        <span>Favorites</span>
+                        <span>{t("library.favorites", "Favorites")}</span>
                     </Link>
                     <Link to="/library" className="nav-item active">
                         <i className="fa-solid fa-book"></i>
-                        <span>Catalog</span>
+                        <span>{t("nav.explore", "Catalog")}</span>
                     </Link>
                     <Link to="/subscription" className="nav-item">
                         <i className="fa-solid fa-bolt"></i>
-                        <span>Plans</span>
+                        <span>{t("nav.subscription", "Plans")}</span>
                     </Link>
                     <Link to="/basket" className="nav-item">
                         <i className="fa-solid fa-cart-shopping"></i>
-                        <span>Cart</span>
+                        <span>{t("nav.cart", "Cart")}</span>
                     </Link>
                 </nav>
             </div>

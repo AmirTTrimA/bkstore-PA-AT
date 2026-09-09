@@ -1,6 +1,6 @@
-// ✅
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { useLanguage } from '../Context/LanguageContext'
 
 // ---Style---
 import '../Styles/components/Footer.css'
@@ -9,6 +9,7 @@ import '../Styles/components/Footer.css'
 
 
 export default function Footer() {
+  const { t } = useLanguage();
   return (
 
 <>
@@ -23,24 +24,24 @@ export default function Footer() {
             <div className="footer-content">
                 <div className="footer-column">
                     <h3>PageNet</h3>
-                    <p>Best-friend of Owls</p>
+                    <p>{t('info.slogan')}</p>
                 </div>
                 <div className="footer-column">
-                    <h3>Quick Links</h3>
+                    <h3>{t('info.quickLinks')}</h3>
                     <ul>
-                        <li><Link to="/home">Home</Link></li>
-                        <li><Link to="/library">Library</Link></li>
-                        <li><Link to="/subscription">Subscribe</Link></li>
-                        <li><Link to="/all-publisher">Publishers</Link></li>
+                        <li><Link to="/home">{t('nav.home')}</Link></li>
+                        <li><Link to="/library">{t('nav.library')}</Link></li>
+                        <li><Link to="/subscription">{t('nav.subscription')}</Link></li>
+                        <li><Link to="/all-publisher">{t('nav.publishers')}</Link></li>
                     </ul>
                 </div>
                 <div className="footer-column">
-                    <h3>About</h3>
+                    <h3>{t('info.about')}</h3>
                     <ul>
-                        <li><Link to="/faq">FAQ</Link></li>
-                        <li><Link to="/refund">Refund</Link></li>
-                        <li><Link to="/about-us">About us</Link></li>
-                        <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+                        <li><Link to="/faq">{t('info.faq')}</Link></li>
+                        <li><Link to="/refund">{t('info.refund')}</Link></li>
+                        <li><Link to="/about-us">{t('info.aboutUs')}</Link></li>
+                        <li><Link to="/privacy-policy">{t('info.privacy')}</Link></li>
                     </ul>
                 </div>
                 
@@ -49,7 +50,7 @@ export default function Footer() {
         </div>
     
       {/* Contact Section */}
-      <p className='contact-text'>contact with us</p>
+      <p className='contact-text'>{t('info.contactWithUs')}</p>
         <ul className="example-link">
           <li className="icon-content">
             <a
@@ -128,7 +129,7 @@ export default function Footer() {
 
      
         <div className="copyright">
-            <p>&copy; 2025 PageNet. All rights reserved.</p>
+            <p>&copy; 2025 PageNet. {t('info.allRightsReserved')}</p>
         </div>
     </div>
   </footer>

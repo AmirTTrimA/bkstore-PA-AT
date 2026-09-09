@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
+import { useLanguage } from "../../Context/LanguageContext";
 
 import BookService from "../../Services/BookService";
 import PublisherService from "../../Services/PublisherService";
@@ -59,6 +60,7 @@ export default function Search() {
   const navigate = useNavigate();
   const { searchTerm } = useParams();
   const [searchParams] = useSearchParams();
+  const { t } = useLanguage();
 
   // Initial values from URL
   const initialQuery =
@@ -345,10 +347,10 @@ export default function Search() {
             <button
               className="search-back-btn"
               onClick={() => navigate(-1)}
-              title="Go Back"
+              title={t("common.back", "Go Back")}
             >
               <i className="fas fa-arrow-left"></i>
-              <span>Back</span>
+              <span>{t("common.back", "Back")}</span>
             </button>
 
             <form className="search-input-form" onSubmit={handleSearchSubmit}>
@@ -356,7 +358,7 @@ export default function Search() {
               <input
                 type="text"
                 className="search-input-field"
-                placeholder="Search catalog by title, author, description, or ISBN..."
+                placeholder={t("nav.searchPlaceholder", "Search catalog by title, author, description, or ISBN...")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
               />
@@ -365,13 +367,13 @@ export default function Search() {
                   type="button"
                   className="search-clear-btn"
                   onClick={handleClearSearch}
-                  title="Clear search"
+                  title={t("common.delete", "Clear search")}
                 >
                   <i className="fas fa-times"></i>
                 </button>
               )}
               <button type="submit" className="search-submit-btn">
-                Search
+                {t("nav.search", "Search")}
               </button>
             </form>
 
@@ -380,13 +382,13 @@ export default function Search() {
                 className="mobile-sort-trigger-btn"
                 onClick={() => setIsSortSheetOpen(true)}
               >
-                <i className="fas fa-sort"></i> Sort
+                <i className="fas fa-sort"></i> {t("search.sort", "Sort")}
               </button>
               <button
                 className="mobile-filter-trigger-btn"
                 onClick={() => setIsFilterSheetOpen(true)}
               >
-                <i className="fas fa-filter"></i> Filter
+                <i className="fas fa-filter"></i> {t("search.filter", "Filter")}
                 {hasActiveFilters && <span className="active-dot"></span>}
               </button>
             </div>
@@ -395,7 +397,7 @@ export default function Search() {
           {/* ACTIVE FILTER CHIPS */}
           {hasActiveFilters && (
             <div className="active-filter-chips-bar">
-              <span className="chips-title">Active Filters:</span>
+              <span className="chips-title">{t("search.filters", "Active Filters")}:</span>
               {activeQuery && (
                 <span className="filter-chip">
                   Keyword: "{activeQuery}"
@@ -440,7 +442,7 @@ export default function Search() {
                 </span>
               )}
               <button className="clear-all-chips-btn" onClick={handleClearAllFilters}>
-                Clear All
+                {t("search.clearFilters", "Clear All")}
               </button>
             </div>
           )}
@@ -453,14 +455,14 @@ export default function Search() {
             <div className="filter-sidebar-header">
               <h3>
                 <i className="fas fa-sliders-h" style={{ marginRight: 8 }}></i>
-                Filters
+                {t("search.filters", "Filters")}
               </h3>
               {hasActiveFilters && (
                 <button
                   className="filter-reset-text-btn"
                   onClick={handleClearAllFilters}
                 >
-                  Reset
+                  {t("search.clearFilters", "Reset")}
                 </button>
               )}
             </div>
@@ -577,16 +579,16 @@ export default function Search() {
             <div className="search-results-meta-bar">
               <div className="results-count-text">
                 {isLoading ? (
-                  <span>Loading books...</span>
+                  <span>{t("common.loading", "Loading books...")}</span>
                 ) : (
                   <span>
-                    Showing <strong>{displayedBooks.length}</strong> of {totalCount} books
+                    {t("search.resultsFound", "Showing {count} of {total} books", { count: displayedBooks.length, total: totalCount })}
                   </span>
                 )}
               </div>
 
               <div className="desktop-sort-bar">
-                <span className="sort-bar-label">Sort by:</span>
+                <span className="sort-bar-label">{t("search.sort", "Sort by:")}</span>
                 <div className="sort-chips">
                   {SORT_OPTIONS.map((opt) => (
                     <button
@@ -594,7 +596,10 @@ export default function Search() {
                       className={`sort-chip-btn ${selectedSort === opt.id ? "active" : ""}`}
                       onClick={() => setSelectedSort(opt.id)}
                     >
-                      {opt.label}
+                      {opt.id === "latest" ? t("search.sortLatest", opt.label) :
+                       opt.id === "cheap" ? t("search.sortPriceLow", opt.label) :
+                       opt.id === "expensive" ? t("search.sortPriceHigh", opt.label) :
+                       opt.id === "title" ? t("search.sortTitle", opt.label) : opt.label}
                     </button>
                   ))}
                 </div>
@@ -605,21 +610,21 @@ export default function Search() {
             {isLoading ? (
               <div className="search-status-box">
                 <div className="search-spinner"></div>
-                <p>Searching bookstore catalog...</p>
+                <p>{t("common.loading", "Searching bookstore catalog...")}</p>
               </div>
             ) : displayedBooks.length === 0 ? (
               <div className="search-empty-state">
                 <i className="fas fa-book-open empty-icon"></i>
-                <h3>No Books Found</h3>
+                <h3>{t("search.noResults", "No Books Found")}</h3>
                 <p>
-                  No titles match your active search and filter criteria. Try adjusting or clearing your filters.
+                  {t("search.noResultsSubtitle", "No titles match your active search and filter criteria. Try adjusting or clearing your filters.")}
                 </p>
                 {hasActiveFilters && (
                   <button
                     className="reset-filters-cta-btn"
                     onClick={handleClearAllFilters}
                   >
-                    Clear All Filters
+                    {t("search.clearFilters", "Clear All Filters")}
                   </button>
                 )}
               </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
 import AuthService from '../../Services/AuthService';
 import Notification from '../../Components/feature/Notification';
 import '../../Styles/components/Login.css';
@@ -10,6 +11,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ConfirmEmail() {
   const { error, setError, clearError } = useAuth();
+  const { t } = useLanguage();
   const notificationRef = useRef(null);
 
   const [email, setEmail] = useState('');
@@ -76,9 +78,9 @@ export default function ConfirmEmail() {
       <div className="confirm-card">
         {/* Navigation Header */}
         <div className="auth-header-nav">
-          <Link to="/home" className="auth-back-btn" title="Back to Bookstore">
+          <Link to="/home" className="auth-back-btn" title={t("reader.store", "Back to Bookstore")}>
             <i className="fas fa-arrow-left"></i>
-            <span>Back to Store</span>
+            <span>{t("common.back", "Back to Store")}</span>
           </Link>
           <Link to="/home" className="auth-brand">
             Page<span>Net</span>
@@ -92,7 +94,7 @@ export default function ConfirmEmail() {
 
         {/* Title Section */}
         <div className="auth-title-section">
-          <h1 className="auth-main-title">Reset Your Password</h1>
+          <h1 className="auth-main-title">{t("auth.resetPassword", "Reset Your Password")}</h1>
           <p className="auth-subtitle">
             Enter your account email address and we will dispatch a secure link to reset your password.
           </p>
@@ -133,7 +135,7 @@ export default function ConfirmEmail() {
           <form onSubmit={handleSubmit} noValidate>
             <div className="auth-form-group">
               <label className="auth-label" htmlFor="reset-email">
-                Registered Email Address
+                {t("auth.email", "Registered Email Address")}
               </label>
               <div className="auth-input-wrapper">
                 <i className="fas fa-envelope auth-input-icon"></i>
@@ -165,11 +167,11 @@ export default function ConfirmEmail() {
               {isLoading ? (
                 <>
                   <i className="fas fa-spinner fa-spin"></i>
-                  <span>Sending Link...</span>
+                  <span>{t("common.loading", "Sending Link...")}</span>
                 </>
               ) : (
                 <>
-                  <span>Send Reset Link</span>
+                  <span>{t("auth.sendResetLink", "Send Reset Link")}</span>
                   <i className="fas fa-paper-plane"></i>
                 </>
               )}
@@ -181,10 +183,10 @@ export default function ConfirmEmail() {
         <div className="confirm-alt-links">
           <Link to="/login?mode=otp" className="confirm-alt-link">
             <i className="fas fa-shield-alt"></i>
-            <span>Sign in with an OTP code instead</span>
+            <span>{t("auth.modeOtp", "Sign in with an OTP code instead")}</span>
           </Link>
           <Link to="/login" className="confirm-subtle-link">
-            Remember your password? Back to Login
+            {t("auth.haveAccount", "Remember your password? Back to Login")}
           </Link>
         </div>
       </div>

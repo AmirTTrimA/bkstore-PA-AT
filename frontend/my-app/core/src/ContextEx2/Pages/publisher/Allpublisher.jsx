@@ -1,9 +1,9 @@
-// ✅
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../Components/Navbar'
 import SimpleNav from '../../Components/SimpleNav'
 import Footer from '../../Components/Footer'
+import { useLanguage } from '../../Context/LanguageContext'
 import PublisherService from '../../Services/PublisherService'
 import "../../Styles/components/AllPublisher.css"
 import {
@@ -43,6 +43,7 @@ export const allPublishers = [];
 // ============================================
 export default function AllPublisher() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [publishers, setPublishers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,7 +61,7 @@ export default function AllPublisher() {
       } catch (err) {
         console.error("Failed to load publishers:", err);
         if (isMounted) {
-          setError("Failed to load publishers. Please try again later.");
+          setError(t("publisher.loadError", "Failed to load publishers. Please try again later."));
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -92,13 +93,14 @@ export default function AllPublisher() {
             onClick={() => navigate(-1)}
             className="all-publisher-back-btn"
             type="button"
+            title={t("common.back", "Go Back")}
           >
-            ← Back
+            ← {t("common.back", "Back")}
           </button>
           <div className="all-publisher-breadcrumbs">
-            <Link to="/home">Home</Link>
+            <Link to="/home">{t("nav.home", "Home")}</Link>
             <span>/</span>
-            <span className="current">Publishers</span>
+            <span className="current">{t("publisher.publishers", "Publishers")}</span>
           </div>
         </div>
 
@@ -106,10 +108,9 @@ export default function AllPublisher() {
         <div className="main-all-publisher-container">
           {/* Header */}
           <div className="publishers-title-container">
-            <h1 className="publishers-title">Authorized Publishing Houses</h1>
+            <h1 className="publishers-title">{t("publisher.authorizedHouses", "Authorized Publishing Houses")}</h1>
             <p className="publishers-title-info">
-              Explore trusted Iranian publishers and cultural organizations partnering with PageNet.
-              Discover thousands of authentic physical editions, ebooks, and audiobooks directly from primary sources.
+              {t("publisher.housesDesc", "Explore trusted Iranian publishers and cultural organizations partnering with PageNet. Discover thousands of authentic physical editions, ebooks, and audiobooks directly from primary sources.")}
             </p>
           </div>
 
@@ -117,7 +118,7 @@ export default function AllPublisher() {
           {loading && (
             <div className="publishers-loading-state">
               <div className="publisher-spinner"></div>
-              <p>Loading publishing houses...</p>
+              <p>{t("common.loading", "Loading publishing houses...")}</p>
             </div>
           )}
 
@@ -130,7 +131,7 @@ export default function AllPublisher() {
                 className="publisher-retry-btn"
                 type="button"
               >
-                Retry
+                {t("common.retry", "Retry")}
               </button>
             </div>
           )}
@@ -157,11 +158,11 @@ export default function AllPublisher() {
                       <h3 className="publishers-field-name">{item.name}</h3>
                       <div className="publishers-meta-badges">
                         <span className="pub-badge pub-books-badge">
-                          <i className="fas fa-book"></i> {item.books_count || 0} Books
+                          <i className="fas fa-book"></i> {t("publisher.booksCount", "{count} Books", { count: item.books_count || 0 })}
                         </span>
                         {item.authors_count > 0 && (
                           <span className="pub-badge pub-authors-badge">
-                            <i className="fas fa-user-edit"></i> {item.authors_count} Authors
+                            <i className="fas fa-user-edit"></i> {t("publisher.authorsCount", "{count} Authors", { count: item.authors_count })}
                           </span>
                         )}
                       </div>
@@ -173,7 +174,7 @@ export default function AllPublisher() {
                         </p>
                       )}
                       <span className="publishers-view-action">
-                        View Catalog <i className="fas fa-angle-right"></i>
+                        {t("publisher.viewCatalog", "View Catalog")} <i className="fas fa-angle-right"></i>
                       </span>
                     </div>
                   </Link>

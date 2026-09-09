@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
+import { useLanguage } from "../../Context/LanguageContext";
 import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/PaymentResult.css";
@@ -15,6 +16,7 @@ import "../../Styles/components/PaymentResult.css";
 export default function PaymentResult() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const { t } = useLanguage();
 
     const status = searchParams.get("status");
     const isSuccess = status === "success" || status === "OK";
@@ -46,17 +48,17 @@ export default function PaymentResult() {
                         type="button"
                         className="payment-back-btn"
                         onClick={() => navigate("/dashboard")}
-                        title="Return to user dashboard"
+                        title={t("payment.backToDashboard", "Return to user dashboard")}
                     >
-                        ← Back to Dashboard
+                        ← {t("payment.backToDashboard", "Back to Dashboard")}
                     </button>
 
                     <div className="payment-breadcrumbs">
-                        <Link to="/home">Home</Link>
+                        <Link to="/home">{t("nav.home", "Home")}</Link>
                         <span>/</span>
-                        <Link to="/dashboard">Dashboard</Link>
+                        <Link to="/dashboard">{t("nav.dashboard", "Dashboard")}</Link>
                         <span>/</span>
-                        <span className="current">Payment Result</span>
+                        <span className="current">{t("payment.title", "Payment Result")}</span>
                     </div>
                 </div>
 
@@ -77,15 +79,15 @@ export default function PaymentResult() {
                         {/* Title */}
                         <h1 className="payment-result-title">
                             {isSuccess
-                                ? "Payment Successful!"
-                                : "Payment Failed or Cancelled"}
+                                ? t("payment.successTitle", "Payment Successful!")
+                                : t("payment.failedTitle", "Payment Failed or Cancelled")}
                         </h1>
 
                         {/* Message */}
                         <p className="payment-result-message">
                             {isSuccess
-                                ? "Your wallet has been topped up successfully and the transaction has been recorded."
-                                : "Your payment could not be completed by the banking gateway. No funds were charged."}
+                                ? t("payment.successDesc", "Your wallet has been topped up successfully and the transaction has been recorded.")
+                                : t("payment.failedDesc", "Your payment could not be completed by the banking gateway. No funds were charged.")}
                         </p>
 
                         {/* Optional Reference Details */}
@@ -93,13 +95,13 @@ export default function PaymentResult() {
                             <div className="payment-details-box">
                                 {refId && (
                                     <div className="payment-detail-row">
-                                        <span>Reference ID:</span>
+                                        <span>{t("payment.refId", "Reference ID:")}</span>
                                         <strong>{refId}</strong>
                                     </div>
                                 )}
                                 {amount && (
                                     <div className="payment-detail-row">
-                                        <span>Amount:</span>
+                                        <span>{t("payment.amount", "Amount:")}</span>
                                         <strong className="amount-highlight">
                                             {formatPrice(amount)}
                                         </strong>
@@ -115,7 +117,7 @@ export default function PaymentResult() {
                                 className="payment-primary-btn"
                                 onClick={() => navigate("/dashboard")}
                             >
-                                Go to Dashboard
+                                {t("payment.goToDashboard", "Go to Dashboard")}
                             </button>
 
                             {isSuccess ? (
@@ -124,7 +126,7 @@ export default function PaymentResult() {
                                     className="payment-secondary-btn"
                                     onClick={() => navigate("/library")}
                                 >
-                                    Explore Books
+                                    {t("payment.exploreBooks", "Explore Books")}
                                 </button>
                             ) : (
                                 <button
@@ -132,7 +134,7 @@ export default function PaymentResult() {
                                     className="payment-secondary-btn"
                                     onClick={() => navigate("/basket")}
                                 >
-                                    Return to Cart
+                                    {t("payment.returnToCart", "Return to Cart")}
                                 </button>
                             )}
                         </div>
@@ -147,23 +149,23 @@ export default function PaymentResult() {
                 <nav className="bottom-navbar">
                     <Link to="/" className="nav-item">
                         <i className="fas fa-home"></i>
-                        <span>Home</span>
+                        <span>{t("nav.home", "Home")}</span>
                     </Link>
                     <Link to="/favorites" className="nav-item">
                         <i className="fa-solid fa-heart"></i>
-                        <span>Favorites</span>
+                        <span>{t("library.wishlistTitle", "Favorites")}</span>
                     </Link>
                     <Link to="/library" className="nav-item">
                         <i className="fa-solid fa-book"></i>
-                        <span>Catalog</span>
+                        <span>{t("nav.explore", "Catalog")}</span>
                     </Link>
                     <Link to="/subscription" className="nav-item">
                         <i className="fa-solid fa-bolt"></i>
-                        <span>Plans</span>
+                        <span>{t("nav.subscription", "Plans")}</span>
                     </Link>
                     <Link to="/basket" className="nav-item">
                         <i className="fa-solid fa-cart-shopping"></i>
-                        <span>Cart</span>
+                        <span>{t("nav.cart", "Cart")}</span>
                     </Link>
                 </nav>
             </div>

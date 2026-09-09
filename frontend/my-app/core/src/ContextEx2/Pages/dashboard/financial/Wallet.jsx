@@ -15,6 +15,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Notification from "../../../Components/feature/Notification";
 import PaymentService from "../../../Services/PaymentService";
 import WalletService from "../../../Services/WalletService";
+import { useLanguage } from "../../../Context/LanguageContext";
 import { formatPrice } from "../../../utils/formatPrice";
 
 import "../../../Styles/components/Wallet.css";
@@ -22,6 +23,7 @@ import "../../../Styles/components/Wallet.css";
 const PRESET_AMOUNTS = [50000, 100000, 250000, 500000, 1000000];
 
 export default function Wallet() {
+  const { t } = useLanguage();
   const [wallet, setWallet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -126,12 +128,12 @@ export default function Wallet() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <AccountBalanceWalletIcon sx={{ fontSize: 28, color: "#d17842" }} />
             <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 1 }}>
-              BOOKSTORE WALLET
+              {t("dashboard.walletCardTitle", "BOOKSTORE WALLET")}
             </Typography>
           </Box>
           <Chip
             icon={<CheckCircleIcon sx={{ fontSize: "14px !important" }} />}
-            label="Active"
+            label={t("common.status_active", "Active")}
             size="small"
             sx={{
               bgcolor: "rgba(76, 175, 80, 0.2)",
@@ -144,7 +146,7 @@ export default function Wallet() {
 
         <Box className="card-balance-section">
           <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.6)", textTransform: "uppercase" }}>
-            Available Balance
+            {t("dashboard.availableBalance", "Available Balance")}
           </Typography>
           <Typography variant="h4" className="balance-value">
             {formatPrice(currentBalance)}
@@ -153,11 +155,11 @@ export default function Wallet() {
 
         <Box className="card-bottom-row">
           <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
-            Owner: {wallet?.user || "Valued Reader"}
+            {t("dashboard.walletOwner", "Owner: {name}", { name: wallet?.user || "Valued Reader" })}
           </Typography>
           {wallet?.updated_at && (
             <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.4)" }}>
-              Updated {new Date(wallet.updated_at).toLocaleDateString()}
+              {t("dashboard.walletUpdated", "Updated {date}", { date: new Date(wallet.updated_at).toLocaleDateString() })}
             </Typography>
           )}
         </Box>
@@ -168,11 +170,11 @@ export default function Wallet() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
           <AddCardIcon sx={{ color: "#d17842" }} />
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Top-up Wallet
+            {t("dashboard.topUpWallet", "Top-up Wallet")}
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mb: 2 }}>
-          Choose a quick deposit preset or enter any custom amount in IRR.
+          {t("dashboard.topUpSubtitle", "Choose a quick deposit preset or enter any custom amount in IRR.")}
         </Typography>
 
         {/* Presets */}
@@ -207,7 +209,7 @@ export default function Wallet() {
           <TextField
             fullWidth
             type="number"
-            label="Deposit Amount (IRR)"
+            label={t("dashboard.customAmount", "Deposit Amount (IRR)")}
             placeholder="e.g. 200000"
             value={amount}
             onChange={(e) => {
@@ -220,7 +222,7 @@ export default function Wallet() {
             InputProps={{
               startAdornment: (
                 <Typography sx={{ color: "rgba(255,255,255,0.4)", mr: 1, fontSize: "0.9rem" }}>
-                  IRR
+                  {t("common.irr", "IRR")}
                 </Typography>
               )
             }}
@@ -247,10 +249,10 @@ export default function Wallet() {
             {charging ? (
               <>
                 <CircularProgress size={18} sx={{ color: "#fff", mr: 1 }} />
-                Processing...
+                {t("dashboard.processingGateway", "Processing...")}
               </>
             ) : (
-              `Charge ${amount ? formatPrice(Number(amount)) : "Wallet"}`
+              t("dashboard.depositViaGateway", "Deposit via Gateway")
             )}
           </Button>
         </Box>

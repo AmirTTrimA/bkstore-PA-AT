@@ -13,7 +13,19 @@
   <a href="{% url 'admin:index' %}" class="pagenet-admin-brand">
     <span class="brand-badge-icon">📖</span>
     <span class="brand-title">PageNet</span>
-    <span class="brand-subtitle">Editorial & Commerce Operations</span>
+    <span class="brand-subtitle">{% trans "Editorial & Commerce Operations" %}</span>
   </a>
 </div>
+{% endblock %}
+
+{% block userlinks %}
+  <form action="{% url 'set_language' %}" method="post" style="display: inline-flex; align-items: center; margin: 0 8px; vertical-align: middle;">
+    {% csrf_token %}
+    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+    <div class="lang-switch-container" style="display: inline-flex; background: rgba(255,255,255,0.12); border-radius: 6px; padding: 2px; border: 1px solid rgba(255,255,255,0.2);">
+      <button type="submit" name="language" value="en" title="English" style="background: {% if LANGUAGE_CODE == 'en' %}#d17842{% else %}transparent{% endif %}; color: #fff; border: none; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">EN</button>
+      <button type="submit" name="language" value="fa" title="فارسی" style="background: {% if LANGUAGE_CODE == 'fa' %}#d17842{% else %}transparent{% endif %}; color: #fff; border: none; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: Tahoma, sans-serif;">فا</button>
+    </div>
+  </form>
+  {{ block.super }}
 {% endblock %}

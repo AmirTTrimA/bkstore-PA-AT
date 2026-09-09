@@ -4,6 +4,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
+import { useLanguage } from "../../Context/LanguageContext";
 
 import BookService from "../../Services/BookService";
 import { formatPrice } from "../../utils/formatPrice";
@@ -13,6 +14,7 @@ import "../../Styles/components/Author.css";
 export default function Author() {
   const navigate = useNavigate();
   const { authorId } = useParams();
+  const { t } = useLanguage();
 
   const [authorData, setAuthorData] = useState(null);
   const [books, setBooks] = useState([]);
@@ -97,7 +99,7 @@ export default function Author() {
         </div>
         <div className="author-container author-loading-box">
           <div className="author-spinner"></div>
-          <p>Loading author details...</p>
+          <p>{t("common.loading", "Loading author details...")}</p>
         </div>
         <Footer />
       </div>
@@ -114,13 +116,13 @@ export default function Author() {
           <SimpleNav />
         </div>
         <div className="author-container author-not-found-box">
-          <h2>{error || "Author Not Found"}</h2>
-          <p>We couldn't locate this author in our catalog.</p>
+          <h2>{error || t("author.notFound", "Author Not Found")}</h2>
+          <p>{t("author.notFoundDesc", "We couldn't locate this author in our catalog.")}</p>
           <button
             className="author-action-btn"
             onClick={() => navigate("/library")}
           >
-            Explore Book Catalog
+            {t("library.exploreCatalog", "Explore Book Catalog")}
           </button>
         </div>
         <Footer />
@@ -146,15 +148,15 @@ export default function Author() {
           <button
             className="author-back-btn"
             onClick={() => navigate(-1)}
-            title="Go Back"
+            title={t("common.back", "Go Back")}
             type="button"
           >
-            ← Back
+            ← {t("common.back", "Back")}
           </button>
           <div className="author-breadcrumbs">
-            <Link to="/home">Home</Link>
+            <Link to="/home">{t("nav.home", "Home")}</Link>
             <span>/</span>
-            <Link to="/library">Authors</Link>
+            <Link to="/library">{t("author.authors", "Authors")}</Link>
             <span>/</span>
             <span className="current">{authorData.name}</span>
           </div>
@@ -177,7 +179,7 @@ export default function Author() {
           <div className="author-hero-content">
             <div className="author-hero-header">
               <span className="author-verified-pill">
-                <i className="fas fa-check-circle"></i> Verified Author
+                <i className="fas fa-check-circle"></i> {t("author.verifiedAuthor", "Verified Author")}
               </span>
               <h2 className="author-hero-name">{authorData.name}</h2>
             </div>
@@ -186,7 +188,7 @@ export default function Author() {
               {authorData.books_count !== undefined && (
                 <span className="author-stat-chip">
                   <i className="fas fa-book"></i>
-                  <strong>{authorData.books_count}</strong> Published Works
+                  <strong>{authorData.books_count}</strong> {t("author.publishedWorks", "Published Works")}
                 </span>
               )}
               {authorData.nationality && (
@@ -210,13 +212,13 @@ export default function Author() {
                     className="author-bio-toggle-btn"
                     onClick={() => setIsBioExpanded(!isBioExpanded)}
                   >
-                    {isBioExpanded ? "Show Less ↑" : "Read More ↓"}
+                    {isBioExpanded ? t("common.showLess", "Show Less ↑") : t("common.readMore", "Read More ↓")}
                   </button>
                 )}
               </div>
             ) : (
               <p className="author-biography">
-                No biography available for this author.
+                {t("author.noBio", "No biography available for this author.")}
               </p>
             )}
           </div>
@@ -226,10 +228,10 @@ export default function Author() {
         <div className="author-books-section">
           <div className="author-books-header">
             <div className="author-books-header-left">
-              <h3>Published Books</h3>
+              <h3>{t("author.publishedBooks", "Published Books")}</h3>
               <span className="author-books-count-tag">
                 {filteredBooks.length}{" "}
-                {filteredBooks.length === 1 ? "Book" : "Books"} Available
+                {t("author.booksAvailable", filteredBooks.length === 1 ? "Book Available" : "Books Available", { count: filteredBooks.length })}
               </span>
             </div>
 
@@ -240,28 +242,28 @@ export default function Author() {
                 className={`author-format-tab ${formatFilter === "ALL" ? "active" : ""}`}
                 onClick={() => setFormatFilter("ALL")}
               >
-                All ({books.length})
+                {t("common.all", "All")} ({books.length})
               </button>
               <button
                 type="button"
                 className={`author-format-tab ${formatFilter === "PHYSICAL" ? "active" : ""}`}
                 onClick={() => setFormatFilter("PHYSICAL")}
               >
-                Physical
+                {t("book.physical", "Physical")}
               </button>
               <button
                 type="button"
                 className={`author-format-tab ${formatFilter === "DIGITAL" ? "active" : ""}`}
                 onClick={() => setFormatFilter("DIGITAL")}
               >
-                📱 Digital
+                📱 {t("book.digital", "Digital")}
               </button>
               <button
                 type="button"
                 className={`author-format-tab ${formatFilter === "AUDIO" ? "active" : ""}`}
                 onClick={() => setFormatFilter("AUDIO")}
               >
-                🎧 Audio
+                🎧 {t("book.audio", "Audio")}
               </button>
             </div>
           </div>
@@ -269,11 +271,11 @@ export default function Author() {
           {filteredBooks.length === 0 ? (
             <div className="author-books-empty">
               <i className="fas fa-book-open author-empty-icon"></i>
-              <h4>No books found</h4>
+              <h4>{t("library.noBooksFound", "No books found")}</h4>
               <p>
                 {books.length === 0
-                  ? "No published books available for this author yet."
-                  : "No books matching the selected format filter."}
+                  ? t("author.noBooksDesc", "No published books available for this author yet.")
+                  : t("publisher.noFormatBooks", "No books matching the selected format filter.")}
               </p>
               {formatFilter !== "ALL" && (
                 <button
@@ -281,7 +283,7 @@ export default function Author() {
                   className="author-reset-filter-btn"
                   onClick={() => setFormatFilter("ALL")}
                 >
-                  Show All Formats
+                  {t("publisher.showAllFormats", "Show All Formats")}
                 </button>
               )}
             </div>
@@ -360,7 +362,7 @@ export default function Author() {
                       </div>
 
                       <span className="author-book-action-btn">
-                        View Details →
+                        {t("book.viewDetails", "View Details")} →
                       </span>
                     </div>
                   </Link>

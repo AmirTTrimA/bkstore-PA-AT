@@ -120,6 +120,16 @@ THEMATIC_TAGS = [
     {"name": "Iranian History", "normalized_name": "iranian history", "description": "The cultural, dynastic, and sociopolitical evolution of the Iranian plateau across eras.", "language": "en"},
     {"name": "Persian Poetry", "normalized_name": "persian poetry", "description": "Rich verse tradition spanning Rumi, Hafez, Ferdowsi, Khayyam, and modernist bards.", "language": "en"},
     {"name": "Mysticism", "normalized_name": "mysticism", "description": "Spiritual experiences seeking direct, unmediated communion with ultimate transcendent reality.", "language": "en"},
+
+    # Authentic Persian Tags (language="fa")
+    {"name": "ادبیات داستانی معاصر", "normalized_name": "ادبیات داستانی معاصر", "description": "رمان‌ها و داستان‌های تحسین‌شده نویسندگان معاصر ایران.", "language": "fa"},
+    {"name": "شعر کهن فارسی", "normalized_name": "شعر کهن فارسی", "description": "شاهکارهای منظوم حافظ، سعدی، مولانا، فردوسی و خیام.", "language": "fa"},
+    {"name": "عرفان و تصوف", "normalized_name": "عرفان و تصوف", "description": "رساله‌ها و متون عرفانی و سیر و سلوک معنوی در ادبیات کهن.", "language": "fa"},
+    {"name": "تاریخ و فرهنگ ایران", "normalized_name": "تاریخ و فرهنگ ایران", "description": "پژوهش‌های تاریخی درباره تمدن، هویت و فرهنگ دیرپای ایران.", "language": "fa"},
+    {"name": "فلسفه و اگزیستانسیالیسم", "normalized_name": "فلسفه و اگزیستانسیالیسم", "description": "ترجمه و تبیین مکاتب فلسفی اگزیستانسیال، اخلاق و معنای زندگی.", "language": "fa"},
+    {"name": "روانشناسی فردی و رشد فردی", "normalized_name": "روانشناسی فردی و رشد فردی", "description": "کتب کاربردی در حوزه عادت‌سازی، ذهن‌آگاهی و انضباط فردی.", "language": "fa"},
+    {"name": "مهندسی نرم‌افزار و معماری سیستم", "normalized_name": "مهندسی نرم‌افزار و معماری سیستم", "description": "اصول طراحی سیستم‌های مقیاس‌پذیر، کدنویسی تمیز و الگوهای معماری.", "language": "fa"},
+    {"name": "مدیریت و استارتاپ", "normalized_name": "مدیریت و استارتاپ", "description": "استراتژی‌های راه‌اندازی کسب‌وکار، تفکر نوآورانه و روش‌های چابک.", "language": "fa"},
 ]
 
 def seed_taxonomies(stdout=None):

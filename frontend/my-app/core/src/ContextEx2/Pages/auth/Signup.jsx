@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
 import Notification from '../../Components/feature/Notification';
 import '../../Styles/components/Login.css';
 import '../../Styles/components/Signup.css';
@@ -11,6 +12,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function Signup() {
   const navigate = useNavigate();
   const { signup, setError, error, clearError } = useAuth();
+  const { t } = useLanguage();
   const notificationRef = useRef(null);
 
   // Form State (no age field)
@@ -215,7 +217,7 @@ export default function Signup() {
           {/* Email */}
           <div className="auth-form-group">
             <label className="auth-label" htmlFor="signup-email">
-              Email Address
+              {t("auth.email", "Email Address")}
             </label>
             <div className="auth-input-wrapper">
               <i className="fas fa-envelope auth-input-icon"></i>
@@ -236,7 +238,7 @@ export default function Signup() {
           {/* Password */}
           <div className="auth-form-group">
             <label className="auth-label" htmlFor="signup-password">
-              Password
+              {t("auth.password", "Password")}
             </label>
             <div className="auth-input-wrapper">
               <i className="fas fa-lock auth-input-icon"></i>
@@ -315,7 +317,7 @@ export default function Signup() {
           {/* Confirm Password */}
           <div className="auth-form-group">
             <label className="auth-label" htmlFor="signup-password-repeat">
-              Confirm Password
+              {t("auth.confirmPassword", "Confirm Password")}
             </label>
             <div className="auth-input-wrapper">
               <i className="fas fa-lock auth-input-icon"></i>
@@ -355,8 +357,8 @@ export default function Signup() {
                 ></i>
                 <span>
                   {isPasswordsMatch
-                    ? 'Passwords match'
-                    : 'Passwords do not match'}
+                    ? t("auth.passwordsMatch", "Passwords match")
+                    : t("auth.passMismatch", "Passwords do not match")}
                 </span>
               </div>
             )}
@@ -372,11 +374,11 @@ export default function Signup() {
             {submitting ? (
               <>
                 <i className="fas fa-spinner fa-spin"></i>
-                <span>Creating Account...</span>
+                <span>{t("common.loading", "Creating Account...")}</span>
               </>
             ) : (
               <>
-                <span>Create Account</span>
+                <span>{t("auth.signupTitle", "Create Account")}</span>
                 <i className="fas fa-arrow-right"></i>
               </>
             )}
@@ -385,8 +387,8 @@ export default function Signup() {
 
         {/* Card Footer */}
         <div className="auth-card-footer">
-          Already have an account?
-          <Link to="/login">Sign In here</Link>
+          {t("auth.haveAccount", "Already have an account?")}
+          <Link to="/login">{t("nav.login", "Sign In here")}</Link>
         </div>
       </div>
 

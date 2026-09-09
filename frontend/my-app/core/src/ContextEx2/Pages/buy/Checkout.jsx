@@ -12,6 +12,7 @@ import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
 import { useAuth } from "../../Context/AuthContext";
+import { useLanguage } from "../../Context/LanguageContext";
 import BasketService from "../../Services/BasketService";
 import AddressService from "../../Services/AddressService";
 import WalletService from "../../Services/WalletService";
@@ -41,6 +42,7 @@ export const isPercentDiscount = (coupon) => {
 
 export default function Checkout() {
     const { isLoggedIn } = useAuth();
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
     const notificationRef = useRef(null);
@@ -440,14 +442,14 @@ export default function Checkout() {
                 </div>
                 <div className="checkout-container">
                     <div className="checkout-empty-box">
-                        <h2>Your basket is empty</h2>
-                        <p>There are no items to checkout.</p>
+                        <h2>{t("cart.emptyCart", "Your basket is empty")}</h2>
+                        <p>{t("cart.emptySubtitle", "There are no items to checkout.")}</p>
                         <button
                             type="button"
                             className="checkout-action-btn"
                             onClick={() => navigate("/library")}
                         >
-                            Explore Catalog
+                            {t("cart.browseStore", "Explore Catalog")}
                         </button>
                     </div>
                 </div>
@@ -489,34 +491,34 @@ export default function Checkout() {
                         }}
                         title={
                             step === 2 && hasPhysicalItems
-                                ? "Back to delivery details"
-                                : "Back to Shopping Cart"
+                                ? t("checkout.backToShipping", "Back to delivery details")
+                                : t("cart.title", "Back to Shopping Cart")
                         }
                     >
                         {step === 2 && hasPhysicalItems
-                            ? "← Back to Shipping"
-                            : "← Back to Cart"}
+                            ? `← ${t("checkout.backToShipping", "Back to Shipping")}`
+                            : `← ${t("cart.title", "Back to Cart")}`}
                     </button>
 
                     <div className="checkout-breadcrumbs">
-                        <Link to="/home">Home</Link>
+                        <Link to="/home">{t("nav.home", "Home")}</Link>
                         <span>/</span>
-                        <Link to="/basket">Cart</Link>
+                        <Link to="/basket">{t("nav.cart", "Cart")}</Link>
                         <span>/</span>
-                        <span className="current">Checkout</span>
+                        <span className="current">{t("checkout.title", "Checkout")}</span>
                     </div>
 
                     <div className="checkout-steps-indicator">
                         <span className={`step-pill ${step >= 1 ? "active" : ""}`}>
-                            1. Details
+                            {t("checkout.stepDetails", "1. Details")}
                         </span>
                         <span className="step-arrow">→</span>
                         <span className={`step-pill ${step >= 2 ? "active" : ""}`}>
-                            2. Review & Pay
+                            {t("checkout.stepReview", "2. Review & Pay")}
                         </span>
                         <span className="step-arrow">→</span>
                         <span className={`step-pill ${step >= 3 ? "active" : ""}`}>
-                            3. Success
+                            {t("checkout.stepSuccess", "3. Success")}
                         </span>
                     </div>
                 </div>
@@ -525,7 +527,7 @@ export default function Checkout() {
                 {pageLoading && (
                     <div className="checkout-state-box">
                         <div className="checkout-spinner" />
-                        <p>Loading checkout details...</p>
+                        <p>{t("common.loading", "Loading checkout details...")}</p>
                     </div>
                 )}
 
@@ -537,7 +539,7 @@ export default function Checkout() {
                             className="checkout-action-btn"
                             onClick={loadData}
                         >
-                            Retry
+                            {t("common.retry", "Retry")}
                         </button>
                     </div>
                 )}
@@ -549,7 +551,7 @@ export default function Checkout() {
                         {step === 1 && (
                             <div className="checkout-step-card step1">
                                 <h2 className="title-checkout">
-                                    Delivery Details
+                                    {t("checkout.deliveryDetails", "Delivery Details")}
                                 </h2>
 
                                 {!hasPhysicalItems ? (
@@ -558,11 +560,9 @@ export default function Checkout() {
                                             📱
                                         </div>
                                         <div>
-                                            <h4>Digital Order</h4>
+                                            <h4>{t("checkout.digitalOrder", "Digital Order")}</h4>
                                             <p>
-                                                All items in your cart are digital
-                                                (e-books or audiobooks). No physical
-                                                shipping address is required.
+                                                {t("checkout.digitalOrderDesc", "All items in your cart are digital (e-books or audiobooks). No physical shipping address is required.")}
                                             </p>
                                         </div>
                                     </div>
@@ -841,7 +841,7 @@ export default function Checkout() {
                         {step === 2 && (
                             <div className="checkout-step-card step2">
                                 <h2 className="title-checkout">
-                                    Review & Payment
+                                    {t("checkout.reviewAndPayment", "Review & Payment")}
                                 </h2>
 
                                 {/* Delivery Destination Card for Physical Orders */}
@@ -851,7 +851,7 @@ export default function Checkout() {
                                             <div className="delivery-summary-title">
                                                 <span className="delivery-icon">📦</span>
                                                 <div>
-                                                    <h4>Delivery Destination</h4>
+                                                    <h4>{t("checkout.deliveryDestination", "Delivery Destination")}</h4>
                                                     <p className="delivery-subtitle">
                                                         Physical items will be dispatched to:
                                                     </p>
@@ -867,9 +867,9 @@ export default function Checkout() {
                                                         behavior: "smooth",
                                                     });
                                                 }}
-                                                title="Change delivery address"
+                                                title={t("checkout.changeAddress", "Change delivery address")}
                                             >
-                                                ✏️ Change Address
+                                                ✏️ {t("checkout.changeAddress", "Change Address")}
                                             </button>
                                         </div>
                                         {currentAddress ? (
@@ -1174,10 +1174,10 @@ export default function Checkout() {
                         {step === 3 && order && (
                             <div className="checkout-step-card step3">
                                 <div className="checkout-success-icon">✓</div>
-                                <h2 className="success-title">Order Placed Successfully!</h2>
+                                <h2 className="success-title">{t("checkout.orderPlacedSuccess", "Order Placed Successfully!")}</h2>
 
                                 <p className="success-order-id">
-                                    Order ID: <strong>#{order.id}</strong>
+                                    {t("cart.orderId", "Order ID: #{id}", { id: order.id })}
                                 </p>
 
                                 <span className="success-status-pill">
@@ -1186,19 +1186,19 @@ export default function Checkout() {
 
                                 <div className="order-receipt-box">
                                     <div className="receipt-row">
-                                        <span>Subtotal:</span>
+                                        <span>{t("cart.subtotal", "Subtotal")}:</span>
                                         <span>{formatPrice(order.subtotal)}</span>
                                     </div>
                                     {Number(order.discount_amount) > 0 && (
                                         <div className="receipt-row discount">
-                                            <span>Discount Saved:</span>
+                                            <span>{t("cart.discount", "Discount Saved")}:</span>
                                             <span>
                                                 -{formatPrice(order.discount_amount)}
                                             </span>
                                         </div>
                                     )}
                                     <div className="receipt-row total">
-                                        <span>Total Paid:</span>
+                                        <span>{t("checkout.totalPaid", "Total Paid:")}</span>
                                         <span className="paid-val">
                                             {formatPrice(order.total_amount)}
                                         </span>
@@ -1216,14 +1216,14 @@ export default function Checkout() {
                                         className="checkout-continue-btn"
                                         onClick={() => navigate("/dashboard")}
                                     >
-                                        View in Dashboard
+                                        {t("checkout.viewInDashboard", "View in Dashboard")}
                                     </button>
                                     <button
                                         type="button"
                                         className="checkout-secondary-btn"
                                         onClick={() => navigate("/library")}
                                     >
-                                        Continue Browsing
+                                        {t("checkout.continueBrowsing", "Continue Browsing")}
                                     </button>
                                 </div>
                             </div>
@@ -1239,23 +1239,23 @@ export default function Checkout() {
                 <nav className="bottom-navbar">
                     <Link to="/" className="nav-item">
                         <i className="fas fa-home"></i>
-                        <span>Home</span>
+                        <span>{t("nav.home", "Home")}</span>
                     </Link>
                     <Link to="/favorites" className="nav-item">
                         <i className="fa-solid fa-heart"></i>
-                        <span>Favorites</span>
+                        <span>{t("library.wishlistTitle", "Favorites")}</span>
                     </Link>
                     <Link to="/library" className="nav-item">
                         <i className="fa-solid fa-book"></i>
-                        <span>Catalog</span>
+                        <span>{t("nav.explore", "Catalog")}</span>
                     </Link>
                     <Link to="/subscription" className="nav-item">
                         <i className="fa-solid fa-bolt"></i>
-                        <span>Plans</span>
+                        <span>{t("nav.subscription", "Plans")}</span>
                     </Link>
                     <Link to="/basket" className="nav-item active">
                         <i className="fa-solid fa-cart-shopping"></i>
-                        <span>Cart</span>
+                        <span>{t("nav.cart", "Cart")}</span>
                     </Link>
                 </nav>
             </div>

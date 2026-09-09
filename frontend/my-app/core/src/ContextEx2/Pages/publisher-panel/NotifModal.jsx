@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { useLanguage } from '../../Context/LanguageContext';
 import { formatPrice } from '../../utils/formatPrice';
 
 export default function NotifModal({ open, onClose, notifmessage = [], onWithdraw }) {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState('ALL');
   const [confirmWithdrawId, setConfirmWithdrawId] = useState(null);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -27,31 +29,31 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
   const getProposalTypeInfo = (type) => {
     switch (type) {
       case 'BOOK_CREATE':
-        return { label: '📖 New Book', className: 'book_create' };
+        return { label: `📖 ${t('publisher_panel.newBook', 'New Book')}`, className: 'book_create' };
       case 'BOOK_UPDATE':
-        return { label: '✏️ Book Update', className: 'book_update' };
+        return { label: `✏️ ${t('publisher_panel.bookUpdate', 'Book Update')}`, className: 'book_update' };
       case 'PRICE_CHANGE':
-        return { label: '💰 Price Change', className: 'price_change' };
+        return { label: `💰 ${t('publisher_panel.priceChange', 'Price Change')}`, className: 'price_change' };
       case 'AUTHOR_CREATE':
-        return { label: '👤 New Author', className: 'author_create' };
+        return { label: `👤 ${t('publisher_panel.newAuthor', 'New Author')}`, className: 'author_create' };
       case 'AUTHOR_UPDATE':
-        return { label: '📝 Author Update', className: 'author_update' };
+        return { label: `📝 ${t('publisher_panel.authorUpdate', 'Author Update')}`, className: 'author_update' };
       default:
-        return { label: '📋 Proposal', className: 'generic' };
+        return { label: `📋 ${t('publisher_panel.proposal', 'Proposal')}`, className: 'generic' };
     }
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDING':
-        return <span className="proposal-status-chip pending">⏳ Under Review</span>;
+        return <span className="proposal-status-chip pending">⏳ {t('publisher_panel.underReview', 'Under Review')}</span>;
       case 'APPROVED':
       case 'APPLIED':
-        return <span className="proposal-status-chip approved">✅ Approved</span>;
+        return <span className="proposal-status-chip approved">✅ {t('publisher_panel.approved', 'Approved')}</span>;
       case 'REJECTED':
-        return <span className="proposal-status-chip rejected">❌ Rejected</span>;
+        return <span className="proposal-status-chip rejected">❌ {t('publisher_panel.rejected', 'Rejected')}</span>;
       case 'WITHDRAWN':
-        return <span className="proposal-status-chip withdrawn">↩️ Withdrawn</span>;
+        return <span className="proposal-status-chip withdrawn">↩️ {t('publisher_panel.withdrawn', 'Withdrawn')}</span>;
       default:
         return <span className="proposal-status-chip">{status}</span>;
     }
@@ -100,10 +102,10 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
         >
           <div>
             <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primarys)' }}>
-              🔔 Proposals & Activity Hub
+              🔔 {t('publisher_panel.proposalsActivityHub', 'Proposals & Activity Hub')}
             </h3>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: 'var(--text-primarys)', opacity: 0.75 }}>
-              Track submissions, editorial reviews, and status changes across all catalog items.
+              {t('publisher_panel.proposalsHubDesc', 'Track submissions, editorial reviews, and status changes across all catalog items.')}
             </p>
           </div>
 
@@ -127,28 +129,28 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
             className={`proposal-filter-chip ${filter === 'ALL' ? 'active' : ''}`}
             onClick={() => setFilter('ALL')}
           >
-            All ({counts.ALL})
+            {t('common.all', 'All')} ({counts.ALL})
           </button>
           <button
             type="button"
             className={`proposal-filter-chip ${filter === 'PENDING' ? 'active' : ''}`}
             onClick={() => setFilter('PENDING')}
           >
-            ⏳ Pending ({counts.PENDING})
+            ⏳ {t('publisher_panel.pending', 'Pending')} ({counts.PENDING})
           </button>
           <button
             type="button"
             className={`proposal-filter-chip ${filter === 'APPROVED' ? 'active' : ''}`}
             onClick={() => setFilter('APPROVED')}
           >
-            ✅ Approved ({counts.APPROVED})
+            ✅ {t('publisher_panel.approved', 'Approved')} ({counts.APPROVED})
           </button>
           <button
             type="button"
             className={`proposal-filter-chip ${filter === 'REJECTED' ? 'active' : ''}`}
             onClick={() => setFilter('REJECTED')}
           >
-            ❌ Rejected ({counts.REJECTED})
+            ❌ {t('publisher_panel.rejected', 'Rejected')} ({counts.REJECTED})
           </button>
         </div>
 
@@ -165,7 +167,7 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
         >
           {filteredProposals.length === 0 ? (
             <div className="empty-roster-state" style={{ margin: '30px 0' }}>
-              <p>No proposals found in this category.</p>
+              <p>{t('publisher_panel.noProposals', 'No proposals found in this category.')}</p>
             </div>
           ) : (
             filteredProposals.map((item) => {
@@ -194,13 +196,13 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
                   <div>
                     <h4 className="proposal-item-title">{item.title}</h4>
                     <div className="proposal-item-meta" style={{ marginTop: 6 }}>
-                      <span>📅 Submitted: {formattedDate}</span>
+                      <span>📅 {t('publisher_panel.submitted', 'Submitted')}: {formattedDate}</span>
                       {item.submitted_by_username && (
-                        <span>👤 Submitter: {item.submitted_by_username}</span>
+                        <span>👤 {t('publisher_panel.submitter', 'Submitter')}: {item.submitted_by_username}</span>
                       )}
                       {item.proposal_type === 'PRICE_CHANGE' && item.details?.value && (
                         <span>
-                          💰 Proposed Price: <strong>{formatPrice(item.details.value)}</strong>
+                          💰 {t('publisher_panel.proposedPrice', 'Proposed Price')}: <strong>{formatPrice(item.details.value)}</strong>
                         </span>
                       )}
                     </div>
@@ -213,7 +215,7 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
                         item.status === 'REJECTED' ? 'rejected-box' : ''
                       }`}
                     >
-                      <strong>Editorial Feedback:</strong> {item.review_notes}
+                      <strong>{t('publisher_panel.editorialFeedback', 'Editorial Feedback')}:</strong> {item.review_notes}
                     </div>
                   )}
 
@@ -223,7 +225,7 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
                       {confirmWithdrawId === item.id ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: '0.8rem', color: '#f87171' }}>
-                            Withdraw this proposal?
+                            {t('publisher_panel.confirmWithdrawal', 'Withdraw this proposal?')}
                           </span>
                           <button
                             type="button"
@@ -232,7 +234,7 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
                             onClick={() => handleWithdrawConfirm(item.id)}
                             disabled={isWithdrawing}
                           >
-                            {isWithdrawing ? 'Withdrawing...' : 'Yes, Withdraw'}
+                            {isWithdrawing ? t('common.loading', 'Withdrawing...') : t('publisher_panel.yesWithdraw', 'Yes, Withdraw')}
                           </button>
                           <button
                             type="button"
@@ -240,7 +242,7 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
                             style={{ padding: '4px 8px', fontSize: '0.8rem' }}
                             onClick={() => setConfirmWithdrawId(null)}
                           >
-                            Cancel
+                            {t('common.cancel', 'Cancel')}
                           </button>
                         </div>
                       ) : (
@@ -248,9 +250,9 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
                           type="button"
                           className="withdraw-btn"
                           onClick={() => setConfirmWithdrawId(item.id)}
-                          title="Withdraw proposal from admin queue"
+                          title={t('publisher_panel.withdrawTitle', 'Withdraw proposal from admin queue')}
                         >
-                          Withdraw Proposal
+                          {t('publisher_panel.withdrawProposal', 'Withdraw Proposal')}
                         </button>
                       )}
                     </div>
