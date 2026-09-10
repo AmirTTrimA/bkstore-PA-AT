@@ -78,34 +78,52 @@
 
 ```mermaid
 graph TB
-    subgraph Client Layer ["Client Layer (React 19 SPA)"]
-        UI[Bookkadeh UI / Pages]
-        RQ[TanStack React Query v5 Cache]
-        API_CLIENT[ApiClient Axios + JWT Queue]
-        UI --> RQ --> API_CLIENT
+    subgraph CLIENT_LAYER ["Client Layer (React 19 SPA)"]
+        UI["Bookkadeh UI (Pages & Components)"]
+        RQ["TanStack React Query v5 Cache"]
+        API_CLIENT["ApiClient (Axios + JWT Queue)"]
+        UI --> RQ
+        RQ --> API_CLIENT
     end
 
-    subgraph API Gateway ["Django REST Framework (DRF 3.15 / Django 5.2)"]
-        AUTH[accounts / Auth & OTP]
-        CAT[catalog / Books & Authors]
-        PRICE[pricing / Engine & Subscriptions]
-        CART[cart / Basket & Checkout]
-        PUB[publishing / Organization & Proposals]
-        WAL[wallet / Financial Ledger]
-        REC[recommendations / Content-Based Recs]
+    subgraph API_GATEWAY ["Django REST Framework (DRF 3.15 / Django 5.2)"]
+        ROUTER["API Router (/api/v1/)"]
+        AUTH["accounts (Auth & OTP)"]
+        CAT["catalog (Books & Authors)"]
+        PRICE["pricing (Engine & Subscriptions)"]
+        CART["cart (Basket & Checkout)"]
+        PUB["publishing (Proposals & Moderation)"]
+        WAL["wallet (Financial Ledger)"]
+        REC["recommendations (Content-Based Recs)"]
+
+        ROUTER --> AUTH
+        ROUTER --> CAT
+        ROUTER --> PRICE
+        ROUTER --> CART
+        ROUTER --> PUB
+        ROUTER --> WAL
+        ROUTER --> REC
     end
 
-    API_CLIENT -->|Bearer JWT / REST| API Gateway
+    API_CLIENT -->|"Bearer JWT / REST"| ROUTER
 
-    subgraph Async & Storage ["Storage & Background Processing"]
-        PG[(PostgreSQL 16 Database)]
-        REDIS[(Redis 7 Broker & Cache)]
-        CELERY[Celery Workers & Beat]
-        ADMIN[Custom Django Admin Moderation]
+    subgraph STORAGE_ASYNC ["Storage & Background Processing"]
+        PG[("PostgreSQL 16 Database")]
+        REDIS[("Redis 7 Broker & Cache")]
+        CELERY["Celery Workers & Beat"]
+        ADMIN["Custom Django Admin Moderation"]
     end
 
-    API Gateway --> PG
-    API Gateway --> REDIS
+    AUTH --> PG
+    CAT --> PG
+    PRICE --> PG
+    CART --> PG
+    PUB --> PG
+    WAL --> PG
+    REC --> PG
+
+    AUTH -.->|"Session & OTP Cache"| REDIS
+    CART -.->|"Async Tasks"| REDIS
     REDIS --> CELERY
     CELERY --> PG
     ADMIN --> PG
