@@ -355,13 +355,105 @@
 }
 
 
+/* ============================================
+        FORMATS & PRICING
+   ============================================ */
+
+.library-card-available-formats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 6px 0 2px;
+}
+
+.library-format-chip {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.library-format-chip.primary {
+    background: rgba(209, 120, 66, 0.12);
+    border-color: rgba(209, 120, 66, 0.35);
+    color: #d17842;
+}
+
+.library-format-chip.discounted {
+    border-color: #ef4444;
+}
+
 .library-card-pricing {
-    margin: 6px 0 0;
+    margin: 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.library-price-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.library-price-from-label {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    opacity: 0.85;
+}
+
+.library-price-format-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(209, 120, 66, 0.14);
+    border: 1px solid rgba(209, 120, 66, 0.3);
+    color: #d17842;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.library-price-format-pill.digital {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #0284c7;
+}
+
+[data-theme="dark"] .library-price-format-pill.digital {
+    color: #38bdf8;
+}
+
+.library-price-format-pill.audio {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.35);
+    color: #9333ea;
+}
+
+[data-theme="dark"] .library-price-format-pill.audio {
+    color: #c084fc;
+}
+
+.library-price-format-pill.physical {
+    background: rgba(209, 120, 66, 0.12);
+    border-color: rgba(209, 120, 66, 0.35);
+    color: #d17842;
 }
 
 .library-price-discount-box {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     flex-wrap: wrap;
 }
@@ -374,22 +466,31 @@
 }
 
 .library-price-final {
-    color: var(--accent-light, #d17842);
-    font-size: 0.95rem;
-    font-weight: 700;
+    color: var(--text-primarys, #ffffff);
+    font-size: 1.02rem;
+    font-weight: 800;
 }
 
 .library-price-final.discounted {
-    color: #d17842;
+    color: #16a34a;
 }
 
-.library-card-price {
-    margin: 5px 0 0;
+[data-theme="dark"] .library-price-final.discounted {
+    color: #22c55e;
+}
 
-    color: var(--accent-light);
-
-    font-size: 0.95rem;
+.library-price-discount-tag {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #dc2626;
+    font-size: 0.72rem;
     font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 6px;
+}
+
+[data-theme="dark"] .library-price-discount-tag {
+    color: #ef4444;
 }
 
 

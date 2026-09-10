@@ -251,10 +251,38 @@ export default function Library() {
                 {books.length > 0 && (
                     <div className="explore">
                         {books.map(book => {
-                            const hasDiscount = Boolean(book.has_discount);
-                            const discountPercent = book.discount_percent || 0;
+                            const formats = book.formats || [];
+
+                            // Check available formats for cover badges and chip row
+                            const hasPhysical = formats.some(f => (f.type || f.format) === "PHYSICAL");
+                            const hasDigital = Boolean(book.is_digital || formats.some(f => (f.type || f.format) === "DIGITAL" || f.is_digital));
+                            const hasAudio = Boolean(book.is_audio || formats.some(f => (f.type || f.format) === "AUDIO" || f.is_audio));
+                            const showCoverFormats = hasPhysical || hasDigital || hasAudio;
+
+                            // Discount info (checks book-level or format-level discounts)
+                            const hasDiscount = Boolean(book.has_discount || book.has_any_discount);
+                            const discountPercent = book.discount_percent || book.max_discount_percent || 0;
                             const price = book.price;
                             const origPrice = book.original_price;
+
+                            // Format corresponding to the displayed starting price
+                            const priceFormatType = book.price_format || (formats.length > 0 ? (formats.find(f => String(f.price) === String(price)) || formats[0])?.type : null);
+                            
+                            const getFormatDisplay = (type) => {
+                                const upper = (type || "").toUpperCase();
+                                if (upper === "DIGITAL") {
+                                    return { icon: "📱", label: t("book.digital", "Digital (PDF)"), short: t("book.digitalShort", "E-Book") };
+                                }
+                                if (upper === "AUDIO") {
+                                    return { icon: "🎧", label: t("book.audio", "Audiobook"), short: t("book.audioShort", "Audio") };
+                                }
+                                if (upper === "PHYSICAL") {
+                                    return { icon: "📖", label: t("book.physical", "Physical Book"), short: t("book.physicalShort", "Print") };
+                                }
+                                return { icon: "📚", label: upper || t("common.book", "Book"), short: upper };
+                            };
+
+                            const priceFormatDisplay = priceFormatType ? getFormatDisplay(priceFormatType) : null;
 
                             return (
                                 <Link
@@ -281,14 +309,19 @@ export default function Library() {
                                                 e.target.src = "/default-book.png";
                                             }}
                                         />
-                                        <div className="library-card-formats-badges">
-                                            {(book.is_digital || book.formats?.some(f => f.format === "DIGITAL" || f.is_digital)) && (
-                                                <span title="Digital PDF available">📱</span>
-                                            )}
-                                            {(book.is_audio || book.formats?.some(f => f.format === "AUDIO" || f.is_audio)) && (
-                                                <span title="Audiobook available">🎧</span>
-                                            )}
-                                        </div>
+                                        {showCoverFormats && (
+                                            <div className="library-card-formats-badges">
+                                                {hasPhysical && (
+                                                    <span title={t("book.physical", "Physical Book available")}>📖</span>
+                                                )}
+                                                {hasDigital && (
+                                                    <span title={t("book.digital", "Digital PDF available")}>📱</span>
+                                                )}
+                                                {hasAudio && (
+                                                    <span title={t("book.audio", "Audiobook available")}>🎧</span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Information */}
@@ -318,8 +351,39 @@ export default function Library() {
                                             </span>
                                         )}
 
+                                        {/* Formats Availability Chips */}
+                                        {formats.length > 0 && (
+                                            <div className="library-card-available-formats">
+                                                {formats.map(f => {
+                                                    const fType = f.type || f.format;
+                                                    const fInfo = getFormatDisplay(fType);
+                                                    const isPriceFormat = fType === priceFormatType;
+                                                    return (
+                                                        <span
+                                                            key={f.id || fType}
+                                                            className={`library-format-chip ${isPriceFormat ? 'primary' : ''} ${f.has_discount ? 'discounted' : ''}`}
+                                                            title={`${fInfo.label}: ${formatPrice(f.price)}`}
+                                                        >
+                                                            {fInfo.icon} {fInfo.short}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
                                         {/* Pricing Block */}
                                         <div className="library-card-pricing">
+                                            <div className="library-price-meta-line">
+                                                <span className="library-price-from-label">
+                                                    {t("book.startsFrom", "From")}
+                                                </span>
+                                                {priceFormatDisplay && (
+                                                    <span className={`library-price-format-pill ${(priceFormatType || '').toLowerCase()}`}>
+                                                        {priceFormatDisplay.icon} {priceFormatDisplay.label}
+                                                    </span>
+                                                )}
+                                            </div>
+
                                             {hasDiscount && origPrice ? (
                                                 <div className="library-price-discount-box">
                                                     <span className="library-price-orig">
@@ -328,6 +392,11 @@ export default function Library() {
                                                     <span className="library-price-final discounted">
                                                         {formatPrice(price)}
                                                     </span>
+                                                    {discountPercent > 0 && (
+                                                        <span className="library-price-discount-tag">
+                                                            -{discountPercent}%
+                                                        </span>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <span className="library-price-final">

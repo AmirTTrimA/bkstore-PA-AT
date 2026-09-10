@@ -86,6 +86,64 @@ def seed_commerce(books_list, stdout=None):
         defaults={"discount": disc_summer, "is_active": True, "max_uses": 2000},
     )
 
+    # Automatic Promotional Store & Genre Discounts
+    Discount.objects.update_or_create(
+        name="جشنواره شاهکارهای ادبیات داستانی",
+        defaults={
+            "discount_type": Discount.DiscountType.PERCENT,
+            "value": Decimal(25),
+            "scope": Discount.Scope.GENRE,
+            "genre": "FICTION",
+            "activation": Discount.Activation.AUTOMATIC,
+            "is_active": True,
+            "valid_from": timezone.now() - timezone.timedelta(days=30),
+            "valid_until": timezone.now() + timezone.timedelta(days=365),
+            "description": "۲۵ درصد تخفیف ویژه برای تمام آثار ادبیات و داستان",
+        },
+    )
+    Discount.objects.update_or_create(
+        name="تخفیف ویژه فلسفه و اندیشه",
+        defaults={
+            "discount_type": Discount.DiscountType.PERCENT,
+            "value": Decimal(20),
+            "scope": Discount.Scope.GENRE,
+            "genre": "PHILOSOPHY",
+            "activation": Discount.Activation.AUTOMATIC,
+            "is_active": True,
+            "valid_from": timezone.now() - timezone.timedelta(days=30),
+            "valid_until": timezone.now() + timezone.timedelta(days=365),
+            "description": "۲۰ درصد تخفیف برای کتاب‌های فلسفه و اندیشه",
+        },
+    )
+    Discount.objects.update_or_create(
+        name="تخفیف ویژه کتاب‌های فناوری و مهندسی",
+        defaults={
+            "discount_type": Discount.DiscountType.PERCENT,
+            "value": Decimal(30),
+            "scope": Discount.Scope.GENRE,
+            "genre": "TECH",
+            "activation": Discount.Activation.AUTOMATIC,
+            "is_active": True,
+            "valid_from": timezone.now() - timezone.timedelta(days=30),
+            "valid_until": timezone.now() + timezone.timedelta(days=365),
+            "description": "۳۰ درصد تخفیف برای کتاب‌های فناوری و مهندسی نرم‌افزار",
+        },
+    )
+    Discount.objects.update_or_create(
+        name="تخفیف ویژه شاهکارهای علمی‌تخیلی",
+        defaults={
+            "discount_type": Discount.DiscountType.PERCENT,
+            "value": Decimal(20),
+            "scope": Discount.Scope.GENRE,
+            "genre": "SCI_FI",
+            "activation": Discount.Activation.AUTOMATIC,
+            "is_active": True,
+            "valid_from": timezone.now() - timezone.timedelta(days=30),
+            "valid_until": timezone.now() + timezone.timedelta(days=365),
+            "description": "۲۰ درصد تخفیف ویژه کتاب‌های علمی‌تخیلی",
+        },
+    )
+
     # 2. Create Subscription Plans
     gold_plan, _ = SubscriptionPlan.objects.update_or_create(
         slug="gold-tier",

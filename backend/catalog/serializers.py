@@ -78,23 +78,50 @@ class CurrentPriceMixin(serializers.Serializer):
     original_price = serializers.SerializerMethodField()
     discount_percent = serializers.SerializerMethodField()
     has_discount = serializers.SerializerMethodField()
+    price_format = serializers.SerializerMethodField()
+    price_format_name = serializers.SerializerMethodField()
+    has_any_discount = serializers.SerializerMethodField()
+    max_discount_percent = serializers.SerializerMethodField()
 
-    def _get_book_pricing(self, obj):
-        if not hasattr(obj, "_cached_book_pricing"):
+    def _get_all_format_pricings(self, obj):
+        if not hasattr(obj, "_cached_all_format_pricings"):
             from pricing.services import PricingEngine
 
             request = self.context.get("request")
             user = request.user if request and request.user.is_authenticated else None
 
-            primary_format = None
+            pricings = []
             if hasattr(obj, "formats"):
-                primary_format = obj.formats.filter(is_available=True).first()
+                for fmt in obj.formats.filter(is_available=True):
+                    try:
+                        engine = PricingEngine(book=obj, book_format=fmt, user=user)
+                        calc = engine.calculate()
+                        if calc:
+                            pricings.append((fmt, calc))
+                    except Exception:
+                        pass
+            obj._cached_all_format_pricings = pricings
+        return obj._cached_all_format_pricings
 
-            try:
-                engine = PricingEngine(book=obj, book_format=primary_format, user=user)
-                obj._cached_book_pricing = engine.calculate()
-            except Exception:
-                obj._cached_book_pricing = None
+    def _get_book_pricing(self, obj):
+        if not hasattr(obj, "_cached_book_pricing"):
+            pricings = self._get_all_format_pricings(obj)
+            if pricings:
+                # Select the format with lowest final price (best starting entry price)
+                best_fmt, best_calc = min(pricings, key=lambda x: x[1].final_price)
+                obj._cached_book_pricing = best_calc
+                obj._cached_primary_format = best_fmt
+            else:
+                from pricing.services import PricingEngine
+                request = self.context.get("request")
+                user = request.user if request and request.user.is_authenticated else None
+                try:
+                    engine = PricingEngine(book=obj, user=user)
+                    obj._cached_book_pricing = engine.calculate()
+                    obj._cached_primary_format = None
+                except Exception:
+                    obj._cached_book_pricing = None
+                    obj._cached_primary_format = None
         return obj._cached_book_pricing
 
     def get_price(self, obj):
@@ -121,9 +148,35 @@ class CurrentPriceMixin(serializers.Serializer):
         res = self._get_book_pricing(obj)
         return bool(res and res.final_price < res.base_price)
 
+    def get_price_format(self, obj):
+        self._get_book_pricing(obj)
+        fmt = getattr(obj, "_cached_primary_format", None)
+        return fmt.format_type if fmt else None
+
+    def get_price_format_name(self, obj):
+        self._get_book_pricing(obj)
+        fmt = getattr(obj, "_cached_primary_format", None)
+        return fmt.get_format_type_display() if fmt else None
+
+    def get_has_any_discount(self, obj):
+        pricings = self._get_all_format_pricings(obj)
+        return any(calc.final_price < calc.base_price for _, calc in pricings)
+
+    def get_max_discount_percent(self, obj):
+        pricings = self._get_all_format_pricings(obj)
+        discounts = [
+            int(round((calc.base_price - calc.final_price) / calc.base_price * 100))
+            for _, calc in pricings
+            if calc.final_price < calc.base_price and calc.base_price > 0
+        ]
+        return max(discounts) if discounts else 0
+
 
 class BookFormatSerializer(serializers.ModelSerializer):
     type = serializers.CharField(source="format_type", read_only=True)
+    format = serializers.CharField(source="format_type", read_only=True)
+    format_name = serializers.CharField(source="get_format_type_display", read_only=True)
+    is_available = serializers.BooleanField(read_only=True)
     price = serializers.SerializerMethodField()
     original_price = serializers.SerializerMethodField()
     discount_percent = serializers.SerializerMethodField()
@@ -134,6 +187,9 @@ class BookFormatSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "type",
+            "format",
+            "format_name",
+            "is_available",
             "price",
             "original_price",
             "discount_percent",
@@ -207,6 +263,10 @@ class BookListSerializer(CurrentPriceMixin, serializers.ModelSerializer):
             "original_price",
             "discount_percent",
             "has_discount",
+            "price_format",
+            "price_format_name",
+            "has_any_discount",
+            "max_discount_percent",
         )
 
 

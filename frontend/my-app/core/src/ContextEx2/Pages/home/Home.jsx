@@ -582,8 +582,9 @@ export default function Home() {
           </section>
         )}
 
-        <Footer />
       </main>
+
+      <Footer />
 
       {/* Mobile Bottom Navigation */}
       <div className="BottomNav">

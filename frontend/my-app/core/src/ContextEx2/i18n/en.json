@@ -121,6 +121,7 @@
     "publicationYear": "Publication Year",
     "edition": "Edition",
     "formats": "Available Formats",
+    "startsFrom": "From",
     "physical": "Physical Book",
     "digital": "Digital (PDF)",
     "audio": "Audiobook",
