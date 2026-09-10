@@ -81,21 +81,6 @@
 {% endblock %}
 
 {% block object-tools-items %}
-  {% if original and original.status == "PENDING" %}
-    <li>
-      <a href="{% url 'admin:publishing_proposal_approve' original.pk %}"
-         class="proposal-header-action-btn btn-approve-primary"
-         onclick="return confirm('{% trans "Are you sure you want to APPROVE and apply this proposal to the live catalog?" %}');">
-        ✓ {% trans "Approve Proposal" %}
-      </a>
-    </li>
-    <li>
-      <a href="{% url 'admin:publishing_proposal_reject' original.pk %}"
-         class="proposal-header-action-btn btn-reject-primary">
-        ✕ {% trans "Reject Proposal" %}
-      </a>
-    </li>
-  {% endif %}
   {{ block.super }}
 {% endblock %}
 
@@ -113,11 +98,11 @@
           <a href="{% url 'admin:publishing_proposal_approve' original.pk %}"
              class="proposal-header-action-btn btn-approve-primary"
              onclick="return confirm('{% trans "Are you sure you want to APPROVE and apply this proposal to the live catalog?" %}');">
-            ✓ {% trans "Approve" %}
+            ✓ {% trans "Approve Proposal" %}
           </a>
           <a href="{% url 'admin:publishing_proposal_reject' original.pk %}"
              class="proposal-header-action-btn btn-reject-primary">
-            ✕ {% trans "Reject" %}
+            ✕ {% trans "Reject Proposal" %}
           </a>
         </div>
       </div>

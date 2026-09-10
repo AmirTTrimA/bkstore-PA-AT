@@ -291,7 +291,6 @@ class ProposalAdmin(admin.ModelAdmin):
         "content_preview",
         "submitted_by",
         "submitted_at",
-        "quick_actions",
     )
 
     list_filter = (
@@ -510,9 +509,9 @@ class ProposalAdmin(admin.ModelAdmin):
             if hasattr(obj, "book_create"):
                 bc = obj.book_create
                 cover_html = (
-                    f'<img src="{bc.cover_image_url}" class="proposal-thumb-mini" alt="Cover" />'
+                    f'<img src="{bc.cover_image_url}" class="proposal-thumb-mini" style="width: 44px; height: 60px; max-width: 44px; max-height: 60px; object-fit: cover; border-radius: 4px; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.18);" alt="Cover" />'
                     if bc.cover_image_url
-                    else '<div class="proposal-thumb-placeholder">📖</div>'
+                    else '<div class="proposal-thumb-placeholder" style="width: 44px; height: 60px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">📖</div>'
                 )
                 formats = ["Print"]
                 if bc.is_digital:
@@ -533,9 +532,9 @@ class ProposalAdmin(admin.ModelAdmin):
                 bu = obj.book_update
                 cover_url = bu.cover_image_url or (bu.book.cover_image_url if bu.book else None)
                 cover_html = (
-                    f'<img src="{cover_url}" class="proposal-thumb-mini" alt="Cover" />'
+                    f'<img src="{cover_url}" class="proposal-thumb-mini" style="width: 44px; height: 60px; max-width: 44px; max-height: 60px; object-fit: cover; border-radius: 4px; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.18);" alt="Cover" />'
                     if cover_url
-                    else '<div class="proposal-thumb-placeholder">📖</div>'
+                    else '<div class="proposal-thumb-placeholder" style="width: 44px; height: 60px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">📖</div>'
                 )
                 changes = []
                 if bu.title and bu.book and bu.title != bu.book.title:

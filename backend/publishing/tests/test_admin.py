@@ -203,10 +203,10 @@ class ProposalAdminTestCase(TestCase):
         self.assertIn("New Book Submission Overview", card_html)
         self.assertIn("Card Book", card_html)
 
-        # Quick action row test
-        quick_html = admin_instance.quick_actions(create_prop)
-        self.assertIn("✓ Approve", quick_html)
-        self.assertIn("✕ Reject", quick_html)
+        # Preview card test
+        preview_html = admin_instance.content_preview(create_prop)
+        self.assertIn("Card Book", preview_html)
+        self.assertIn("Admin Test Author", preview_html)
 
         # 2. Book Update Proposal inline & diff card
         existing_book = Book.objects.create(
