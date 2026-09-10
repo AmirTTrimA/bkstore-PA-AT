@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 import { useLanguage } from '../../Context/LanguageContext';
+import { ThemeToggle } from '../../Components/common/ThemeToggle';
+import { LanguageToggle } from '../../Components/common/LanguageToggle';
 import Notification from '../../Components/feature/Notification';
 import '../../Styles/components/Login.css';
 import '../../Styles/components/Signup.css';
@@ -12,7 +14,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function Signup() {
   const navigate = useNavigate();
   const { signup, setError, error, clearError } = useAuth();
-  const { t } = useLanguage();
+  const { t, isPersian } = useLanguage();
   const notificationRef = useRef(null);
 
   // Form State (no age field)
@@ -165,20 +167,24 @@ export default function Signup() {
       <div className="signup-card">
         {/* Navigation & Brand Header */}
         <div className="auth-header-nav">
-          <Link to="/home" className="auth-back-btn" title="Back to Bookstore">
-            <i className="fas fa-arrow-left"></i>
-            <span>Back to Store</span>
+          <Link to="/home" className="auth-back-btn" title={isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}>
+            <i className={isPersian ? 'fas fa-arrow-right' : 'fas fa-arrow-left'}></i>
+            <span>{isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}</span>
           </Link>
-          <Link to="/home" className="auth-brand">
-            Page<span>Net</span>
-          </Link>
+          <div className="auth-header-controls">
+            <ThemeToggle page="auth" />
+            <LanguageToggle page="auth" />
+            <Link to="/home" className="auth-brand">
+              Book<span>kadeh</span>
+            </Link>
+          </div>
         </div>
 
         {/* Title Section */}
         <div className="auth-title-section">
-          <h1 className="auth-main-title">Create an Account</h1>
+          <h1 className="auth-main-title">{t("auth.signupTitle", "Create an Account")}</h1>
           <p className="auth-subtitle">
-            Join PageNet to read, listen, and collect your favorite books.
+            {t("auth.signupSubtitle", "Join Bookkadeh to read, listen, and collect your favorite books.")}
           </p>
         </div>
 

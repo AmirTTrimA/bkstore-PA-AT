@@ -138,7 +138,8 @@ html[data-theme="dark"],
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
 }
 
-.pagenet-admin-brand {
+.pagenet-admin-brand,
+.bookkadeh-admin-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -845,7 +846,8 @@ html[dir="rtl"] #user-tools {
   float: left !important;
 }
 
-html[dir="rtl"] .pagenet-admin-brand {
+html[dir="rtl"] .pagenet-admin-brand,
+html[dir="rtl"] .bookkadeh-admin-brand {
   flex-direction: row-reverse;
 }
 

@@ -225,11 +225,17 @@ msgstr "پرداخت"
 msgid "Payments"
 msgstr "پرداخت‌ها"
 
+msgid "Bookkadeh Admin Portal"
+msgstr "درگاه مدیریت بوک‌کده"
+
+msgid "Bookkadeh Bookstore Administration"
+msgstr "مدیریت کتابفروشی بوک‌کده"
+
 msgid "PageNet Admin Portal"
-msgstr "درگاه مدیریت پیج‌نت"
+msgstr "درگاه مدیریت بوک‌کده"
 
 msgid "PageNet Bookstore Administration"
-msgstr "مدیریت کتابفروشی پیج‌نت"
+msgstr "مدیریت کتابفروشی بوک‌کده"
 
 msgid "Bookstore Management & Editorial Operations"
 msgstr "مدیریت کتابفروشی و امور تحریریه"

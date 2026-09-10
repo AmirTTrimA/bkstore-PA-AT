@@ -3,6 +3,8 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import AuthService from '../../Services/AuthService';
 import Notification from '../../Components/feature/Notification';
 import { useLanguage } from '../../Context/LanguageContext';
+import { ThemeToggle } from '../../Components/common/ThemeToggle';
+import { LanguageToggle } from '../../Components/common/LanguageToggle';
 import '../../Styles/components/Login.css';
 import '../../Styles/components/Forgetpass.css';
 
@@ -127,9 +129,13 @@ export default function Forgetpass() {
             <i className={isPersian ? 'fas fa-arrow-right' : 'fas fa-arrow-left'}></i>
             <span>{isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}</span>
           </Link>
-          <Link to="/home" className="auth-brand">
-            Page<span>Net</span>
-          </Link>
+          <div className="auth-header-controls">
+            <ThemeToggle page="auth" />
+            <LanguageToggle page="auth" />
+            <Link to="/home" className="auth-brand">
+              Book<span>kadeh</span>
+            </Link>
+          </div>
         </div>
 
         {/* Brand Icon */}

@@ -30,7 +30,7 @@ export default function Refund() {
           <section className="refund-section">
             <h2>۱. تعهد ما به کاربران</h2>
             <p>
-              در پیج‌نت هدف ما ارائه لذت‌بخش‌ترین تجربه مطالعه دیجیتال و تهیه کتاب است. 
+              در بوک‌کده هدف ما ارائه لذت‌بخش‌ترین تجربه مطالعه دیجیتال و تهیه کتاب است. 
               در صورت بروز هرگونه مشکل یا عدم رضایت، تیم پشتیبانی ما آماده رفع دغدغه شماست.
             </p>
           </section>
@@ -61,20 +61,20 @@ export default function Refund() {
               <div className="refund-card">
                 <h3>اشتراک سالانه</h3>
                 <p>امکان استرداد کامل تا ۳۰ روز اول اشتراک</p>
-                <span className="refund-badge">استرداد نسبی پس از ۳۰ روز</span>
+                <span className="refund-badge">استرداد کامل در ماه اول</span>
               </div>
             </div>
           </section>
 
-          {/* Section4 */}
+          {/* Steps */}
           <section className="refund-section">
-            <h2>۴. مراحل ثبت درخواست بازگشت وجه</h2>
+            <h2>۴. مراحل ثبت درخواست استرداد</h2>
             <ol className="refund-steps">
               <li>
                 <span className="refund-step-number">۱</span>
                 <div>
                   <h4>ارتباط با پشتیبانی</h4>
-                  <p>ارسال ایمیل به <a href="mailto:support@pagenet.com">support@pagenet.com</a> یا ثبت تیکت در داشبورد</p>
+                  <p>ارسال ایمیل به <a href="mailto:support@bookkadeh.com">support@bookkadeh.com</a> یا ثبت تیکت در داشبورد</p>
                 </div>
               </li>
               <li>
@@ -144,7 +144,7 @@ export default function Refund() {
         {/* Footer */}
         <div className="refund-footer-note">
           <p>
-            <strong>نکته:</strong> این آیین‌نامه بر تمامی سفارش‌های ثبت‌شده در سامانه پیج‌نت حاکم است.
+            <strong>نکته:</strong> این آیین‌نامه بر تمامی سفارش‌های ثبت‌شده در سامانه بوک‌کده حاکم است.
           </p>
         </div>
       </div>
@@ -169,7 +169,7 @@ export default function Refund() {
           <section className="refund-section">
             <h2>1. Our Commitment</h2>
             <p>
-              At PageNet, we strive to provide the best digital reading experience. 
+              At Bookkadeh, we strive to provide the best digital reading experience. 
               If you're not completely satisfied with your purchase, we're here to help.
             </p>
           </section>
@@ -178,12 +178,12 @@ export default function Refund() {
             <h2>2. Digital Products</h2>
             <p>
               For digital products (e-books, PDFs, and digital subscriptions), 
-              we offer a <strong>7-day money-back guarantee</strong> from the date of purchase.
+              we offer a <strong>7-day money-back guarantee</strong> under the following conditions:
             </p>
             <ul>
-              <li>✅ Full refund if the product is not as described</li>
-              <li>✅ Partial refund for technical issues</li>
-              <li>❌ No refund for change of mind after download</li>
+              <li> Full refund if the file is corrupted and cannot be repaired</li>
+              <li> Partial refund or replacement if content doesn't match description</li>
+              <li> No refund once the entire file has been downloaded and read</li>
             </ul>
           </section>
 
@@ -193,8 +193,8 @@ export default function Refund() {
             <div className="refund-grid">
               <div className="refund-card">
                 <h3>Monthly Plan</h3>
-                <p>Cancel anytime before renewal</p>
-                <span className="refund-badge">Pro-rated refund</span>
+                <p>Cancel anytime before the next billing cycle</p>
+                <span className="refund-badge">Prorated refund</span>
               </div>
               <div className="refund-card">
                 <h3>Annual Plan</h3>
@@ -212,7 +212,7 @@ export default function Refund() {
                 <span className="refund-step-number">1</span>
                 <div>
                   <h4>Contact Support</h4>
-                  <p>Email us at <a href="mailto:support@pagenet.com">support@pagenet.com</a></p>
+                  <p>Email us at <a href="mailto:support@bookkadeh.com">support@bookkadeh.com</a></p>
                 </div>
               </li>
               <li>
@@ -285,7 +285,7 @@ export default function Refund() {
         <div className="refund-footer-note">
           <p>
             <strong>Note:</strong> This refund policy applies to all purchases made 
-            through PageNet platform. We reserve the right to update this policy at any time.
+            through Bookkadeh platform. We reserve the right to update this policy at any time.
           </p>
         </div>
       </div>

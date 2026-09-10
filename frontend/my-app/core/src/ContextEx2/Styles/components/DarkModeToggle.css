@@ -172,5 +172,41 @@
       background-color: var(--dash-mobile-bg, #444);
     }
   }
-  
-  
+
+  /* ===== AUTH PAGES THEME BUTTON ===== */
+  .auth-dark-btn {
+    position: static !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 7px;
+    border-radius: 8px;
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    fill: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .auth-dark-btn:hover {
+    background-color: rgba(209, 120, 66, 0.12);
+    border-color: #d17842;
+    fill: #d17842;
+  }
+
+  .dark .auth-dark-btn,
+  html.dark .auth-dark-btn {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    fill: #f59e0b;
+  }
+
+  .dark .auth-dark-btn:hover,
+  html.dark .auth-dark-btn:hover {
+    background-color: rgba(209, 120, 66, 0.2);
+    border-color: #d17842;
+    fill: #fbbf24;
+  }

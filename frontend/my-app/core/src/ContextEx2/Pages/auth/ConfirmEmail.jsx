@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../Context/AuthContext';
 import { useLanguage } from '../../Context/LanguageContext';
+import { ThemeToggle } from '../../Components/common/ThemeToggle';
+import { LanguageToggle } from '../../Components/common/LanguageToggle';
 import AuthService from '../../Services/AuthService';
 import Notification from '../../Components/feature/Notification';
 import '../../Styles/components/Login.css';
@@ -11,7 +13,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ConfirmEmail() {
   const { error, setError, clearError } = useAuth();
-  const { t } = useLanguage();
+  const { t, isPersian } = useLanguage();
   const notificationRef = useRef(null);
 
   const [email, setEmail] = useState('');
@@ -78,13 +80,17 @@ export default function ConfirmEmail() {
       <div className="confirm-card">
         {/* Navigation Header */}
         <div className="auth-header-nav">
-          <Link to="/home" className="auth-back-btn" title={t("reader.store", "Back to Bookstore")}>
-            <i className="fas fa-arrow-left"></i>
-            <span>{t("common.back", "Back to Store")}</span>
+          <Link to="/home" className="auth-back-btn" title={isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}>
+            <i className={isPersian ? 'fas fa-arrow-right' : 'fas fa-arrow-left'}></i>
+            <span>{isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}</span>
           </Link>
-          <Link to="/home" className="auth-brand">
-            Page<span>Net</span>
-          </Link>
+          <div className="auth-header-controls">
+            <ThemeToggle page="auth" />
+            <LanguageToggle page="auth" />
+            <Link to="/home" className="auth-brand">
+              Book<span>kadeh</span>
+            </Link>
+          </div>
         </div>
 
         {/* Brand Icon */}

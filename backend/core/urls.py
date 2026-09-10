@@ -3,8 +3,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 # Custom Admin Branding
-admin.site.site_header = "PageNet Bookstore Administration"
-admin.site.site_title = "PageNet Admin Portal"
+admin.site.site_header = "Bookkadeh Bookstore Administration"
+admin.site.site_title = "Bookkadeh Admin Portal"
 admin.site.index_title = "Bookstore Management & Editorial Operations"
 
 urlpatterns = [

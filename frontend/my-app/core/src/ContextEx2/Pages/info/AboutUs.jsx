@@ -40,7 +40,7 @@ export default function AboutUs() {
           </div>
           <div className="about-us-text">
             <span className='about-us-text-title'>
-              {isPersian ? 'به پیج‌نت خوش آمدید' : 'Welcome to PageNet'} 
+              {isPersian ? 'به بوک‌کده خوش آمدید' : 'Welcome to Bookkadeh'} 
             </span>
             <span>
               {isPersian

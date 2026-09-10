@@ -1,7 +1,7 @@
 {% extends "admin/base.html" %}
 {% load i18n static %}
 
-{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('PageNet Admin Portal') }}{% endblock %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Bookkadeh Admin Portal') }}{% endblock %}
 
 {% block extrastyle %}
   {{ block.super }}
@@ -10,9 +10,9 @@
 
 {% block branding %}
 <div id="site-name">
-  <a href="{% url 'admin:index' %}" class="pagenet-admin-brand">
+  <a href="{% url 'admin:index' %}" class="pagenet-admin-brand bookkadeh-admin-brand">
     <span class="brand-badge-icon">📖</span>
-    <span class="brand-title">PageNet</span>
+    <span class="brand-title">Bookkadeh</span>
     <span class="brand-subtitle">{% trans "Editorial & Commerce Operations" %}</span>
   </a>
 </div>

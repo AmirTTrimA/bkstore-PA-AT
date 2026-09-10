@@ -1,5 +1,5 @@
 /* ============================================
-      SIGNUP / REGISTRATION STYLES
+      SIGNUP / REGISTRATION STYLES (THEMED)
    ============================================ */
 
 .signup-page-wrapper {
@@ -9,22 +9,24 @@
   align-items: center;
   justify-content: center;
   padding: 2.5rem 1.25rem;
-  background: radial-gradient(ellipse at 50% 30%, rgba(209, 120, 66, 0.08) 0%, rgba(12, 15, 20, 0.98) 75%), #0c0f14;
+  background: var(--auth-bg-gradient);
   box-sizing: border-box;
+  transition: background 0.3s ease;
 }
 
 .signup-card {
   width: 100%;
   max-width: 480px;
-  background: rgba(22, 27, 34, 0.88);
+  background: var(--auth-card-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: var(--auth-card-border);
   border-radius: 18px;
   padding: 2.25rem 2rem;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(209, 120, 66, 0.08);
+  box-shadow: var(--auth-card-shadow);
   box-sizing: border-box;
   animation: signupCardFadeIn 0.35s ease-out;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 @keyframes signupCardFadeIn {
@@ -49,8 +51,9 @@
   align-items: center;
   justify-content: space-between;
   font-size: 0.76rem;
-  color: #8b949e;
+  color: var(--auth-subtitle-color);
   margin-bottom: 0.35rem;
+  transition: color 0.2s ease;
 }
 
 .signup-strength-label {
@@ -62,9 +65,15 @@
   display: flex;
   gap: 4px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #e2e8f0;
   border-radius: 4px;
   overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+.dark .signup-strength-bar,
+html.dark .signup-strength-bar {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .signup-strength-segment {
@@ -89,13 +98,27 @@
   font-size: 0.72rem;
   padding: 0.15rem 0.45rem;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #6e7681;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
   transition: all 0.2s ease;
 }
 
+.dark .signup-criteria-badge,
+html.dark .signup-criteria-badge {
+  background: rgba(255, 255, 255, 0.04);
+  color: #6e7681;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
 .signup-criteria-badge.met {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.dark .signup-criteria-badge.met,
+html.dark .signup-criteria-badge.met {
   background: rgba(46, 213, 115, 0.1);
   color: #2ed573;
   border-color: rgba(46, 213, 115, 0.25);
@@ -111,10 +134,20 @@
 }
 
 .signup-match-status.valid {
+  color: #16a34a;
+}
+
+.dark .signup-match-status.valid,
+html.dark .signup-match-status.valid {
   color: #2ed573;
 }
 
 .signup-match-status.invalid {
+  color: #dc2626;
+}
+
+.dark .signup-match-status.invalid,
+html.dark .signup-match-status.invalid {
   color: #ff4757;
 }
 

@@ -5,7 +5,7 @@ from catalog.serializers import BookListSerializer
 
 class RecommendationEngine:
     """
-    Explainable content-based recommendation engine for PageNet Bookstore (Phase 3).
+    Explainable content-based recommendation engine for Bookkadeh Bookstore (Phase 3).
     Computes semantic similarity and personalized picks using:
     - Controlled Genre taxonomy overlap
     - Fine-grained Thematic Tag Jaccard similarity
