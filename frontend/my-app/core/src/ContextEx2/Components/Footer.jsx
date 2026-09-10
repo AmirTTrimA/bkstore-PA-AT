@@ -23,7 +23,7 @@ export default function Footer() {
         <div className="container">
             <div className="footer-content">
                 <div className="footer-column">
-                    <h3>PageNet</h3>
+                    <h3>{t('nav.brandName', 'Bookkadeh')}</h3>
                     <p>{t('info.slogan', 'Your Gateway to Infinite Knowledge & Reading')}</p>
                 </div>
                 <div className="footer-column">
@@ -48,12 +48,12 @@ export default function Footer() {
         </div>
     
       {/* Contact Section */}
-      <p className='contact-text'>{t('info.contactWithUs', 'Connect With PageNet')}</p>
+      <p className='contact-text'>{t('info.contactWithUs', 'Connect With Bookkadeh')}</p>
         <ul className="example-link">
           {/* Telegram */}
           <li className="icon-content">
             <a
-              href="https://t.me/pagenet_books"
+              href="https://t.me/bookkadeh"
               target="_blank"
               data-social="telegram"
               aria-label="Telegram"
@@ -72,7 +72,7 @@ export default function Footer() {
           {/* Bale (بله) */}
           <li className="icon-content">
             <a
-              href="https://ble.ir/pagenet_books"
+              href="https://ble.ir/bookkadeh"
               target="_blank"
               data-social="bale"
               aria-label="Bale Messenger"
@@ -91,7 +91,7 @@ export default function Footer() {
           {/* Aparat (آپارات) */}
           <li className="icon-content">
             <a
-              href="https://www.aparat.com/pagenet_books"
+              href="https://www.aparat.com/bookkadeh"
               target="_blank"
               data-social="aparat"
               aria-label="Aparat"
@@ -109,7 +109,10 @@ export default function Footer() {
         </ul>
 
         <div className="copyright">
-            <p>&copy; 2025 PageNet. {t('info.allRightsReserved', 'All rights reserved.')}</p>
+            <p>&copy; 2025 {t('nav.brandName', 'Bookkadeh')}. {t('info.allRightsReserved', 'All rights reserved.')}</p>
+            <p className="copyright-devs">
+              {t('info.developedBy', 'Developed by Amirreza Tehrani & Parsa Alinejad')}
+            </p>
         </div>
     </div>
   </footer>

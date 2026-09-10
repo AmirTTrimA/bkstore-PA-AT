@@ -159,12 +159,12 @@ export default function Navbar() {
   return (
     <>
       {/* Unified Primary Navigation Bar */}
-      <header className='pagenet-navbar'>
+      <header className='bookkadeh-navbar pagenet-navbar'>
         <div className="navbar-container">
           {/* Left: Brand & Navigation Links */}
           <div className="navbar-left">
             <Link to="/home" className='nav-brand-logo'>
-              <span className="brand-dot">●</span> {t('nav.brandName', 'PageNet')}
+              <span className="brand-dot">●</span> {t('nav.brandName', 'Bookkadeh')}
             </Link>
 
             <nav className="nav-links-menu">

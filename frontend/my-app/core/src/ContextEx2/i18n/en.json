@@ -66,7 +66,7 @@
     "genre_persian_lit": "Persian Literature"
   },
   "nav": {
-    "brandName": "PageNet",
+    "brandName": "Bookkadeh",
     "home": "Home",
     "catalog": "Catalog",
     "authors": "Authors",
@@ -442,16 +442,17 @@
     "reenterNewPassword": "Re-enter new password"
   },
   "info": {
-    "aboutUs": "About PageNet",
-    "aboutText": "PageNet is a next-generation cultural commerce platform bridging avid readers with world-class literature, cutting-edge software architecture books, and authentic Iranian masterpieces.",
+    "aboutUs": "About Bookkadeh",
+    "aboutText": "Bookkadeh is a next-generation cultural commerce platform bridging avid readers with world-class literature, cutting-edge software architecture books, and authentic Iranian masterpieces.",
     "faq": "Frequently Asked Questions",
     "privacy": "Privacy Policy",
     "refund": "Returns & Refund Policy",
     "allRightsReserved": "All rights reserved.",
+    "developedBy": "Developed by Amirreza Tehrani & Parsa Alinejad",
     "designedWith": "Crafted with passion for knowledge & reading.",
     "quickLinks": "Quick Links",
     "about": "About",
-    "contactWithUs": "Contact With Us",
+    "contactWithUs": "Connect With Bookkadeh",
     "slogan": "Best-friend of Owls"
   },
   "payment": {

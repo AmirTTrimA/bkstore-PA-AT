@@ -355,7 +355,7 @@ export default function Home() {
         <nav className="top-res">
           <div className="up">
             <Link to="/home" className="logo-res">
-              PageNet
+              {t('nav.brandName', 'Bookkadeh')}
             </Link>
           </div>
           <div className="down">

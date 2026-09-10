@@ -117,7 +117,7 @@
 .card-image-wrapper {
   position: relative;
   width: 100%;
-  height: 150px; 
+  height: 180px; 
   margin-bottom: 0.5rem;
   display: block; 
   background-color: rgba(0,0,0,0.04); 
@@ -128,7 +128,7 @@
 /* Main Image */
 .card-slider img#card-main {
   width: 100%;
-  height: 150px;
+  height: 180px;
   border-radius: 8px;
   margin-bottom: 0.5rem;
   object-fit: cover;  

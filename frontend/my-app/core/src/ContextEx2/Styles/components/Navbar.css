@@ -1,7 +1,8 @@
 /* ============================================
-   PAGE NET UNIFIED NAVBAR
+   BOOKKADEH UNIFIED NAVBAR
    ============================================ */
 
+.bookkadeh-navbar,
 .pagenet-navbar {
     position: sticky;
     top: 0;
@@ -165,6 +166,7 @@
 }
 
 /* Dark mode button alignment inside navbar */
+.bookkadeh-navbar .dark-buttons,
 .pagenet-navbar .dark-buttons {
     width: 38px !important;
     height: 38px !important;
@@ -183,6 +185,7 @@
     outline: none !important;
 }
 
+.bookkadeh-navbar .dark-buttons:hover,
 .pagenet-navbar .dark-buttons:hover {
     background-color: rgba(209, 120, 66, 0.1) !important;
     border-color: rgba(209, 120, 66, 0.25) !important;
@@ -191,6 +194,7 @@
     transform: translateY(-1px) !important;
 }
 
+.bookkadeh-navbar .dark-buttons svg,
 .pagenet-navbar .dark-buttons svg {
     width: 20px !important;
     height: 20px !important;
@@ -198,6 +202,7 @@
 }
 
 /* Language toggle inside navbar */
+.bookkadeh-navbar .lang-toggle-btn,
 .pagenet-navbar .lang-toggle-btn {
     height: 36px;
     padding: 4px 12px;
@@ -208,6 +213,7 @@
     box-shadow: none;
 }
 
+.bookkadeh-navbar .lang-toggle-btn:hover,
 .pagenet-navbar .lang-toggle-btn:hover {
     background: rgba(209, 120, 66, 0.1);
     border-color: #d17842;
@@ -229,6 +235,7 @@
 }
 
 @media (max-width: 768px) {
+    .bookkadeh-navbar,
     .pagenet-navbar {
         display: none !important;
     }
