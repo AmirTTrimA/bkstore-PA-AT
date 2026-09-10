@@ -4,8 +4,10 @@
 
 .author-page-wrapper {
     min-height: 100vh;
-    background-color: var(--bg-body, #111622);
+    background-color: var(--bg-primary);
     color: var(--text-primarys);
+    display: flex;
+    flex-direction: column;
 }
 
 .author-nav-full {
@@ -26,17 +28,16 @@
    ============================================ */
 
 .author-container {
-    max-width: 1200px;
-    margin: 20px auto 40px;
+    max-width: 1280px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    border-radius: 16px;
     background-color: var(--bg-primary);
     color: var(--text-primarys);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    width: 95%;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
+    width: 100%;
+    padding: 0 24px 40px 24px;
+    box-sizing: border-box;
+    flex: 1;
 }
 
 /* ============================================
@@ -47,7 +48,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 24px;
+    padding: 16px 0;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-primary);
     gap: 16px;
@@ -105,7 +106,7 @@
 .author-hero-card {
     display: flex;
     gap: 28px;
-    padding: 32px 24px;
+    padding: 32px 0 28px 0;
     border-bottom: 1px solid var(--border-color);
     align-items: flex-start;
     background: var(--bg-primary);
@@ -202,7 +203,7 @@
 .author-biography {
     font-size: 0.95rem;
     line-height: 1.7;
-    color: #cbd5e1;
+    color: var(--text-secondary);
     margin: 0;
     max-width: 850px;
 }
@@ -232,7 +233,7 @@
    ============================================ */
 
 .author-books-section {
-    padding: 24px;
+    padding: 24px 0;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -555,16 +556,14 @@
     }
 
     .author-container {
-        width: 95%;
-        margin: 12px auto 30px;
-        border-radius: 12px;
+        padding: 0 16px 30px 16px;
     }
 
     .author-hero-card {
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 24px 16px;
+        padding: 24px 0;
     }
 
     .author-hero-header {
@@ -593,8 +592,12 @@
 }
 
 @media (max-width: 480px) {
+    .author-container {
+        padding: 0 12px 24px 12px;
+    }
+
     .author-top-bar {
-        padding: 12px 16px;
+        padding: 12px 0;
     }
 
     .author-breadcrumbs {
@@ -602,7 +605,7 @@
     }
 
     .author-books-section {
-        padding: 16px;
+        padding: 16px 0;
     }
 
     .author-books-grid {

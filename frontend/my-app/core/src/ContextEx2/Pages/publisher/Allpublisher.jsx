@@ -183,9 +183,9 @@ export default function AllPublisher() {
             </div>
           )}
         </div>
-
-        <Footer />
       </div>
+
+      <Footer />
     </div>
   )
 }

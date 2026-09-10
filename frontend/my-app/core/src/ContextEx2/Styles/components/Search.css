@@ -4,8 +4,8 @@
 
 .search-page-wrapper {
     min-height: 100vh;
-    background-color: var(--bg-body, #111622);
-    color: var(--text-primarys, #f1f5f9);
+    background-color: var(--bg-primary);
+    color: var(--text-primarys);
 }
 
 /* Navigation Sticky Wrappers */

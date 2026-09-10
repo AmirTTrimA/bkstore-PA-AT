@@ -410,7 +410,7 @@ export default function Publisher() {
                       </div>
 
                       <Link to={`/book/${bookId}`} className="pub-book-action-btn">
-                        {t("book.viewDetails", "View Details")} →
+                        {t("book.viewDetails", "View Details")}
                       </Link>
                     </div>
                   </div>
@@ -419,9 +419,9 @@ export default function Publisher() {
             </div>
           )}
         </div>
-
-        <Footer />
       </div>
+
+      <Footer />
     </div>
   );
 }

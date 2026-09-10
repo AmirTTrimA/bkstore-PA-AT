@@ -230,8 +230,7 @@ export default function Author() {
             <div className="author-books-header-left">
               <h3>{t("author.publishedBooks", "Published Books")}</h3>
               <span className="author-books-count-tag">
-                {filteredBooks.length}{" "}
-                {t("author.booksAvailable", filteredBooks.length === 1 ? "Book Available" : "Books Available", { count: filteredBooks.length })}
+                {t("author.booksAvailable", "{count} Books Available", { count: filteredBooks.length })}
               </span>
             </div>
 
@@ -362,7 +361,7 @@ export default function Author() {
                       </div>
 
                       <span className="author-book-action-btn">
-                        {t("book.viewDetails", "View Details")} →
+                        {t("book.viewDetails", "View Details")}
                       </span>
                     </div>
                   </Link>
