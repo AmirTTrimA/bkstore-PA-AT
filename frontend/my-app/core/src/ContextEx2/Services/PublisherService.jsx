@@ -138,7 +138,7 @@ const PublisherService = {
    * Fetches all authors from the catalog.
    */
   getAuthors: async () => {
-    const response = await ApiClient.get("/authors/");
+    const response = await ApiClient.get("/authors/?all=true");
     return Array.isArray(response.data) ? response.data : (response.data?.results || []);
   },
 };

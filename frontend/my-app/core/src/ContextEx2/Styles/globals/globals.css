@@ -329,3 +329,15 @@ html[dir="rtl"] .nav-chevron,
 html[dir="rtl"] .arrow-right {
   transform: scaleX(-1);
 }
+
+/* Universal dark mode dropdown/select options styling */
+.dark select,
+[data-theme='dark'] select {
+  color-scheme: dark;
+}
+
+.dark select option,
+[data-theme='dark'] select option {
+  background-color: #282b31;
+  color: #f1f5f9;
+}

@@ -32,6 +32,11 @@ class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
             return AuthorDetailSerializer
         return AuthorSerializer
 
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get("all") == "true" or self.request.query_params.get("page_size") == "all":
+            return None
+        return super().paginate_queryset(queryset)
+
 
 # class BookViewSet(viewsets.ReadOnlyModelViewSet):
 #     """

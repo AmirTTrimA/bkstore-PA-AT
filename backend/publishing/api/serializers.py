@@ -1,5 +1,6 @@
 # publishing/api/serializers.py
 from catalog.models import Book
+from catalog.serializers import BookListSerializer
 from django.utils import timezone
 from pricing.models import Price
 from publishing.models import (BookCreateProposal, BookUpdateProposal, BookDeleteProposal,
@@ -8,6 +9,25 @@ from publishing.models import (BookCreateProposal, BookUpdateProposal, BookDelet
 from publishing.services.proposal_service import ProposalService
 from requests import Response
 from rest_framework import serializers
+
+
+class PublisherBookSerializer(BookListSerializer):
+    """
+    Detailed serializer for books listed within the Publisher Dashboard.
+    Extends BookListSerializer with author_id, isbn, genre, and description.
+    """
+    author_id = serializers.IntegerField(source="author.id", read_only=True)
+    isbn = serializers.CharField(read_only=True)
+    genre = serializers.CharField(read_only=True)
+    description = serializers.CharField(read_only=True)
+
+    class Meta(BookListSerializer.Meta):
+        fields = BookListSerializer.Meta.fields + (
+            "author_id",
+            "isbn",
+            "genre",
+            "description",
+        )
 
 
 class PublisherSerializer(serializers.ModelSerializer):

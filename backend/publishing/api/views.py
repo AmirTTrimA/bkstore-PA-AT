@@ -20,7 +20,8 @@ from .serializers import (BookCreateProposalResponseSerializer,
                           PublisherSerializer, AuthorCreateProposalResponseSerializer,
                           AuthorCreateProposalSubmissionSerializer,
                           AuthorUpdateProposalResponseSerializer,
-                          AuthorUpdateProposalSubmissionSerializer,)
+                          AuthorUpdateProposalSubmissionSerializer,
+                          PublisherBookSerializer,)
 
 
 class MyPublishersView(generics.ListAPIView):
@@ -92,7 +93,7 @@ class PublisherBooksView(generics.ListAPIView):
     Accessible to active members of the publisher and staff/superusers.
     """
 
-    serializer_class = BookListSerializer
+    serializer_class = PublisherBookSerializer
     permission_classes = [IsAuthenticated, IsPublisherMember]
 
     def get_queryset(self):

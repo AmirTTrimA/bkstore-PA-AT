@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Notification from '../../Components/feature/Notification';
 import { useLanguage } from '../../Context/LanguageContext';
 import PublisherService from '../../Services/PublisherService';
@@ -49,6 +49,27 @@ export default function Upload({
   const [authors, setAuthors] = useState([]);
   const [loadingAuthors, setLoadingAuthors] = useState(true);
 
+  const isEditMode = bookToEdit !== null;
+
+  // Ensure the book's author is in the select dropdown list
+  const displayAuthors = useMemo(() => {
+    if (!isEditMode || !bookToEdit) return authors;
+    const authorName = bookToEdit.author_name || bookToEdit.author;
+    if (!authorName) return authors;
+    const targetId =
+      bookToEdit.author_id ||
+      bookToEdit.raw?.author_id ||
+      bookToEdit.raw?.author?.id ||
+      authorId;
+    const exists = authors.some(
+      (a) => (targetId && String(a.id) === String(targetId)) || a.name === authorName
+    );
+    if (!exists) {
+      return [{ id: targetId || 'current', name: authorName }, ...authors];
+    }
+    return authors;
+  }, [authors, isEditMode, bookToEdit, authorId]);
+
   // Submission & validation state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -63,8 +84,6 @@ export default function Upload({
     reason: '',
     submitting: false,
   });
-
-  const isEditMode = bookToEdit !== null;
 
   // Load available authors
   useEffect(() => {
@@ -101,15 +120,24 @@ export default function Upload({
       setCoverImageUrl(bookToEdit.cover_image_url || bookToEdit.bookImage || '');
 
       // Identify matching author ID
-      if (bookToEdit.author_id) {
-        setAuthorId(String(bookToEdit.author_id));
-      } else if (bookToEdit.raw?.author?.id) {
-        setAuthorId(String(bookToEdit.raw.author.id));
+      const targetAuthorId =
+        bookToEdit.author_id ||
+        bookToEdit.raw?.author_id ||
+        bookToEdit.raw?.author?.id;
+
+      if (targetAuthorId) {
+        setAuthorId(String(targetAuthorId));
       } else if (authors.length > 0) {
         const found = authors.find(
           (a) => a.name === bookToEdit.author || a.name === bookToEdit.author_name
         );
-        if (found) setAuthorId(String(found.id));
+        if (found) {
+          setAuthorId(String(found.id));
+        } else if (bookToEdit.author || bookToEdit.author_name) {
+          setAuthorId('current');
+        }
+      } else if (bookToEdit.author || bookToEdit.author_name) {
+        setAuthorId('current');
       }
 
       // Populate format instances
@@ -246,7 +274,7 @@ export default function Upload({
       return;
     }
 
-    if (!authorId) {
+    if (!isEditMode && !authorId) {
       setFormError('Please assign an author to this title.');
       return;
     }
@@ -457,16 +485,21 @@ export default function Upload({
                 value={authorId}
                 onChange={(e) => setAuthorId(e.target.value)}
                 disabled={loadingAuthors || isEditMode}
-                required
+                required={!isEditMode}
               >
                 {loadingAuthors ? (
                   <option value="">{t('common.loading', 'Loading authors...')}</option>
                 ) : (
-                  authors.map((auth) => (
-                    <option key={auth.id} value={auth.id}>
-                      {auth.name}
-                    </option>
-                  ))
+                  <>
+                    {!isEditMode && (
+                      <option value="">{t('publisher_panel.selectAuthor', 'Select an Author...')}</option>
+                    )}
+                    {displayAuthors.map((auth) => (
+                      <option key={auth.id} value={auth.id}>
+                        {auth.name}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>

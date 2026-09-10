@@ -110,10 +110,28 @@
   font-weight: 600;
   outline: none;
   cursor: pointer;
+  color-scheme: light dark;
 }
 
 .publisher-dropdown-select:focus {
   border-color: #d17842;
+}
+
+.publisher-dropdown-select option {
+  background-color: var(--bg-card, #ffffff);
+  color: var(--text-primarys, #111827);
+  padding: 4px 8px;
+}
+
+.dark .publisher-dropdown-select,
+[data-theme='dark'] .publisher-dropdown-select {
+  color-scheme: dark;
+}
+
+.dark .publisher-dropdown-select option,
+[data-theme='dark'] .publisher-dropdown-select option {
+  background-color: #282b31 !important;
+  color: #f1f5f9 !important;
 }
 
 /* Topbar Right Controls */
