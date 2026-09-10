@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# generated PDF.js worker
+/public/pdf.worker.min.mjs
