@@ -72,7 +72,7 @@ export default function AllPublisher() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   return (
     <div className="all-publisher-page-wrapper">
@@ -110,7 +110,7 @@ export default function AllPublisher() {
           <div className="publishers-title-container">
             <h1 className="publishers-title">{t("publisher.authorizedHouses", "Authorized Publishing Houses")}</h1>
             <p className="publishers-title-info">
-              {t("publisher.housesDesc", "Explore trusted Iranian publishers and cultural organizations partnering with PageNet. Discover thousands of authentic physical editions, ebooks, and audiobooks directly from primary sources.")}
+              {t("publisher.housesDesc", "Explore trusted Iranian publishers and cultural organizations partnering with Bookkadeh. Discover thousands of authentic physical editions, ebooks, and audiobooks directly from primary sources.")}
             </p>
           </div>
 

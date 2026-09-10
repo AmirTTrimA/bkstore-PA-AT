@@ -233,11 +233,12 @@ export default function Dashboard({ initialTab }) {
     <div className="dashboard-wrapper">
       {/* Site-Wide Aligned Top Navigation Bar */}
       <header className="dashboard-topbar">
-        {/* Brand Logo & User Greeting */}
-        <div className="topbar-left-group">
-          <Link to="/home" className="nav-logo dashboard-logo" title="Back to Home">
-            PageNet
-          </Link>
+        <div className="dashboard-topbar-inner">
+          {/* Brand Logo & User Greeting */}
+          <div className="topbar-left-group">
+            <Link to="/home" className="nav-logo dashboard-logo" title="Back to Home">
+              <span className="brand-dot">●</span> {t('nav.brandName', 'Bookkadeh')}
+            </Link>
 
           <div
             className="topbar-user-section"
@@ -399,6 +400,7 @@ export default function Dashboard({ initialTab }) {
             </svg>
           </button>
         </nav>
+        </div>
       </header>
 
       {/* Main Content Body */}

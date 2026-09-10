@@ -18,17 +18,25 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  width: 100%;
   background-color: var(--bg-nav);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.45);
-  border-radius: 0 0 10px 10px;
-  padding: 10px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   margin-bottom: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0;
+}
+
+.pdashboard-topbar-inner {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .pdashboard-topbar-left {
@@ -39,12 +47,21 @@
 }
 
 .pdashboard-logo {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 800;
   color: #d17842 !important;
   text-decoration: none;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.5px;
   transition: transform 0.2s ease, opacity 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdashboard-logo .brand-dot {
+  color: #d17842;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .pdashboard-logo:hover {
@@ -187,13 +204,14 @@
    Main Container & KPI Metrics Cards
    -------------------------------------------- */
 .pdashboard-main {
-  max-width: 1240px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 20px 40px 20px;
+  padding: 0 24px 40px 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  box-sizing: border-box;
 }
 
 .pdashboard-kpi-grid {
@@ -674,7 +692,7 @@
    Responsive Styles
    -------------------------------------------- */
 @media (max-width: 900px) {
-  .pdashboard-topbar {
+  .pdashboard-topbar-inner {
     padding: 10px 16px;
   }
   
@@ -689,7 +707,7 @@
 }
 
 @media (max-width: 600px) {
-  .pdashboard-topbar {
+  .pdashboard-topbar-inner {
     flex-wrap: wrap;
     gap: 10px;
   }

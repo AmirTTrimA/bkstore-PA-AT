@@ -218,11 +218,12 @@ export default function PDashboard() {
           Site-Wide Aligned Top Navigation Bar
          -------------------------------------------- */}
       <header className="pdashboard-topbar">
-        {/* Left: PageNet Branding & Publisher Switcher */}
-        <div className="pdashboard-topbar-left">
-          <Link to="/home" className="pdashboard-logo" title={t('publisher_panel.backStorefront', 'Back to Storefront')}>
-            PageNet
-          </Link>
+        <div className="pdashboard-topbar-inner">
+          {/* Left: Branding & Publisher Switcher */}
+          <div className="pdashboard-topbar-left">
+            <Link to="/home" className="pdashboard-logo" title={t('publisher_panel.backStorefront', 'Back to Storefront')}>
+              <span className="brand-dot">●</span> {t('nav.brandName', 'Bookkadeh')}
+            </Link>
 
           <div className="pdashboard-user-greeting">
             {t('publisher_panel.welcome', 'Welcome, {name}', { name: username })}
@@ -312,6 +313,7 @@ export default function PDashboard() {
           >
             ☰
           </button>
+        </div>
         </div>
       </header>
 

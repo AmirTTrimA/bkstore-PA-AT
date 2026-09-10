@@ -19,15 +19,24 @@
   position: sticky;
   top: 0;
   z-index: 1000;
+  width: 100%;
+  background-color: var(--bg-nav, #26282c);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease;
+  padding: 0;
+}
+
+.dashboard-topbar-inner {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 8px 24px;
-  background-color: var(--bg-nav, #26282c);
-  border-radius: 0 0 10px 10px;
-  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.45);
-  transition: background-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 /* Left Group: Logo + User Profile */
@@ -40,12 +49,21 @@
 
 /* Logo matching site-wide nav-logo */
 .dashboard-logo {
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 1.6rem;
+  font-weight: 800;
   color: var(--text-primarys2, #d17842) !important;
   text-decoration: none;
   letter-spacing: -0.5px;
   transition: opacity 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-logo .brand-dot {
+  color: #d17842;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .dashboard-logo:hover {
@@ -259,10 +277,11 @@
    ============================================ */
 
 .dashboard-content-area {
-  max-width: 1200px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
-  padding: 24px 20px;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 .dashboard-breadcrumb-row {
@@ -709,7 +728,7 @@
 }
 
 @media (max-width: 600px) {
-  .dashboard-topbar {
+  .dashboard-topbar-inner {
     padding: 10px 16px;
     flex-wrap: wrap;
   }
