@@ -70,18 +70,54 @@ function mapBookForSlider(book) {
 }
 
 const GENRE_ICONS = {
-  HISTORY: "/icons/cat-history.svg",
+  // Canonical backend genres
+  FICTION: "/icons/cat-novel.svg",
   SCI_FI: "/icons/cat-science.svg",
-  ART_DESIGN: "/icons/cat-art.svg",
-  PSYCHOLOGY: "/icons/cat-psychology.svg",
+  HISTORY: "/icons/cat-history.svg",
+  SCIENCE: "/icons/cat-science.svg",
   TECH: "/icons/cat-tech.svg",
+  BUSINESS: "/icons/cat-business.svg",
+  PHILOSOPHY: "/icons/cat-philosophy.svg",
+  PSYCHOLOGY: "/icons/cat-psychology.svg",
+  PERSIAN_LIT: "/icons/cat-persian-lit.svg",
+
+  // Aliases / Related codes
+  ART_DESIGN: "/icons/cat-art.svg",
   TRIP_GEO: "/icons/cat-trip.svg",
-  FINANCIAL: "/icons/cat-finance.svg",
+  FINANCIAL: "/icons/cat-business.svg",
   RELIGIOUS: "/icons/cat-religious.svg",
   NOVEL: "/icons/cat-novel.svg",
 };
 
-const getGenreIcon = (genre) => GENRE_ICONS[genre] || "/icons/cat-default.svg";
+const getGenreIcon = (genre) => {
+  if (!genre) return "/icons/cat-default.svg";
+  const raw = String(genre.value || genre.slug || genre.name || genre);
+  const normalized = raw.toUpperCase().replace(/[-\s]+/g, "_");
+  if (GENRE_ICONS[normalized]) return GENRE_ICONS[normalized];
+
+  if (normalized.includes("SCI") || normalized.includes("SCIENCE")) return "/icons/cat-science.svg";
+  if (normalized.includes("TECH") || normalized.includes("CODE") || normalized.includes("COMPUTER")) return "/icons/cat-tech.svg";
+  if (normalized.includes("PHILOSOPH") || normalized.includes("فلسفه")) return "/icons/cat-philosophy.svg";
+  if (normalized.includes("PSYCHO") || normalized.includes("روان")) return "/icons/cat-psychology.svg";
+  if (normalized.includes("HISTOR") || normalized.includes("تاریخ")) return "/icons/cat-history.svg";
+  if (normalized.includes("PERSIAN") || normalized.includes("LIT") || normalized.includes("ادبیات") || normalized.includes("شعر")) return "/icons/cat-persian-lit.svg";
+  if (normalized.includes("BUSINES") || normalized.includes("FINANC") || normalized.includes("ECONOM") || normalized.includes("مدیریت")) return "/icons/cat-business.svg";
+  if (normalized.includes("FICTION") || normalized.includes("NOVEL") || normalized.includes("داستان") || normalized.includes("رمان")) return "/icons/cat-novel.svg";
+  if (normalized.includes("ART") || normalized.includes("DESIGN") || normalized.includes("هنر")) return "/icons/cat-art.svg";
+
+  return "/icons/cat-default.svg";
+};
+
+const FALLBACK_GENRES = [
+  { value: "PERSIAN_LIT", label: "Persian Literature" },
+  { value: "FICTION", label: "Fiction & Novels" },
+  { value: "PHILOSOPHY", label: "Philosophy" },
+  { value: "HISTORY", label: "History" },
+  { value: "TECH", label: "Technology & Code" },
+  { value: "BUSINESS", label: "Business & Finance" },
+  { value: "PSYCHOLOGY", label: "Psychology" },
+  { value: "SCIENCE", label: "Science & Nature" },
+];
 
 // ============================================
 // Main Component
@@ -104,7 +140,7 @@ export default function Home() {
   const [digitalBooks, setDigitalBooks] = useState([]);
   const [audioBooks, setAudioBooks] = useState([]);
   const [publishers, setPublishers] = useState([]);
-  const [genres, setGenres] = useState([]);
+  const [genres, setGenres] = useState(FALLBACK_GENRES);
 
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [bookError, setBookError] = useState("");
@@ -206,7 +242,9 @@ export default function Home() {
         // 7. Genres
         if (genresRes.status === "fulfilled") {
           const rawGenres = genresRes.value?.results || genresRes.value || [];
-          setGenres(Array.isArray(rawGenres) ? rawGenres : []);
+          setGenres(Array.isArray(rawGenres) && rawGenres.length >= 4 ? rawGenres : FALLBACK_GENRES);
+        } else {
+          setGenres(FALLBACK_GENRES);
         }
       } catch (err) {
         console.error("Failed loading home data:", err);
@@ -381,10 +419,11 @@ export default function Home() {
                 >
                   <div className="category-icon">
                     <img
-                      src={getGenreIcon(genre.value || genre)}
-                      alt={`${genre.label || genre} icon`}
+                      src={getGenreIcon(genre)}
+                      alt={`${genre.label || genre.name || genre} icon`}
                       onError={(e) => {
-                        e.target.style.display = "none";
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/icons/cat-default.svg";
                       }}
                     />
                   </div>

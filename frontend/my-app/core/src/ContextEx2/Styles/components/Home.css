@@ -17,14 +17,15 @@
 }
 
 /* ============================================
-
+   SECTION META HEADERS & LINKS
+   ============================================ */
 
 .section-meta-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 24px 8px;
-    max-width: 1200px;
+    padding: 24px 20px 8px;
+    max-width: 1100px;
     margin: 0 auto;
 }
 
@@ -36,8 +37,8 @@
 }
 
 .home-meta-link {
-    background: rgba(209, 120, 66, 0.1);
-    border: 1px solid rgba(209, 120, 66, 0.3);
+    background: rgba(209, 120, 66, 0.12);
+    border: 1px solid rgba(209, 120, 66, 0.4);
     color: #d17842;
     font-size: 0.88rem;
     font-weight: 600;
@@ -55,7 +56,8 @@
     color: #fff;
     border-color: #d17842;
     text-decoration: none;
-    transform: translateX(2px);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(209, 120, 66, 0.25);
 }
 
 
@@ -66,94 +68,82 @@
 .categories-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    padding: 20px;
+    gap: 16px;
+    padding: 10px 20px 25px;
     justify-content: center;
     max-width: 1100px;
-    margin: 50px 15px;
+    margin: 10px auto 25px;
 }
 
 
 .category-card {
-    background-color:#F2F3FF ;
-    color: #000000 !important;
-    border-radius: 20px;  
+    background-color: var(--bg-category, #ffffff);
+    color: var(--text-primarys);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 16px;  
     overflow: hidden;
-    box-shadow: 0 4px 12px var(--category-box-shadow);
+    box-shadow: 0 3px 10px var(--category-box-shadow, rgba(0,0,0,0.05));
     text-decoration: none;
-    color: inherit;
-    transition: all 0.001s ease-out;
-    
-    
-    flex: 0 0 calc(55% - 50px);
-    max-width:calc(55% - 50px);
-    max-width: 250px; 
-    padding: 10px 0px;
-    
-
+    transition: all 0.2s ease;
+    flex: 0 0 calc(25% - 16px);
+    min-width: 130px;
+    max-width: 240px; 
+    padding: 14px 10px;
     text-align: center;
-    
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-   
-    
 }
 
 .category-card:hover {
-    background-color: rgba(201, 202, 216, 0.799);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    background-color: var(--bg-category-hover, #eef2f6);
+    border-color: #d17842;
+    box-shadow: 0 6px 18px rgba(209, 120, 66, 0.2);
+    transform: translateY(-2px);
     cursor: pointer;
 }
 
-.category-card:hover  .category-icon  {
-    background-color: rgba(201, 202, 216, 0.002);
-
+.category-card:hover .category-icon {
+    background-color: transparent;
 }
 
-
-
 .category-icon {
-    background-color: inherit;
-    
-    margin: 20px 0px ;
+    background-color: transparent;
+    margin: 8px 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 20px;
-    
-    
+    height: 36px;
 }
 
-.category-icon i {
-    font-size: 30px;
+.category-icon img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
 }
-
-
 
 .category-title {
-    font-size: 18px;
-    font-weight: 500;
-    margin: 0;
-    color: #333;
-    
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin: 4px 0 0;
+    color: var(--text-primarys);
 }
-
 
 
 /* ============================================
-        CAROUSEL 
+        HERO CAROUSEL 
    ============================================ */
     
 .carousel-container {
     position: relative;
-    max-width: 1100px;
-    margin: 20px auto 40px;
+    max-width: 960px;
+    margin: 15px auto 30px;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-    background: #000;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    background: #111;
 }
 
 .carousel-card{
@@ -166,7 +156,7 @@
 .slide-image{
     border-radius: 16px;
     width: 100%;
-    height: 440px; 
+    height: 270px; 
     object-fit: cover;  
     display: block; 
     filter: brightness(0.9);
@@ -182,36 +172,36 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
-    padding: 36px 24px 24px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.45) 60%, transparent 100%);
+    padding: 24px 20px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     text-align: center;
 }
 
 .slide-featured-pill {
     background: #d17842;
     color: #fff;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    padding: 3px 12px;
-    border-radius: 12px;
+    padding: 2px 10px;
+    border-radius: 10px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
 }
 
 .slide-title{
     margin: 0;
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     font-weight: 800;
     color: #fff;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .slide-price-pill {
-    font-size: 1.15rem;
+    font-size: 1rem;
     font-weight: 800;
     color: #4caf50;
 }
@@ -296,21 +286,22 @@
 }
 
 .publisher-card {
-    background: var(--bg-card, #1e2430);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
     border-radius: 14px;
     padding: 18px;
     display: flex;
     gap: 16px;
     align-items: center;
     cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .publisher-card:hover {
     transform: translateY(-3px);
     border-color: #d17842;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 8px 22px rgba(209, 120, 66, 0.2);
 }
 
 .publisher-avatar {
@@ -325,7 +316,8 @@
     flex-shrink: 0;
     padding: 5px;
     box-sizing: border-box;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     overflow: hidden;
 }
 
@@ -366,7 +358,7 @@
 .pub-desc-line {
     margin: 0;
     font-size: 0.8rem;
-    color: #94a3b8;
+    color: var(--text-secondary, #64748b);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -705,7 +697,7 @@
     .carousel-card {
         flex: 0 0 100%;
         width: 100%;
-        height: 400px;
+        height: 230px;
         overflow: hidden;
         border-radius: 10px;
         position: relative;
@@ -775,13 +767,13 @@
 @media(max-width:500px){
     .carousel-card{
         flex: 0 0 100%;
-        height: 350px;
+        height: 200px;
         overflow: hidden;
         border-radius: 10px;
     }
     
     .slide-image{
-        height: 350px;
+        height: 200px;
         width: 100%;
         object-fit: cover;
         object-position: center;
@@ -847,7 +839,7 @@
     .carousel-card {
         flex: 0 0 100%;
         width: 100%;
-        height: 300px;
+        height: 180px;
         overflow: hidden;
         border-radius: 10px;
         position: relative;

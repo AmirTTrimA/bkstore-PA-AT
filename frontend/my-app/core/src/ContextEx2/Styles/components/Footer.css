@@ -1,92 +1,99 @@
-
 /* ============================================
         FOOTER CONTAINER
    ============================================ */
 
-.container_footer{
+.container_footer {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    font-size: large;
+    font-size: 1rem;
     font-weight: 500;
-    background-color: #464646;
-    color: white;
-
+    background-color: var(--bg-footer, #14171d);
+    color: #f1f5f9;
     position: relative;
-
-    padding-top: 75px;
-    padding-bottom: 150px;
-    
+    padding-top: 60px;
+    padding-bottom: 140px;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 }
 
-
-
-
-
-        
-        
 footer {
-    padding: 20px 0 0px;
+    padding: 0;
 }
 
 .footer-content {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: 50px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+    width: 100%;
 }
 
-      
 .footer-column h3 {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-    color: var(--accent-light);
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: #d17842;
+    letter-spacing: 0.3px;
+}
+
+.footer-column p {
+    color: #94a3b8;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin: 0;
 }
 
 .footer-column ul {
     list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .footer-column ul li {
-    margin-bottom: 10px;
-    margin-left: -25px;
+    margin-bottom: 8px;
+    padding: 0;
 }
 
 .footer-column a {
-    color: #9ca3af;
+    color: #cbd5e1;
+    font-size: 0.92rem;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    display: inline-block;
+    padding: 2px 0;
 }
 
 .footer-column a:hover {
-    color: var(--accent-light);
+    color: #d17842;
+    transform: translateX(4px);
 }
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .copyright {
     position: absolute;
-    bottom: -5px;
-    margin-top: 50px;
+    bottom: 12px;
+    width: 100%;
     text-align: center;
-    border-top: 1px solid var(--secondary-dark);
-    color: var(--text-secondary-f);
-    font-size: 0.7em;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #64748b;
+    font-size: 0.8rem;
+    padding-top: 16px;
 }
 
-
-
-.contact-text{
-  text-align: center;
-  font-weight: bold;
-  font-size: x-large;
-  margin-bottom: 0;
-  padding: 20px 0;
-
+.contact-text {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #f1f5f9;
+    margin: 32px 0 16px 0;
+    padding: 0;
 }
 
 
@@ -210,50 +217,8 @@ ul{
 }
 
 
-.icon-content a[data-social="spotify"] .filled,
-.icon-content a[data-social="spotify"]  {
-    background: linear-gradient(135deg, #0f3d1f, #146b35, #1db954, #0d2916);
-    background-size: 400% 400%;
-    animation: premiumGradient 6s ease infinite;
-    backdrop-filter: blur(12px) saturate(200%);
-    -webkit-backdrop-filter: blur(12px) saturate(200%);
-    border: 1px solid rgba(29, 185, 84, 0.6);
-    box-shadow:
-      inset 0 0 12px rgba(29, 185, 84, 0.5),
-      0 0 24px rgba(29, 185, 84, 0.7);
-}
-
-
-.icon-content a[data-social="pinterest"] .filled,
-.icon-content a[data-social="pinterest"]  {
-    background: linear-gradient(135deg, #3d0a0f, #7a0f1c, #bd081c, #4a0b12);
-    background-size: 400% 400%;
-    animation: premiumGradient 6s ease infinite;
-    backdrop-filter: blur(12px) saturate(200%);
-    -webkit-backdrop-filter: blur(12px) saturate(200%);
-    border: 1px solid rgba(189, 8, 28, 0.6);
-    box-shadow:
-      inset 0 0 12px rgba(189, 8, 28, 0.5),
-      0 0 24px rgba(189, 8, 28, 0.7);
-}
-
-
-.icon-content a[data-social="dribbble"] .filled,
-.icon-content a[data-social="dribbble"]  {
-    background: linear-gradient(135deg, #3a0f24, #7a1f4d, #ea4c89, #4a0f2d);
-    background-size: 400% 400%;
-    animation: premiumGradient 6s ease infinite;
-    backdrop-filter: blur(12px) saturate(200%);
-    -webkit-backdrop-filter: blur(12px) saturate(200%);
-    border: 1px solid rgba(234, 76, 137, 0.6);
-    box-shadow:
-      inset 0 0 12px rgba(234, 76, 137, 0.5),
-      0 0 24px rgba(234, 76, 137, 0.7);
-}
-
-
 .icon-content a[data-social="telegram"] .filled,
-.icon-content a[data-social="telegram"]  {
+.icon-content a[data-social="telegram"] {
     background: linear-gradient(135deg, #0a1f2d, #0f4a66, #0088cc, #0a2e44);
     background-size: 400% 400%;
     animation: premiumGradient 6s ease infinite;
@@ -263,6 +228,32 @@ ul{
     box-shadow:
       inset 0 0 12px rgba(0, 136, 204, 0.5),
       0 0 24px rgba(0, 136, 204, 0.7);
+}
+
+.icon-content a[data-social="bale"] .filled,
+.icon-content a[data-social="bale"] {
+    background: linear-gradient(135deg, #052416, #095937, #00ba74, #043821);
+    background-size: 400% 400%;
+    animation: premiumGradient 6s ease infinite;
+    backdrop-filter: blur(12px) saturate(200%);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
+    border: 1px solid rgba(0, 186, 116, 0.6);
+    box-shadow:
+      inset 0 0 12px rgba(0, 186, 116, 0.5),
+      0 0 24px rgba(0, 186, 116, 0.7);
+}
+
+.icon-content a[data-social="aparat"] .filled,
+.icon-content a[data-social="aparat"] {
+    background: linear-gradient(135deg, #300613, #7a0d30, #ea1d5d, #3d0718);
+    background-size: 400% 400%;
+    animation: premiumGradient 6s ease infinite;
+    backdrop-filter: blur(12px) saturate(200%);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
+    border: 1px solid rgba(234, 29, 93, 0.6);
+    box-shadow:
+      inset 0 0 12px rgba(234, 29, 93, 0.5),
+      0 0 24px rgba(234, 29, 93, 0.7);
 }
 
 

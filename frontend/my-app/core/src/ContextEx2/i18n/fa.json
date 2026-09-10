@@ -82,7 +82,18 @@
     "wishlist": "علاقه‌مندی‌ها",
     "wallet": "کیف پول",
     "searchPlaceholder": "جستجوی کتاب، نویسنده، شابک...",
-    "digitalLibrary": "کتابخانه من"
+    "digitalLibrary": "کتابخانه من",
+    "library": "فروشگاه کتاب",
+    "subscription": "اشتراک‌ها"
+  },
+  "navigation": {
+    "home": "صفحه اصلی",
+    "catalog": "فروشگاه کتاب",
+    "library": "فروشگاه کتاب",
+    "subscription": "اشتراک‌ها",
+    "publishers": "ناشران",
+    "aboutUs": "درباره ما",
+    "wishlist": "علاقه‌مندی‌ها"
   },
   "home": {
     "heroTitle": "با شاهکارهای ماندگار اندیشه‌ات را شکوفا کن",

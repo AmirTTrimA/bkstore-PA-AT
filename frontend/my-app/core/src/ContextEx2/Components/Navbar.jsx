@@ -1,7 +1,7 @@
 // ✅
 import React from 'react'
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation, matchPath, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Notification from './feature/Notification';
 
 import {
@@ -42,7 +42,6 @@ export default function Navbar() {
     const { t } = useLanguage();
     const inputRef = useRef(null);
     const searchDropdownRef = useRef(null);
-    const secondaryNavRef = useRef(null);
     const notificationRef = useRef();
 
     // ---States---
@@ -50,17 +49,10 @@ export default function Navbar() {
     const [searchInputValue, setSearchInputValue] = useState('');
     const [recentSearches, setRecentSearches] = useState([]);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [isSecondaryVisible, setIsSecondaryVisible] = useState(true);
 
     // ---Memorized Values--- 
     const username = user?.username || "";
     const dashboardopen = Boolean(anchorEl);
-
-    // ---Route Detection---
-    const isLibraryPage = matchPath('/library', location.pathname);
-    const isBookPage = matchPath('/book/:bookId', location.pathname);
-    const isAllPublisherPage = matchPath('/all-publisher', location.pathname);
-    const isSearchPage = matchPath('/search/:searchTerm', location.pathname);
 
     // Focus input and listen for outside clicks / escape when search opens
     useEffect(() => {
@@ -96,31 +88,7 @@ export default function Navbar() {
       };
     }, [isSearchOpen]);
 
-
-   // Scroll Handler for Secondary Nav 
-   useEffect(() => {
-    let lastY = window.scrollY;
-  
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-    
-      if (currentY < 100 || currentY < lastY) {
-        setIsSecondaryVisible(true);
-      } else {setIsSecondaryVisible(false);}
-    
-      lastY = currentY;
-    };
-
-     window.addEventListener('scroll', handleScroll, { passive: true });
-     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-
-
-
-
-
-// ---Handlers---
+    // ---Handlers---
 
     const saveRecentSearch = (searchTerm)=>{
       if(!searchTerm || searchTerm.length < SEARCH_MIN_LENGTH) return ;
@@ -178,7 +146,7 @@ export default function Navbar() {
     if (!isLoggedIn) {
       e.preventDefault();
       if (notificationRef.current) {
-        notificationRef.current.showNotif(' require', 'error', {
+        notificationRef.current.showNotif('Login required', 'error', {
           linkText: "login",
           linkHref: "/login"
         });
@@ -190,29 +158,100 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Primary Navigation */}
-      <nav className='upper_nav'>
-        <ul>
-          <div className="first_middle_nav">
-            <li>
-              <Link to="/basket" id='shop_cart' className='fas fa-shopping-cart' />
-            </li>
+      {/* Unified Primary Navigation Bar */}
+      <header className='pagenet-navbar'>
+        <div className="navbar-container">
+          {/* Left: Brand & Navigation Links */}
+          <div className="navbar-left">
+            <Link to="/home" className='nav-brand-logo'>
+              <span className="brand-dot">●</span> {t('nav.brandName', 'PageNet')}
+            </Link>
 
+            <nav className="nav-links-menu">
+              <Link 
+                to='/library' 
+                className={`nav-link-item ${location.pathname === '/library' ? 'active' : ''}`}
+              >
+                {t('nav.catalog', 'Catalog')}
+              </Link>
+              <Link 
+                to='/favorites' 
+                onClick={handleLoginCheck} 
+                className={`nav-link-item ${location.pathname === '/favorites' ? 'active' : ''}`}
+              >
+                {t('nav.wishlist', 'Wishlist')}
+              </Link>
+              <Link 
+                to='/all-publisher' 
+                className={`nav-link-item ${location.pathname.startsWith('/all-publisher') || location.pathname.startsWith('/publisher') ? 'active' : ''}`}
+              >
+                {t('nav.publishers', 'Publishers')}
+              </Link>
+              <Link 
+                to='/faq' 
+                className={`nav-link-item ${location.pathname === '/faq' ? 'active' : ''}`}
+              >
+                {t('nav.aboutUs', 'About Us')}
+              </Link>
+            </nav>
+          </div>
+
+          {/* Right: Controls & User Actions */}
+          <div className="navbar-right">
+            {/* Search Trigger */}
+            <button
+              type="button"
+              className={`nav-icon-btn search_bar_btn ${isSearchOpen ? 'active' : ''}`}
+              onClick={() => setIsSearchOpen((prev) => !prev)}
+              title={t('common.search', 'Search books...')}
+              aria-label="Toggle Search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20" fill="currentColor">
+                <path d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"></path>
+              </svg>
+            </button>
+
+            {/* Theme Toggle */}
+            <div className="nav-control-wrapper">
+              <ThemeToggle page="home" />
+            </div>
+
+            {/* Language Toggle */}
+            <div className="nav-control-wrapper">
+              <LanguageToggle page="home" />
+            </div>
+
+            {/* Subscriptions */}
+            <Link to="/subscription" className='nav-icon-btn' title={t('nav.subscription', 'Subscriptions')}>
+              <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                <path d="M160-240q-50 0-85-35t-35-85v-240q0-50 35-85t85-35h540q50 0 85 35t35 85v240q0 50-35 85t-85 35H160Zm0-80h540q17 0 28.5-11.5T740-360v-240q0-17-11.5-28.5T700-640H160q-17 0-28.5 11.5T120-600v240q0 17 11.5 28.5T160-320Zm700-60v-200h20q17 0 28.5 11.5T920-540v120q0 17-11.5 28.5T880-380h-20Zm-700 20v-240h540v240H160Z"/>
+              </svg>
+            </Link>
+
+            {/* Shopping Cart */}
+            <Link to="/basket" className='nav-icon-btn nav-cart-btn' title={t('nav.cart', 'Shopping Cart')}>
+              <i className="fas fa-shopping-cart"></i>
+            </Link>
+
+            {/* User Auth Section */}
             {!isLoggedIn ? (
               <button 
-                className='login_check'
+                className='nav-auth-btn'
                 onClick={() => navigate('/login')}
               >
-                {t('nav.login', 'login')} | {t('nav.signup', 'signup')}
+                <span>{t('nav.login', 'Sign In')}</span>
+                <span className="auth-sep">|</span>
+                <span>{t('nav.signup', 'Sign Up')}</span>
               </button>
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Button
                   onClick={handleClick}
-                  sx={{ textTransform: 'none', mt: 1 }}
+                  sx={{ p: 0.5, minWidth: 'auto', borderRadius: '50%' }}
                 >
                   <Avatar 
-                    sx={{ width: 24, height: 24 }}
+                    sx={{ width: 34, height: 34, border: '2px solid #d17842' }}
                     src={ppic13}
                   />
                 </Button>
@@ -223,24 +262,25 @@ export default function Navbar() {
                   onClose={handleClickout}
                   PaperProps={{
                     elevation: 3,
-                    sx: { width: 250, maxWidth: '100%' }
+                    sx: { width: 250, maxWidth: '100%', mt: 1 }
                   }}
                 >
-                  <MenuItem>
-                    <Box sx={{ display: 'flex', alignItems: 'center', py: 1 }}>
+                  <MenuItem onClick={() => { handleClickout(); navigate('/dashboard'); }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
                       <Avatar 
-                        sx={{ width: 40, height: 40, mr: 2 }}
+                        sx={{ width: 36, height: 36, mr: 1.5 }}
                         src={ppic13}
                       />
                       <Box>
-                        <Typography variant="subtitle1">{username}</Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{username}</Typography>
+                        <Typography variant="caption" color="text.secondary">Reader Account</Typography>
                       </Box>
                     </Box>
                   </MenuItem>
               
                   <Divider />
               
-                  <MenuItem onClick={() => navigate('/dashboard')}>
+                  <MenuItem onClick={() => { handleClickout(); navigate('/dashboard'); }}>
                     <ListItemIcon>
                       <Person fontSize="small" />
                     </ListItemIcon>
@@ -249,17 +289,17 @@ export default function Navbar() {
               
                   <Divider />
             
-                  <MenuItem onClick={() => navigate('/faq')}>
+                  <MenuItem onClick={() => { handleClickout(); navigate('/faq'); }}>
                     <ListItemIcon>
                       <Help fontSize="small" />
                     </ListItemIcon>
-                    {t('nav.aboutUs', 'Question')}
+                    {t('nav.aboutUs', 'Help & FAQ')}
                   </MenuItem>
 
                   <Divider />
 
                   <MenuItem 
-                    onClick={logout}
+                    onClick={() => { handleClickout(); logout(); }}
                     sx={{ color: 'error.main' }}
                   >
                     <ListItemIcon>
@@ -271,36 +311,7 @@ export default function Navbar() {
               </Box>   
             )}
           </div>
-
-          <li><Link to="/home" className='nav-logo'>{t('nav.brandName', 'PageNet')}</Link></li>
-          
-          <div className="second_middle_nav">
-            <li>
-              <LanguageToggle page="home" />
-            </li>
-            <li>
-              <button
-                type="button"
-                className={`search_bar_btn ${isSearchOpen ? 'active' : ''}`}
-                onClick={() => setIsSearchOpen((prev) => !prev)}
-                title={t('common.search', 'Search books...')}
-                aria-label="Toggle Search"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
-                  <path d="M0 0h24v24H0z" fill="none"></path>
-                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"></path>
-                </svg>
-              </button>
-            </li>
-            <li>
-              <Link to="/subscription" className='sub-battery' title="Subscriptions">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px">
-                  <path d="M160-240q-50 0-85-35t-35-85v-240q0-50 35-85t85-35h540q50 0 85 35t35 85v240q0 50-35 85t-85 35H160Zm0-80h540q17 0 28.5-11.5T740-360v-240q0-17-11.5-28.5T700-640H160q-17 0-28.5 11.5T120-600v240q0 17 11.5 28.5T160-320Zm700-60v-200h20q17 0 28.5 11.5T920-540v120q0 17-11.5 28.5T880-380h-20Zm-700 20v-240h540v240H160Z"/>
-                </svg>
-              </Link>
-            </li>
-          </div>
-        </ul>
+        </div>
 
         {/* Sleek Expandable Search Bar */}
         {isSearchOpen && (
@@ -384,29 +395,9 @@ export default function Navbar() {
             )}
           </div>
         )}
-      </nav>
+      </header>
 
-      {/* Secondary Navigation */}
-      <nav
-        ref={secondaryNavRef}
-        className={`secondary_nav ${isSecondaryVisible ? 'visible' : 'hidden'}`}
-      >
-        {(!isLibraryPage && !isBookPage && !isSearchPage && !isAllPublisherPage) && (
-          <div className="secondary_nav_left">
-            <ThemeToggle page='home'/>
-          </div>
-        )}
-        <ul className='secondary_nav_right'>
-          {!isLibraryPage && (
-            <li><Link to='/library' className='category'>{t('nav.catalog', 'library')}</Link></li>
-          )}
-          <li><Link to='/favorites' onClick={handleLoginCheck} className='favorites'>{t('nav.wishlist', 'favorites')}</Link></li>
-          <li><Link to='/faq' className='anyquestion'>{t('nav.aboutUs', 'any question')}</Link></li>
-        </ul>
-      </nav>
-      
       <Notification ref={notificationRef} />
-
-</>
-  )
+    </>
+  );
 }

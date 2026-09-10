@@ -82,7 +82,18 @@
     "wishlist": "Wishlist",
     "wallet": "Wallet",
     "searchPlaceholder": "Search books, authors, ISBN...",
-    "digitalLibrary": "My Library"
+    "digitalLibrary": "My Library",
+    "library": "Catalog",
+    "subscription": "Subscriptions"
+  },
+  "navigation": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "library": "Catalog",
+    "subscription": "Subscriptions",
+    "publishers": "Publishers",
+    "aboutUs": "About Us",
+    "wishlist": "Wishlist"
   },
   "home": {
     "heroTitle": "Expand Your Mind with Masterpieces",
