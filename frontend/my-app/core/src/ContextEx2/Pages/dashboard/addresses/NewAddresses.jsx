@@ -44,15 +44,15 @@ export default function NewAddresses({
         <Box
           className="mod-box mod-special"
           sx={{
-            background: "linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(20, 20, 20, 0.98))",
+            background: "var(--bg-primary)",
             backdropFilter: "blur(16px)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            border: "1px solid var(--border-color)",
             borderRadius: "16px",
-            boxShadow: "0 24px 48px rgba(0, 0, 0, 0.6)",
+            boxShadow: "0 20px 48px rgba(0, 0, 0, 0.18)",
             maxWidth: "650px",
             width: "90%",
             p: { xs: 2.5, sm: 4 },
-            color: "#fff",
+            color: "var(--text-primarys)",
             maxHeight: "90vh",
             overflowY: "auto"
           }}
@@ -65,13 +65,13 @@ export default function NewAddresses({
               alignItems: "center",
               mb: 2,
               pb: 1.5,
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)"
+              borderBottom: "1px solid var(--border-color)"
             }}
           >
             <Typography
               variant="h6"
               component="h2"
-              sx={{ fontWeight: "700", color: "#fff" }}
+              sx={{ fontWeight: "700", color: "var(--text-primarys)" }}
             >
               {isEditing ? `✏️ ${t("common.edit", "Edit Address")}` : `📍 ${t("dashboard.addNewAddress", "Add New Address")}`}
             </Typography>
@@ -79,8 +79,8 @@ export default function NewAddresses({
               onClick={onClose}
               size="small"
               sx={{
-                color: "rgba(255, 255, 255, 0.7)",
-                "&:hover": { color: "#fff", bgcolor: "rgba(255, 255, 255, 0.1)" }
+                color: "var(--text-secondary)",
+                "&:hover": { color: "var(--text-primarys)", bgcolor: "var(--bg-secondary)" }
               }}
             >
               <CloseIcon />

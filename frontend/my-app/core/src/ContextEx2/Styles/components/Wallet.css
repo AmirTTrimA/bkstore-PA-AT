@@ -65,11 +65,10 @@
 
 /* Deposit Section */
 .wallet-deposit-section {
-  background: rgba(30, 30, 30, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
-  backdrop-filter: blur(8px);
 }
 
 .presets-container {

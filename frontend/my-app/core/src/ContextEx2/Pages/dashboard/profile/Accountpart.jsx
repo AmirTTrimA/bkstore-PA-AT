@@ -152,8 +152,8 @@ export default function Accountpart({
           gap: 2.5,
           p: 2,
           mb: 3,
-          background: "rgba(255, 255, 255, 0.03)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "var(--bg-secondary)",
+          border: "1px solid var(--border-color)",
           borderRadius: "14px"
         }}
       >
@@ -189,12 +189,12 @@ export default function Accountpart({
         </Box>
 
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#fff" }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
             {userAccount.first_name || userAccount.last_name
               ? `${userAccount.first_name} ${userAccount.last_name}`
               : userAccount.username || "Reader"}
           </Typography>
-          <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
             @{userAccount.username || "username"}
           </Typography>
 
@@ -220,8 +220,8 @@ export default function Accountpart({
           size="small"
           onClick={() => setAvatarDialogOpen(true)}
           sx={{
-            color: "rgba(255, 255, 255, 0.8)",
-            borderColor: "rgba(255, 255, 255, 0.2)",
+            color: "var(--text-primarys)",
+            borderColor: "var(--border-color)",
             textTransform: "none",
             "&:hover": { borderColor: "#d17842", color: "#d17842" }
           }}
@@ -368,10 +368,10 @@ export default function Accountpart({
         onClose={() => setAvatarDialogOpen(false)}
         PaperProps={{
           sx: {
-            background: "#1e1e20",
-            color: "#fff",
+            background: "var(--bg-primary)",
+            color: "var(--text-primarys)",
             borderRadius: "16px",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            border: "1px solid var(--border-color)",
             maxWidth: "520px",
             width: "90%",
             p: 2
@@ -379,10 +379,10 @@ export default function Accountpart({
         }}
       >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
             {t("dashboard.avatarDialogTitle", "Choose Profile Avatar")}
           </Typography>
-          <IconButton size="small" onClick={() => setAvatarDialogOpen(false)} sx={{ color: "#aaa" }}>
+          <IconButton size="small" onClick={() => setAvatarDialogOpen(false)} sx={{ color: "var(--text-secondary)" }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>

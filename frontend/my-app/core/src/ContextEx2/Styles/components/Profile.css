@@ -3,46 +3,64 @@
    ============================================ */
 
 .profile-modal-container {
-  color: #fff;
+  color: var(--text-primarys);
 }
 
 /* Modal text fields customization */
-.profile-modal-container .MuiOutlinedInput-root {
-  background: rgba(255, 255, 255, 0.03);
+.profile-modal-container .MuiOutlinedInput-root,
+.mod-box .MuiOutlinedInput-root {
+  background: var(--bg-secondary);
   border-radius: 10px;
-  color: #fff;
+  color: var(--text-primarys);
   transition: all 0.2s ease;
 }
 
-.profile-modal-container .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
-  border-color: rgba(255, 255, 255, 0.15);
+.profile-modal-container .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline,
+.mod-box .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: var(--border-color);
 }
 
-.profile-modal-container .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-  border-color: rgba(255, 255, 255, 0.3);
+.profile-modal-container .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.mod-box .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #d17842;
 }
 
-.profile-modal-container .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+.profile-modal-container .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
+.mod-box .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
   border-color: #d17842 !important;
   box-shadow: 0 0 8px rgba(209, 120, 66, 0.25);
 }
 
-.profile-modal-container .MuiInputLabel-root {
-  color: rgba(255, 255, 255, 0.65) !important;
+.profile-modal-container .MuiInputLabel-root,
+.mod-box .MuiInputLabel-root {
+  color: var(--text-secondary) !important;
 }
 
-.profile-modal-container .MuiInputLabel-root.Mui-focused {
+.profile-modal-container .MuiInputLabel-root.Mui-focused,
+.mod-box .MuiInputLabel-root.Mui-focused {
   color: #d17842 !important;
 }
 
-.profile-modal-container .MuiInputBase-input::placeholder {
-  color: rgba(255, 255, 255, 0.35) !important;
+.profile-modal-container .MuiInputBase-input::placeholder,
+.mod-box .MuiInputBase-input::placeholder {
+  color: var(--text-secondary) !important;
 }
 
-.profile-modal-container .MuiFormHelperText-root {
-  color: rgba(255, 255, 255, 0.5);
+.profile-modal-container .MuiFormHelperText-root,
+.mod-box .MuiFormHelperText-root {
+  color: var(--text-secondary);
 }
 
-.profile-modal-container .MuiFormHelperText-root.Mui-error {
+.profile-modal-container .MuiFormHelperText-root.Mui-error,
+.mod-box .MuiFormHelperText-root.Mui-error {
   color: #ef5350 !important;
 }
+
+.mod-box .MuiSelect-select {
+  color: var(--text-primarys);
+}
+
+.mod-box .MuiSelect-icon {
+  color: var(--text-secondary);
+}
+

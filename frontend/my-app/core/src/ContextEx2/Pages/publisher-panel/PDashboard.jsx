@@ -261,6 +261,9 @@ export default function PDashboard() {
 
         {/* Right: Actions, Notifications, Profile, Theme, Logout */}
         <div className="pdashboard-topbar-right">
+          <Link to="/dashboard" className="pdash-btn" title="Go to Reader Dashboard">
+            📚 {t('dashboard.readerShelf', 'Reader Shelf')}
+          </Link>
           <Link to="/home" className="pdash-btn" title="Return to Customer Storefront">
             {t('publisher_panel.storefront', '← Storefront')}
           </Link>

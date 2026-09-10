@@ -300,12 +300,13 @@ export default function Manually({
                 onChange={handleChange}
                 name="is_default"
                 sx={{
-                  color: "rgba(255,255,255,0.7)",
+                  color: "var(--text-secondary)",
                   "&.Mui-checked": { color: "#d17842" }
                 }}
               />
             }
             label={t("dashboard.setAsDefault", "Set as default shipping address")}
+            sx={{ "& .MuiFormControlLabel-label": { color: "var(--text-primarys)" } }}
           />
         </Grid>
       </Grid>
@@ -319,9 +320,9 @@ export default function Manually({
             onClick={onCancel}
             disabled={saving}
             sx={{
-              color: "#aaa",
-              borderColor: "rgba(255,255,255,0.2)",
-              "&:hover": { borderColor: "rgba(255,255,255,0.4)" }
+              color: "var(--text-secondary)",
+              borderColor: "var(--border-color)",
+              "&:hover": { borderColor: "#d17842" }
             }}
           >
             {t("common.cancel", "Cancel")}

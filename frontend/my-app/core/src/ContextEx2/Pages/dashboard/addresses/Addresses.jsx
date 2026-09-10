@@ -146,7 +146,7 @@ export default function Addresses() {
           <Typography variant="h5" sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
             📍 {t("dashboard.deliveryAddresses", "Saved Addresses")}
           </Typography>
-          <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.5 }}>
             {t("dashboard.deliveryAddressesSubtitle", "Manage delivery locations for physical book orders.")}
           </Typography>
         </div>
@@ -207,17 +207,17 @@ export default function Addresses() {
           sx={{
             p: 6,
             textAlign: "center",
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px dashed rgba(255, 255, 255, 0.15)",
+            background: "var(--bg-secondary)",
+            border: "1px dashed var(--border-color)",
             borderRadius: "16px",
             my: 2
           }}
         >
-          <LocationOnIcon sx={{ fontSize: 56, color: "rgba(255, 255, 255, 0.3)", mb: 1.5 }} />
-          <Typography variant="h6" sx={{ color: "#fff", mb: 1 }}>
+          <LocationOnIcon sx={{ fontSize: 56, color: "var(--text-secondary)", mb: 1.5 }} />
+          <Typography variant="h6" sx={{ color: "var(--text-primarys)", mb: 1 }}>
             {t("dashboard.noAddresses", "No delivery addresses saved yet")}
           </Typography>
-          <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mb: 3 }}>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
             {t("dashboard.noAddressesSubtitle", "Add your shipping address so you can order physical books without retyping during checkout.")}
           </Typography>
           <Button
@@ -252,20 +252,20 @@ export default function Addresses() {
             <Card
               key={address.id}
               sx={{
-                background: "rgba(30, 30, 30, 0.65)",
+                background: "var(--bg-card)",
                 backdropFilter: "blur(10px)",
                 border: address.is_default
                   ? "1.5px solid #d17842"
-                  : "1px solid rgba(255, 255, 255, 0.08)",
+                  : "1px solid var(--border-color)",
                 borderRadius: "14px",
                 transition: "all 0.25s ease",
                 boxShadow: address.is_default
                   ? "0 8px 24px rgba(209, 120, 66, 0.18)"
-                  : "0 4px 12px rgba(0, 0, 0, 0.2)",
+                  : "0 4px 12px rgba(0, 0, 0, 0.06)",
                 "&:hover": {
                   transform: "translateY(-3px)",
-                  boxShadow: "0 10px 28px rgba(0, 0, 0, 0.35)",
-                  borderColor: address.is_default ? "#d17842" : "rgba(255, 255, 255, 0.2)"
+                  boxShadow: "0 10px 28px rgba(0, 0, 0, 0.15)",
+                  borderColor: address.is_default ? "#d17842" : "var(--border-color)"
                 }
               }}
             >
@@ -282,7 +282,7 @@ export default function Addresses() {
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Typography
                       variant="subtitle1"
-                      sx={{ fontWeight: 700, color: "#fff" }}
+                      sx={{ fontWeight: 700, color: "var(--text-primarys)" }}
                     >
                       {address.title || "Address"}
                     </Typography>
@@ -309,7 +309,7 @@ export default function Addresses() {
                       size="small"
                       onClick={() => handleEdit(address)}
                       sx={{
-                        color: "rgba(255, 255, 255, 0.6)",
+                        color: "var(--text-secondary)",
                         "&:hover": { color: "#d17842", bgcolor: "rgba(209, 120, 66, 0.1)" }
                       }}
                       title={t("common.edit", "Edit Address")}
@@ -320,7 +320,7 @@ export default function Addresses() {
                       size="small"
                       onClick={() => setDeleteConfirmId(address.id)}
                       sx={{
-                        color: "rgba(255, 255, 255, 0.6)",
+                        color: "var(--text-secondary)",
                         "&:hover": { color: "#ef5350", bgcolor: "rgba(239, 83, 80, 0.1)" }
                       }}
                       title={t("common.delete", "Delete Address")}
@@ -333,17 +333,17 @@ export default function Addresses() {
                 {/* Recipient & Contact */}
                 <Typography
                   variant="body2"
-                  sx={{ color: "rgba(255, 255, 255, 0.9)", fontWeight: 600, mb: 0.5 }}
+                  sx={{ color: "var(--text-primarys)", fontWeight: 600, mb: 0.5 }}
                 >
                   {address.recipient_name}
                 </Typography>
 
                 {address.phone_number && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, mb: 1 }}>
-                    <PhoneIcon sx={{ fontSize: 15, color: "rgba(255, 255, 255, 0.4)" }} />
+                    <PhoneIcon sx={{ fontSize: 15, color: "var(--text-secondary)" }} />
                     <Typography
                       variant="caption"
-                      sx={{ color: "rgba(255, 255, 255, 0.6)", direction: "ltr" }}
+                      sx={{ color: "var(--text-secondary)", direction: "ltr" }}
                     >
                       {address.phone_number}
                     </Typography>
@@ -353,23 +353,23 @@ export default function Addresses() {
                 {/* Full Address Details */}
                 <Box
                   sx={{
-                    background: "rgba(255, 255, 255, 0.03)",
+                    background: "var(--bg-secondary)",
                     p: 1.5,
                     borderRadius: "8px",
-                    border: "1px solid rgba(255, 255, 255, 0.05)",
+                    border: "1px solid var(--border-color)",
                     my: 1.5
                   }}
                 >
-                  <Typography variant="body2" sx={{ color: "#eee", mb: 0.5, lineHeight: 1.5 }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-primarys)", mb: 0.5, lineHeight: 1.5 }}>
                     {address.province} • {address.city}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)", fontSize: "0.85rem" }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
                     {address.address_line}
                   </Typography>
                   {address.postal_code && (
                     <Typography
                       variant="caption"
-                      sx={{ display: "block", color: "rgba(255, 255, 255, 0.5)", mt: 0.5 }}
+                      sx={{ display: "block", color: "var(--text-secondary)", mt: 0.5 }}
                     >
                       {t("dashboard.postalCode", "Postal Code")}: {address.postal_code}
                     </Typography>
@@ -416,25 +416,25 @@ export default function Addresses() {
         onClose={() => setDeleteConfirmId(null)}
         PaperProps={{
           sx: {
-            background: "#1e1e1e",
-            color: "#fff",
+            background: "var(--bg-primary)",
+            color: "var(--text-primarys)",
             borderRadius: "14px",
-            border: "1px solid rgba(255,255,255,0.1)"
+            border: "1px solid var(--border-color)"
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>
+        <DialogTitle sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
           {t("common.delete", "Delete Address")}?
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ color: "rgba(255,255,255,0.7)" }}>
+          <DialogContentText sx={{ color: "var(--text-secondary)" }}>
             {t("dashboard.deleteAddressConfirm", "Are you sure you want to remove this saved shipping address? This action cannot be undone.")}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button
             onClick={() => setDeleteConfirmId(null)}
-            sx={{ color: "#aaa" }}
+            sx={{ color: "var(--text-secondary)" }}
           >
             {t("common.cancel", "Cancel")}
           </Button>

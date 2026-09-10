@@ -63,17 +63,17 @@ export default function Transactions() {
         sx={{
           p: 6,
           textAlign: "center",
-          background: "rgba(255, 255, 255, 0.03)",
-          border: "1px dashed rgba(255, 255, 255, 0.12)",
+          background: "var(--bg-secondary)",
+          border: "1px dashed var(--border-color)",
           borderRadius: "16px",
           my: 2
         }}
       >
-        <ReceiptLongIcon sx={{ fontSize: 56, color: "rgba(255, 255, 255, 0.3)", mb: 1.5 }} />
-        <Typography variant="h6" sx={{ color: "#fff", mb: 1 }}>
+        <ReceiptLongIcon sx={{ fontSize: 56, color: "var(--text-secondary)", mb: 1.5 }} />
+        <Typography variant="h6" sx={{ color: "var(--text-primarys)", mb: 1 }}>
           {t("dashboard.noTransactions", "No wallet activity yet")}
         </Typography>
-        <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
+        <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
           {t("dashboard.noTransactionsSubtitle", "Deposits, book purchases, and refunds made with your wallet will appear here.")}
         </Typography>
       </Box>
@@ -123,7 +123,7 @@ export default function Transactions() {
 
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#fff" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
                     {txTypeLabel}
                   </Typography>
                   <Chip
@@ -132,12 +132,12 @@ export default function Transactions() {
                     sx={{
                       height: "18px",
                       fontSize: "0.68rem",
-                      bgcolor: "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.6)"
+                      bgcolor: "var(--border-color)",
+                      color: "var(--text-secondary)"
                     }}
                   />
                 </Box>
-                <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)", display: "block", mt: 0.3 }}>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.3 }}>
                   {new Date(tx.created_at).toLocaleDateString()} •{" "}
                   {new Date(tx.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </Typography>
@@ -145,7 +145,7 @@ export default function Transactions() {
                   <Typography
                     variant="caption"
                     sx={{
-                      color: "rgba(255, 255, 255, 0.7)",
+                      color: "var(--text-secondary)",
                       display: "block",
                       mt: 0.5,
                       fontStyle: "italic"
@@ -170,7 +170,7 @@ export default function Transactions() {
               </Typography>
 
               {tx.balance_after !== undefined && (
-                <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)", display: "block" }}>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
                   {t("dashboard.balanceAfter", "Balance After: {balance}", { balance: formatPrice(tx.balance_after) })}
                 </Typography>
               )}

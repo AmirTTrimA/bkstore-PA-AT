@@ -169,11 +169,11 @@ export default function Wallet() {
       <Box className="wallet-deposit-section" component="form" onSubmit={handleTopUp}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
           <AddCardIcon sx={{ color: "#d17842" }} />
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
             {t("dashboard.topUpWallet", "Top-up Wallet")}
           </Typography>
         </Box>
-        <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mb: 2 }}>
+        <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
           {t("dashboard.topUpSubtitle", "Choose a quick deposit preset or enter any custom amount in IRR.")}
         </Typography>
 
@@ -189,9 +189,9 @@ export default function Wallet() {
                 onClick={() => handleSelectPreset(preset)}
                 className={`preset-btn ${isSelected ? "selected" : ""}`}
                 sx={{
-                  color: isSelected ? "#fff" : "rgba(255, 255, 255, 0.8)",
-                  borderColor: isSelected ? "#d17842" : "rgba(255, 255, 255, 0.15)",
-                  bgcolor: isSelected ? "#d17842 !important" : "rgba(255, 255, 255, 0.03)",
+                  color: isSelected ? "#fff" : "var(--text-primarys)",
+                  borderColor: isSelected ? "#d17842" : "var(--border-color)",
+                  bgcolor: isSelected ? "#d17842 !important" : "var(--bg-primary)",
                   "&:hover": {
                     borderColor: "#d17842",
                     bgcolor: "rgba(209, 120, 66, 0.15)"
@@ -221,7 +221,7 @@ export default function Wallet() {
             size="small"
             InputProps={{
               startAdornment: (
-                <Typography sx={{ color: "rgba(255,255,255,0.4)", mr: 1, fontSize: "0.9rem" }}>
+                <Typography sx={{ color: "var(--text-secondary)", mr: 1, fontSize: "0.9rem" }}>
                   {t("common.irr", "IRR")}
                 </Typography>
               )
@@ -243,7 +243,7 @@ export default function Wallet() {
               py: 1.2,
               borderRadius: "8px",
               "&:hover": { backgroundColor: "#b35e2e" },
-              "&:disabled": { backgroundColor: "rgba(255, 255, 255, 0.12)", color: "rgba(255, 255, 255, 0.3)" }
+              "&:disabled": { backgroundColor: "var(--border-color)", color: "var(--text-secondary)" }
             }}
           >
             {charging ? (

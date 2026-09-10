@@ -19,6 +19,7 @@ import {
   Person,
   Help,
   Logout,
+  Business,
 } from '@mui/icons-material';
 
 // ---Components---
@@ -26,6 +27,7 @@ import { useAuth } from '../Context/AuthContext';
 import { useLanguage } from '../Context/LanguageContext';
 import { ThemeToggle } from './common/ThemeToggle';
 import { LanguageToggle } from './common/LanguageToggle';
+import PublisherService from '../Services/PublisherService';
 import { ppic13 } from "../Constants"
 
 import '../Styles/components/Navbar.css'
@@ -49,6 +51,26 @@ export default function Navbar() {
     const [searchInputValue, setSearchInputValue] = useState('');
     const [recentSearches, setRecentSearches] = useState([]);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [hasPublisher, setHasPublisher] = useState(false);
+
+    // Check if user belongs to a publisher
+    useEffect(() => {
+      if (!isLoggedIn) {
+        setHasPublisher(false);
+        return;
+      }
+      let isMounted = true;
+      PublisherService.getMyPublishers()
+        .then((pubs) => {
+          if (isMounted && Array.isArray(pubs) && pubs.length > 0) {
+            setHasPublisher(true);
+          }
+        })
+        .catch(() => {});
+      return () => {
+        isMounted = false;
+      };
+    }, [isLoggedIn]);
 
     // ---Memorized Values--- 
     const username = user?.username || "";
@@ -273,7 +295,9 @@ export default function Navbar() {
                       />
                       <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{username}</Typography>
-                        <Typography variant="caption" color="text.secondary">Reader Account</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {hasPublisher ? t('dashboard.readerAndPublisher', 'Reader & Publisher') : t('dashboard.readerAccount', 'Reader Account')}
+                        </Typography>
                       </Box>
                     </Box>
                   </MenuItem>
@@ -286,6 +310,17 @@ export default function Navbar() {
                     </ListItemIcon>
                     {t('dashboard.profile', 'My Profile')}
                   </MenuItem>
+
+                  {hasPublisher && (
+                    <MenuItem onClick={() => { handleClickout(); navigate('/pub-dashboard'); }}>
+                      <ListItemIcon>
+                        <Business fontSize="small" sx={{ color: "#d17842" }} />
+                      </ListItemIcon>
+                      <Typography sx={{ color: "#d17842", fontWeight: 700 }}>
+                        {t('dashboard.publisherPanel', 'Publisher Panel')}
+                      </Typography>
+                    </MenuItem>
+                  )}
               
                   <Divider />
             

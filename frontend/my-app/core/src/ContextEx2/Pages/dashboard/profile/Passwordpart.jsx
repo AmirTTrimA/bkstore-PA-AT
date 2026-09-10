@@ -139,11 +139,11 @@ export default function Passwordpart({ notificationRef }) {
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 1 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)", display: "flex", alignItems: "center", gap: 1 }}>
           <LockResetIcon sx={{ color: "#d17842" }} />
           {t("dashboard.changePassword", "Change Password")}
         </Typography>
-        <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.6)", mt: 0.5 }}>
+        <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.5 }}>
           {t("dashboard.security", "Security & Password")}
         </Typography>
       </Box>
@@ -183,7 +183,7 @@ export default function Passwordpart({ notificationRef }) {
                     size="small"
                     onClick={() => setShowCurrent((prev) => !prev)}
                     edge="end"
-                    sx={{ color: "rgba(255,255,255,0.6)" }}
+                    sx={{ color: "var(--text-secondary)" }}
                   >
                     {showCurrent ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                   </IconButton>
@@ -211,7 +211,7 @@ export default function Passwordpart({ notificationRef }) {
                     size="small"
                     onClick={() => setShowNew((prev) => !prev)}
                     edge="end"
-                    sx={{ color: "rgba(255,255,255,0.6)" }}
+                    sx={{ color: "var(--text-secondary)" }}
                   >
                     {showNew ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                   </IconButton>
@@ -241,7 +241,7 @@ export default function Passwordpart({ notificationRef }) {
                     size="small"
                     onClick={() => setShowRepeat((prev) => !prev)}
                     edge="end"
-                    sx={{ color: "rgba(255,255,255,0.6)" }}
+                    sx={{ color: "var(--text-secondary)" }}
                   >
                     {showRepeat ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                   </IconButton>
@@ -258,12 +258,12 @@ export default function Passwordpart({ notificationRef }) {
               sx={{
                 p: 2,
                 borderRadius: "10px",
-                background: "rgba(255, 255, 255, 0.025)",
-                border: "1px solid rgba(255, 255, 255, 0.06)"
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-color)"
               }}
             >
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.8 }}>
-                <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>
                   Password Strength
                 </Typography>
                 <Typography
@@ -280,7 +280,7 @@ export default function Passwordpart({ notificationRef }) {
                 sx={{
                   height: 6,
                   borderRadius: 3,
-                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                  bgcolor: "var(--border-color)",
                   "& .MuiLinearProgress-bar": {
                     bgcolor: strengthMeta.color,
                     borderRadius: 3
@@ -310,11 +310,11 @@ export default function Passwordpart({ notificationRef }) {
                       {passed ? (
                         <CheckCircleIcon sx={{ fontSize: 15, color: "#66bb6a" }} />
                       ) : (
-                        <CancelIcon sx={{ fontSize: 15, color: "rgba(255, 255, 255, 0.3)" }} />
+                        <CancelIcon sx={{ fontSize: 15, color: "var(--text-secondary)" }} />
                       )}
                       <Typography
                         variant="caption"
-                        sx={{ color: passed ? "#ddd" : "rgba(255, 255, 255, 0.45)" }}
+                        sx={{ color: passed ? "var(--text-primarys)" : "var(--text-secondary)" }}
                       >
                         {text}
                       </Typography>
@@ -342,8 +342,8 @@ export default function Passwordpart({ notificationRef }) {
             borderRadius: "8px",
             "&:hover": { backgroundColor: "#b35e2e" },
             "&:disabled": {
-              backgroundColor: "rgba(255, 255, 255, 0.12)",
-              color: "rgba(255, 255, 255, 0.3)"
+              backgroundColor: "var(--border-color)",
+              color: "var(--text-secondary)"
             }
           }}
         >

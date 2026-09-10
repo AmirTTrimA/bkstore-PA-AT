@@ -34,15 +34,15 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
       <Box
         className="mod-box mod-special"
         sx={{
-          background: "linear-gradient(135deg, rgba(28, 28, 30, 0.96), rgba(18, 18, 20, 0.98))",
+          background: "var(--bg-primary)",
           backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
+          border: "1px solid var(--border-color)",
           borderRadius: "18px",
-          boxShadow: "0 28px 56px rgba(0, 0, 0, 0.7)",
+          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.18)",
           maxWidth: "850px",
           width: "92%",
           p: { xs: 2.5, sm: 4 },
-          color: "#fff",
+          color: "var(--text-primarys)",
           maxHeight: "90vh",
           display: "flex",
           flexDirection: "column"
@@ -55,13 +55,13 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
             justifyContent: "space-between",
             alignItems: "center",
             pb: 1.5,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)"
+            borderBottom: "1px solid var(--border-color)"
           }}
         >
           <Typography
             variant="h5"
             component="h2"
-            sx={{ fontWeight: "800", color: "#fff", letterSpacing: "0.5px" }}
+            sx={{ fontWeight: "800", color: "var(--text-primarys)", letterSpacing: "0.5px" }}
           >
             💳 {t("dashboard.financialHub", "Financial Hub")}
           </Typography>
@@ -69,8 +69,8 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
             onClick={onClose}
             size="small"
             sx={{
-              color: "rgba(255, 255, 255, 0.7)",
-              "&:hover": { color: "#fff", bgcolor: "rgba(255, 255, 255, 0.1)" }
+              color: "var(--text-secondary)",
+              "&:hover": { color: "var(--text-primarys)", bgcolor: "var(--bg-secondary)" }
             }}
           >
             <CloseIcon />
@@ -84,9 +84,9 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
           variant="fullWidth"
           sx={{
             mt: 2,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            borderBottom: "1px solid var(--border-color)",
             "& .MuiTab-root": {
-              color: "rgba(255, 255, 255, 0.6)",
+              color: "var(--text-secondary)",
               fontWeight: 600,
               fontSize: "0.92rem",
               textTransform: "none",
@@ -131,7 +131,7 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
               width: "6px"
             },
             "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(255, 255, 255, 0.15)",
+              backgroundColor: "var(--border-color)",
               borderRadius: "3px"
             }
           }}

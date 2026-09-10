@@ -18,6 +18,7 @@ import { useLanguage } from "../../Context/LanguageContext";
 import { ppic14 } from "../../Constants";
 import ContentService from "../../Services/ContentService";
 import UserService from "../../Services/UserService";
+import PublisherService from "../../Services/PublisherService";
 
 import "../../Styles/components/Dashboard.css";
 
@@ -62,6 +63,7 @@ export default function Dashboard({ initialTab }) {
   const [libraryError, setLibraryError] = useState("");
 
   const [profileData, setProfileData] = useState(null);
+  const [hasPublisher, setHasPublisher] = useState(false);
 
   // Modals
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -148,6 +150,21 @@ export default function Dashboard({ initialTab }) {
     };
 
     loadProfile();
+  }, []);
+
+  // Check if current reader has publisher memberships
+  useEffect(() => {
+    let isMounted = true;
+    PublisherService.getMyPublishers()
+      .then((pubs) => {
+        if (isMounted && Array.isArray(pubs) && pubs.length > 0) {
+          setHasPublisher(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Clear row highlight after duration
@@ -251,7 +268,9 @@ export default function Dashboard({ initialTab }) {
             </div>
             <div className="user-info-text">
               <h2 className="user-greeting">Hi, {username}</h2>
-              <span className="user-profile-label">My Account</span>
+              <span className="user-profile-label">
+                {hasPublisher ? t('dashboard.readerAndPublisher', 'Reader & Publisher') : t('dashboard.myAccount', 'My Account')}
+              </span>
             </div>
           </div>
         </div>
@@ -339,6 +358,23 @@ export default function Dashboard({ initialTab }) {
           >
             💳 {t('dashboard.wallet', 'Financial')}
           </button>
+
+          {/* Publisher Panel Direct Route */}
+          {hasPublisher && (
+            <button
+              type="button"
+              className="topbar-nav-pill publisher-panel-btn"
+              onClick={() => navigate("/pub-dashboard")}
+              title={t('dashboard.publisherPanel', 'Publisher Panel')}
+              style={{
+                borderColor: "#d17842",
+                color: "#d17842",
+                fontWeight: 700
+              }}
+            >
+              🏢 {t('dashboard.publisherPanel', 'Publisher Panel')}
+            </button>
+          )}
 
           {/* Cart Direct Route */}
           <button
@@ -614,7 +650,9 @@ export default function Dashboard({ initialTab }) {
               <img src={currentAvatar} alt="Profile" className="drawer-avatar" />
               <div>
                 <h4 className="drawer-username">{username}</h4>
-                <span className="drawer-role">Reader Account</span>
+                <span className="drawer-role">
+                  {hasPublisher ? t('dashboard.readerAndPublisher', 'Reader & Publisher') : t('dashboard.readerAccount', 'Reader Account')}
+                </span>
               </div>
             </div>
             <button
@@ -627,6 +665,21 @@ export default function Dashboard({ initialTab }) {
           </div>
 
           <ul className="drawer-nav-list">
+            {hasPublisher && (
+              <li>
+                <button
+                  type="button"
+                  className="drawer-link"
+                  onClick={() => {
+                    navigate("/pub-dashboard");
+                    setMobileMenuOpen(false);
+                  }}
+                  style={{ color: "#d17842", fontWeight: 700 }}
+                >
+                  🏢 {t('dashboard.publisherPanel', 'Publisher Panel')}
+                </button>
+              </li>
+            )}
             <li>
               <button
                 type="button"
