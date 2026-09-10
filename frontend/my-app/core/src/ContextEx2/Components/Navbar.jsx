@@ -1,6 +1,5 @@
-// ✅
 import React from 'react'
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Notification from './feature/Notification';
 
@@ -27,7 +26,7 @@ import { useAuth } from '../Context/AuthContext';
 import { useLanguage } from '../Context/LanguageContext';
 import { ThemeToggle } from './common/ThemeToggle';
 import { LanguageToggle } from './common/LanguageToggle';
-import PublisherService from '../Services/PublisherService';
+import { useMyPublishers, useCart } from '../Hooks/queries';
 import { ppic13 } from "../Constants"
 
 import '../Styles/components/Navbar.css'
@@ -51,26 +50,19 @@ export default function Navbar() {
     const [searchInputValue, setSearchInputValue] = useState('');
     const [recentSearches, setRecentSearches] = useState([]);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [hasPublisher, setHasPublisher] = useState(false);
 
-    // Check if user belongs to a publisher
-    useEffect(() => {
-      if (!isLoggedIn) {
-        setHasPublisher(false);
-        return;
-      }
-      let isMounted = true;
-      PublisherService.getMyPublishers()
-        .then((pubs) => {
-          if (isMounted && Array.isArray(pubs) && pubs.length > 0) {
-            setHasPublisher(true);
-          }
-        })
-        .catch(() => {});
-      return () => {
-        isMounted = false;
-      };
-    }, [isLoggedIn]);
+    // Queries via React Query
+    const { data: myPublishers } = useMyPublishers({ enabled: Boolean(isLoggedIn) });
+    const hasPublisher = useMemo(() => {
+      return Boolean(Array.isArray(myPublishers) && myPublishers.length > 0);
+    }, [myPublishers]);
+
+    const { data: cartData } = useCart({ enabled: Boolean(isLoggedIn) });
+    const cartCount = useMemo(() => {
+      if (!cartData) return 0;
+      const items = cartData.items || cartData.order_items || (Array.isArray(cartData) ? cartData : []);
+      return items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    }, [cartData]);
 
     // ---Memorized Values--- 
     const username = user?.username || "";
@@ -254,6 +246,7 @@ export default function Navbar() {
             {/* Shopping Cart */}
             <Link to="/basket" className='nav-icon-btn nav-cart-btn' title={t('nav.cart', 'Shopping Cart')}>
               <i className="fas fa-shopping-cart"></i>
+              {cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
             </Link>
 
             {/* User Auth Section */}

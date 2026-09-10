@@ -4,10 +4,10 @@ import { translations, DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from '../i18n/i18
 // ============================================
 // Context
 // ============================================
-const LanguageContext = createContext(null);
+export const LanguageContext = createContext(null);
 
 // ============================================
-// Hook
+// Hooks
 // ============================================
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
@@ -15,6 +15,10 @@ export const useLanguage = () => {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
+};
+
+export const useSafeLanguage = () => {
+  return useContext(LanguageContext);
 };
 
 // ============================================

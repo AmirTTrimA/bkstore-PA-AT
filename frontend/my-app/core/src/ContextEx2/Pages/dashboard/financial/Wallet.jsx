@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -14,7 +14,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import Notification from "../../../Components/feature/Notification";
 import PaymentService from "../../../Services/PaymentService";
-import WalletService from "../../../Services/WalletService";
+import { useWallet } from "../../../Hooks/queries";
 import { useLanguage } from "../../../Context/LanguageContext";
 import { formatPrice } from "../../../utils/formatPrice";
 
@@ -24,33 +24,14 @@ const PRESET_AMOUNTS = [50000, 100000, 250000, 500000, 1000000];
 
 export default function Wallet() {
   const { t } = useLanguage();
-  const [wallet, setWallet] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: wallet, isLoading: loading, error: walletErr, refetch: loadWallet } = useWallet();
+  const error = walletErr ? "Could not retrieve wallet balance." : "";
 
   const [amount, setAmount] = useState("");
   const [charging, setCharging] = useState(false);
   const [chargeError, setChargeError] = useState("");
 
   const notificationRef = useRef();
-
-  const loadWallet = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await WalletService.getWallet();
-      setWallet(response.data);
-    } catch (err) {
-      console.error("Failed loading wallet:", err);
-      setError("Could not retrieve wallet balance.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadWallet();
-  }, []);
 
   const handleSelectPreset = (preset) => {
     setAmount(String(preset));

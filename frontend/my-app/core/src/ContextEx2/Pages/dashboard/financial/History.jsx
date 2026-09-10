@@ -13,7 +13,7 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 
-import OrderService from "../../../Services/OrderService";
+import { useOrders } from "../../../Hooks/queries";
 import { useLanguage } from "../../../Context/LanguageContext";
 import { formatPrice } from "../../../utils/formatPrice";
 import { ppic14 } from "../../../Constants";
@@ -31,33 +31,15 @@ const STATUS_CONFIG = {
 
 export default function History() {
   const { t } = useLanguage();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: orders = [], isLoading: loading, error: orderErr } = useOrders();
+  const error = orderErr ? "Could not load order history." : "";
   const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const response = await OrderService.getOrders();
-        const list = response.data?.results || response.data || [];
-        setOrders(list);
-        // Automatically expand the latest order if available
-        if (list.length > 0) {
-          setExpandedOrderId(list[0].id);
-        }
-      } catch (err) {
-        console.error("Failed loading orders:", err);
-        setError("Could not load order history.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadOrders();
-  }, []);
+    if (orders.length > 0 && !expandedOrderId) {
+      setExpandedOrderId(orders[0].id);
+    }
+  }, [orders, expandedOrderId]);
 
   const toggleExpand = (orderId) => {
     setExpandedOrderId((prev) => (prev === orderId ? null : orderId));

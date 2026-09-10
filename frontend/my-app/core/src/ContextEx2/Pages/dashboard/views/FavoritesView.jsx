@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../../../Context/LanguageContext";
-import WishlistService from "../../../Services/WishlistService";
+import { useWishlist, useRemoveFromWishlist } from "../../../Hooks/queries";
 import { formatPrice } from "../../../utils/formatPrice";
 
 import "../../../Styles/components/Favorites.css";
@@ -10,30 +10,17 @@ export default function FavoritesView() {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const [favItems, setFavItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: wishlistData, isLoading: loading, error: wishlistErr, refetch: loadFavorites } = useWishlist();
+  const removeMutation = useRemoveFromWishlist();
+
+  const favItems = useMemo(() => {
+    const items = wishlistData?.results || (Array.isArray(wishlistData) ? wishlistData : []);
+    return items;
+  }, [wishlistData]);
+
+  const error = wishlistErr ? "Could not load favorites." : "";
   const [clearing, setClearing] = useState(false);
   const [removingId, setRemovingId] = useState(null);
-
-  const loadFavorites = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await WishlistService.getWishlist();
-      const items = response.data?.results || response.data || [];
-      setFavItems(Array.isArray(items) ? items : []);
-    } catch (err) {
-      console.error("Failed loading wishlist:", err);
-      setError("Could not load favorites.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
 
   const handleRemoveSingle = async (itemId, e) => {
     if (e) {
@@ -44,8 +31,7 @@ export default function FavoritesView() {
 
     setRemovingId(itemId);
     try {
-      await WishlistService.removeBook(itemId);
-      setFavItems((prev) => prev.filter((item) => item.id !== itemId));
+      await removeMutation.mutateAsync(itemId);
     } catch (err) {
       console.error("Failed removing item from favorites:", err);
     } finally {
@@ -60,12 +46,10 @@ export default function FavoritesView() {
     setClearing(true);
     try {
       await Promise.all(
-        favItems.map((item) => WishlistService.removeBook(item.id))
+        favItems.map((item) => removeMutation.mutateAsync(item.id))
       );
-      setFavItems([]);
     } catch (err) {
       console.error("Failed clearing wishlist:", err);
-      setError("Could not clear favorites.");
     } finally {
       setClearing(false);
     }

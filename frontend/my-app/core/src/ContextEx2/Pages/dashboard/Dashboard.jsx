@@ -17,8 +17,7 @@ import { LanguageToggle } from "../../Components/common/LanguageToggle";
 import { useLanguage } from "../../Context/LanguageContext";
 import { ppic14 } from "../../Constants";
 import ContentService from "../../Services/ContentService";
-import UserService from "../../Services/UserService";
-import PublisherService from "../../Services/PublisherService";
+import { useProfile, useMyPublishers } from "../../Hooks/queries";
 
 import "../../Styles/components/Dashboard.css";
 
@@ -62,8 +61,10 @@ export default function Dashboard({ initialTab }) {
   const [libraryLoading, setLibraryLoading] = useState(true);
   const [libraryError, setLibraryError] = useState("");
 
-  const [profileData, setProfileData] = useState(null);
-  const [hasPublisher, setHasPublisher] = useState(false);
+  // User profile & Publisher status via React Query
+  const { data: profileData, refetch: refetchProfile } = useProfile();
+  const { data: myPublishers } = useMyPublishers();
+  const hasPublisher = Boolean(Array.isArray(myPublishers) && myPublishers.length > 0);
 
   // Modals
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -138,34 +139,7 @@ export default function Dashboard({ initialTab }) {
     loadLibrary();
   }, []);
 
-  // Load User Profile Data
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await UserService.getProfile();
-        setProfileData(response.data);
-      } catch (error) {
-        console.error("Failed to load profile:", error);
-      }
-    };
 
-    loadProfile();
-  }, []);
-
-  // Check if current reader has publisher memberships
-  useEffect(() => {
-    let isMounted = true;
-    PublisherService.getMyPublishers()
-      .then((pubs) => {
-        if (isMounted && Array.isArray(pubs) && pubs.length > 0) {
-          setHasPublisher(true);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Clear row highlight after duration
   useEffect(() => {
@@ -775,7 +749,7 @@ export default function Dashboard({ initialTab }) {
           open={profileModalOpen}
           onClose={() => setProfileModalOpen(false)}
           profileData={profileData}
-          onProfileUpdated={(updated) => setProfileData(updated)}
+          onProfileUpdated={() => refetchProfile()}
         />
       )}
 

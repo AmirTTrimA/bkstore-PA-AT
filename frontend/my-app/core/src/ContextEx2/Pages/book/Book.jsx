@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import BasketService from "../../Services/BasketService";
-import BookService from "../../Services/BookService";
-import WishlistService from "../../Services/WishlistService";
-import RecommendationService from "../../Services/RecommendationService";
+import {
+  useBookDetail,
+  useSimilarBooks,
+  useWishlist,
+  useAddToWishlist,
+  useRemoveFromWishlist,
+  useAddToCart,
+} from "../../Hooks/queries";
 
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
@@ -67,380 +71,111 @@ export default function Book() {
 
 
   // ==========================
-  // State
+  // Queries & Mutations
   // ==========================
 
-  const [book, setBook] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-
-  const [error, setError] = useState("");
+  const { data: book, isLoading: loading, error: bookError } = useBookDetail(bookId);
+  const error = bookError ? "Could not load this book." : "";
 
   const [selectedFormat, setSelectedFormat] = useState(null);
-
-  const [liked, setLiked] = useState(false);
-
-  const [wishlistItemId, setWishlistItemId] = useState(null);
-
   const [addingCart, setAddingCart] = useState(false);
-
   const [updatingWishlist, setUpdatingWishlist] = useState(false);
 
-  const [similarBooks, setSimilarBooks] = useState([]);
+  // Sync default selected format when book loads
+  useEffect(() => {
+    if (book?.formats?.length && !selectedFormat) {
+      setSelectedFormat(book.formats[0]);
+    }
+  }, [book, selectedFormat]);
 
-
-  // ==========================
   // Scroll to top on book change
-  // ==========================
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [bookId]);
 
-
-  // ==========================
-  // Load book
-  // ==========================
-
-  useEffect(() => {
-
-    const fetchBook = async () => {
-
-      try {
-
-        const data =
-          await BookService.getBookById(bookId);
-
-
-        setBook(data);
-
-
-        if (data.formats?.length) {
-          setSelectedFormat(data.formats[0]);
-        }
-
-
-      } catch (err) {
-
-        console.error(err);
-
-        setError("Could not load this book.");
-
-      }
-      finally {
-
-        setLoading(false);
-
-      }
-
-    };
-
-
-    fetchBook();
-
-  }, [bookId]);
-
-
-  // ==========================
-  // Load similar books (Phase 3 Semantic Recommendations)
-  // ==========================
-
-  useEffect(() => {
-    if (!bookId) return;
-    let cancelled = false;
-
-    RecommendationService.getSimilarBooks(bookId, 6)
-      .then((data) => {
-        if (!cancelled && data?.recommendations) {
-          setSimilarBooks(data.recommendations.map(mapBookForSlider));
-        }
-      })
-      .catch((err) => {
-        console.warn("Could not load similar books:", err);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bookId]);
-
-
-  // ==========================
-  // Load wishlist state
-  // ==========================
-
-  useEffect(() => {
-
-    if (!book || !isLoggedIn) {
-
-      setLiked(false);
-      setWishlistItemId(null);
-
-      return;
-
+  // Semantic Similar Books
+  const { data: similarData } = useSimilarBooks(bookId, 6);
+  const similarBooks = useMemo(() => {
+    if (similarData?.recommendations) {
+      return similarData.recommendations.map(mapBookForSlider);
     }
+    return [];
+  }, [similarData]);
 
+  // Wishlist State & Synchronization
+  const { data: wishlistData } = useWishlist({ enabled: Boolean(isLoggedIn) });
+  const addToWishlistMutation = useAddToWishlist();
+  const removeFromWishlistMutation = useRemoveFromWishlist();
 
-    const checkWishlist = async () => {
+  const wishlistItem = useMemo(() => {
+    if (!book || !isLoggedIn || !wishlistData) return null;
+    const list = Array.isArray(wishlistData) ? wishlistData : (wishlistData.results || []);
+    return list.find((item) => item.book_id === book.id) || null;
+  }, [book, isLoggedIn, wishlistData]);
 
-      try {
+  const liked = Boolean(wishlistItem);
+  const wishlistItemId = wishlistItem?.id || null;
 
-        const response =
-          await WishlistService.getWishlist();
-
-
-        const wishlist =
-          response.data.results ||
-          response.data ||
-          [];
-
-
-        const wishlistItem =
-          wishlist.find(
-            item =>
-              item.book_id === book.id
-          );
-
-
-        if (wishlistItem) {
-
-          setLiked(true);
-
-          setWishlistItemId(
-            wishlistItem.id
-          );
-
-        } else {
-
-          setLiked(false);
-
-          setWishlistItemId(null);
-
-        }
-
-
-      } catch (err) {
-
-        console.error(
-          "Failed loading wishlist:",
-          err
-        );
-
-      }
-
-    };
-
-
-    checkWishlist();
-
-  }, [book, isLoggedIn]);
-
-
-  // ==========================
-  // Favorite handler
-  // ==========================
-
+  // Favorite toggle handler
   const toggleFavorite = async () => {
-
     if (!isLoggedIn) {
-
-      notificationRef.current?.showNotif(
-        "Login required",
-        "error",
-        {
-          linkText: "login",
-          linkHref: "/login"
-        }
-      );
-
+      notificationRef.current?.showNotif("Login required", "error", {
+        linkText: "login",
+        linkHref: "/login",
+      });
       return;
-
     }
 
-
-    if (updatingWishlist)
-      return;
-
+    if (updatingWishlist) return;
 
     try {
-
       setUpdatingWishlist(true);
-
-
-      // --------------------------
-      // Remove from wishlist
-      // --------------------------
-
       if (liked) {
-
         if (!wishlistItemId) {
-
-          throw new Error(
-            "Wishlist item ID is missing."
-          );
-
+          throw new Error("Wishlist item ID is missing.");
         }
-
-
-        await WishlistService.removeBook(
-          wishlistItemId
-        );
-
-
-        setLiked(false);
-
-        setWishlistItemId(null);
-
-
-        notificationRef.current?.showNotif(
-          "Removed from favorites",
-          "success"
-        );
-
-
+        await removeFromWishlistMutation.mutateAsync(wishlistItemId);
+        notificationRef.current?.showNotif("Removed from favorites", "success");
+      } else {
+        await addToWishlistMutation.mutateAsync(book.id);
+        notificationRef.current?.showNotif("Added to favorites", "success");
       }
-
-      // --------------------------
-      // Add to wishlist
-      // --------------------------
-
-      else {
-
-        await WishlistService.addBook(
-          book.id
-        );
-
-
-        /*
-         * The backend currently returns:
-         *
-         * {
-         *   detail: "...",
-         *   book_id: ...
-         * }
-         *
-         * It does not return the newly-created
-         * WishlistItem ID.
-         *
-         * Fetch the wishlist again so we can
-         * obtain that ID for future deletion.
-         */
-
-        const response =
-          await WishlistService.getWishlist();
-
-
-        const wishlist =
-          response.data.results ||
-          response.data ||
-          [];
-
-
-        const wishlistItem =
-          wishlist.find(
-            item =>
-              item.book_id === book.id
-          );
-
-
-        setLiked(true);
-
-        setWishlistItemId(
-          wishlistItem?.id || null
-        );
-
-
-        notificationRef.current?.showNotif(
-          "Added to favorites",
-          "success"
-        );
-
-      }
-
-
     } catch (err) {
-
-      console.error(
-        "Wishlist error:",
-        err
-      );
-
-
+      console.error("Wishlist error:", err);
       notificationRef.current?.showNotif(
-        err.response?.data?.detail ||
-        "Failed to update favorites",
+        err.response?.data?.detail || "Failed to update favorites",
         "error"
       );
-
     } finally {
-
       setUpdatingWishlist(false);
-
     }
-
   };
 
-
-  // ==========================
-  // Add to cart
-  // ==========================
-
+  // Add to cart handler
+  const addToCartMutation = useAddToCart();
   const addToCart = async () => {
-
     if (!selectedFormat) {
-
-      notificationRef.current?.showNotif(
-        "Please select a format",
-        "error"
-      );
-
+      notificationRef.current?.showNotif("Please select a format", "error");
       return;
-
     }
-
 
     try {
-
       setAddingCart(true);
-
-
-      await BasketService.addItem({
-
+      await addToCartMutation.mutateAsync({
         book_id: book.id,
-
         format_id: selectedFormat.id,
-
-        quantity: 1
-
+        quantity: 1,
       });
-
-
-      notificationRef.current?.showNotif(
-        "Added to cart",
-        "success"
-      );
-
-
+      notificationRef.current?.showNotif("Added to cart", "success");
     } catch (err) {
-
-      console.error(
-        "Cart error:",
-        err
-      );
-
-
+      console.error("Cart error:", err);
       notificationRef.current?.showNotif(
-        err.response?.data?.detail ||
-        "Failed to add item",
+        err.response?.data?.detail || "Failed to add item",
         "error"
       );
-
-
     } finally {
-
       setAddingCart(false);
-
     }
-
   };
 
 

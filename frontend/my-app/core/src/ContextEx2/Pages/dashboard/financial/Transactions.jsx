@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -10,7 +10,7 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ReplayIcon from "@mui/icons-material/Replay";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
-import WalletService from "../../../Services/WalletService";
+import { useWalletTransactions } from "../../../Hooks/queries";
 import { useLanguage } from "../../../Context/LanguageContext";
 import { formatPrice } from "../../../utils/formatPrice";
 
@@ -18,28 +18,8 @@ import "../../../Styles/components/History.css";
 
 export default function Transactions() {
   const { t } = useLanguage();
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const loadTransactions = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const response = await WalletService.getTransactions();
-        const list = response.data?.results || response.data || [];
-        setTransactions(list);
-      } catch (err) {
-        console.error("Failed loading wallet transactions:", err);
-        setError("Could not load transaction history.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTransactions();
-  }, []);
+  const { data: transactions = [], isLoading: loading, error: transErr } = useWalletTransactions();
+  const error = transErr ? "Could not load transaction history." : "";
 
   if (loading) {
     return (

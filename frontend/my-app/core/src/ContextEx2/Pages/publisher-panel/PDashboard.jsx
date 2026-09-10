@@ -10,6 +10,13 @@ import { LanguageToggle } from '../../Components/common/LanguageToggle';
 import { useAuth } from '../../Context/AuthContext';
 import { useLanguage } from '../../Context/LanguageContext';
 import PublisherService from '../../Services/PublisherService';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useMyPublishers,
+  usePublisherBooks,
+  usePublisherProposals,
+  queryKeys,
+} from '../../Hooks/queries';
 import { ppic14 } from '../../Constants';
 import { formatPrice } from '../../utils/formatPrice';
 
@@ -22,11 +29,62 @@ export default function PDashboard() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
 
-  // Core publisher state
-  const [publishers, setPublishers] = useState([]);
-  const [currentPublisher, setCurrentPublisher] = useState(null);
-  const [proposals, setProposals] = useState([]);
-  const [allbooks, setAllBooks] = useState([]);
+  const queryClient = useQueryClient();
+
+  // Core publisher state via React Query
+  const { data: publishersData = [] } = useMyPublishers();
+  const publishers = useMemo(() => {
+    return Array.isArray(publishersData) ? publishersData : [];
+  }, [publishersData]);
+
+  const [selectedPublisherId, setSelectedPublisherId] = useState(null);
+  const currentPublisher = useMemo(() => {
+    if (selectedPublisherId) {
+      return publishers.find((p) => p.id === selectedPublisherId) || publishers[0] || null;
+    }
+    return publishers[0] || null;
+  }, [publishers, selectedPublisherId]);
+
+  const setCurrentPublisher = (pub) => {
+    setSelectedPublisherId(pub?.id || null);
+  };
+
+  const { data: rawBooks = [] } = usePublisherBooks(currentPublisher?.id);
+  const { data: rawProposals = [] } = usePublisherProposals(currentPublisher?.id);
+
+  const allbooks = useMemo(() => {
+    const list = Array.isArray(rawBooks) ? rawBooks : (rawBooks?.results || []);
+    return list.map((b) => ({
+      id: b.id,
+      name: b.title || 'Untitled',
+      title: b.title || 'Untitled',
+      author: b.author_name || (typeof b.author === 'string' ? b.author : b.author?.name) || 'Unknown',
+      author_name: b.author_name || (typeof b.author === 'string' ? b.author : b.author?.name) || 'Unknown',
+      author_id: b.author_id || (typeof b.author === 'object' ? b.author?.id : null),
+      formats: b.formats || [],
+      type: b.formats && b.formats.length > 0 ? b.formats.map((f) => f.type).join(', ') : 'Physical',
+      price: b.price || (b.formats && b.formats[0]?.price) || '0',
+      genre: b.genre || 'FICTION',
+      aboutbook: b.description || '',
+      description: b.description || '',
+      bookImage: b.cover_image_url || '',
+      cover_image_url: b.cover_image_url || '',
+      isbn: b.isbn || '',
+      raw: b,
+    }));
+  }, [rawBooks]);
+
+  const proposals = useMemo(() => {
+    return Array.isArray(rawProposals) ? rawProposals : (rawProposals?.results || []);
+  }, [rawProposals]);
+
+  const refreshPublisherData = useCallback(() => {
+    if (currentPublisher?.id) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.publishers.books(currentPublisher.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.publishers.proposals(currentPublisher.id) });
+    }
+  }, [currentPublisher?.id, queryClient]);
+
   const [bookToEdit, setBookToEdit] = useState(null);
 
   // Active view: 'mybook' | 'upload' | 'authors' | 'proposals'
@@ -55,69 +113,6 @@ export default function PDashboard() {
   const pendingCount = useMemo(() => {
     return proposals.filter((p) => p.status === 'PENDING').length;
   }, [proposals]);
-
-  // Load Publishers for current authenticated user
-  useEffect(() => {
-    let isMounted = true;
-    const fetchPublishers = async () => {
-      try {
-        const pubs = await PublisherService.getMyPublishers();
-        if (isMounted) {
-          setPublishers(pubs || []);
-          if (pubs && pubs.length > 0) {
-            setCurrentPublisher(pubs[0]);
-          }
-        }
-      } catch (err) {
-        console.error('Failed loading publishers:', err);
-      }
-    };
-    fetchPublishers();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Load Publisher Books & Proposals
-  const loadPublisherData = useCallback(async (pubId) => {
-    if (!pubId) return;
-    try {
-      const [booksData, proposalsData] = await Promise.all([
-        PublisherService.getPublisherBooks(pubId),
-        PublisherService.getPublisherProposals(pubId),
-      ]);
-
-      const formattedBooks = (booksData || []).map((b) => ({
-        id: b.id,
-        name: b.title || 'Untitled',
-        title: b.title || 'Untitled',
-        author: b.author_name || (typeof b.author === 'string' ? b.author : b.author?.name) || 'Unknown',
-        author_name: b.author_name || (typeof b.author === 'string' ? b.author : b.author?.name) || 'Unknown',
-        author_id: b.author_id || (typeof b.author === 'object' ? b.author?.id : null),
-        formats: b.formats || [],
-        type: b.formats && b.formats.length > 0 ? b.formats.map((f) => f.type).join(', ') : 'Physical',
-        price: b.price || (b.formats && b.formats[0]?.price) || '0',
-        genre: b.genre || 'FICTION',
-        aboutbook: b.description || '',
-        description: b.description || '',
-        bookImage: b.cover_image_url || '',
-        cover_image_url: b.cover_image_url || '',
-        isbn: b.isbn || '',
-        raw: b,
-      }));
-
-      setAllBooks(formattedBooks);
-      setProposals(proposalsData || []);
-    } catch (err) {
-      console.error('Failed loading publisher books & proposals:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (currentPublisher?.id) {
-      loadPublisherData(currentPublisher.id);
-    }
-  }, [currentPublisher, loadPublisherData]);
 
   // Clear highlight timer
   useEffect(() => {
@@ -160,9 +155,7 @@ export default function PDashboard() {
         await PublisherService.withdrawProposal(proposalId, 'Withdrawn by publisher');
         notificationRef.current?.showNotif('Proposal withdrawn successfully.', 'info');
         setConfirmWithdrawId(null);
-        if (currentPublisher?.id) {
-          loadPublisherData(currentPublisher.id);
-        }
+        refreshPublisherData();
       } catch (err) {
         console.error('Failed to withdraw proposal:', err);
         notificationRef.current?.showNotif('Failed to withdraw proposal.', 'error');
@@ -170,7 +163,7 @@ export default function PDashboard() {
         setIsWithdrawing(false);
       }
     },
-    [currentPublisher, loadPublisherData]
+    [refreshPublisherData]
   );
 
   // Proposals waiting list filtered items
@@ -533,9 +526,7 @@ export default function PDashboard() {
               }}
               currentPublisher={currentPublisher}
               onProposalCreated={() => {
-                if (currentPublisher?.id) {
-                  loadPublisherData(currentPublisher.id);
-                }
+                refreshPublisherData();
               }}
             />
           </div>
@@ -549,9 +540,7 @@ export default function PDashboard() {
             <Authors
               currentPublisher={currentPublisher}
               onProposalCreated={() => {
-                if (currentPublisher?.id) {
-                  loadPublisherData(currentPublisher.id);
-                }
+                refreshPublisherData();
               }}
             />
           </div>

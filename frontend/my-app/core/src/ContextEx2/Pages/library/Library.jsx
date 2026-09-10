@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 import BookService from "../../Services/BookService";
+import { queryKeys } from "../../Hooks/queries/queryKeys";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
@@ -19,112 +21,51 @@ export default function Library() {
     const { t } = useLanguage();
 
     // ============================================
-    //      State
+    //      Infinite Query
     // ============================================
 
-    const [books, setBooks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-    const [error, setError] = useState("");
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: loading,
+        isError,
+        refetch,
+    } = useInfiniteQuery({
+        queryKey: queryKeys.books.list({ infinite: true }),
+        queryFn: ({ pageParam = 1 }) => BookService.getBooks({ page: pageParam }),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage?.next) {
+                return allPages.length + 1;
+            }
+            return undefined;
+        },
+    });
+
+    const books = useMemo(() => {
+        if (!data?.pages) return [];
+        const all = data.pages.flatMap((page) => page.results || page || []);
+        const seen = new Set();
+        return all.filter((book) => {
+            if (seen.has(book.id)) return false;
+            seen.add(book.id);
+            return true;
+        });
+    }, [data]);
+
+    const loadingMore = isFetchingNextPage;
+    const hasMore = Boolean(hasNextPage);
+    const error = isError ? "Could not load books." : "";
 
     // ============================================
-    //      Refs
-    // ============================================
-
-    const loadingRef = useRef(false);
-    const currentPageRef = useRef(1);
-    const hasMoreRef = useRef(true);
-    const requestedPagesRef = useRef(new Set());
-
-    // ============================================
-    //      Load Books
-    // ============================================
-
-    const loadBooks = useCallback(async (pageNumber) => {
-        if (
-            loadingRef.current ||
-            !hasMoreRef.current ||
-            requestedPagesRef.current.has(pageNumber)
-        ) {
-            return false;
-        }
-
-        requestedPagesRef.current.add(pageNumber);
-        loadingRef.current = true;
-        setError("");
-
-        if (pageNumber === 1) {
-            setLoading(true);
-        } else {
-            setLoadingMore(true);
-        }
-
-        try {
-            const response = await BookService.getBooks({
-                page: pageNumber,
-            });
-
-            const results = response.results || [];
-            const nextExists = Boolean(response.next);
-
-            setBooks(previousBooks => {
-                if (pageNumber === 1) {
-                    return results;
-                }
-
-                const existingIds = new Set(
-                    previousBooks.map(book => book.id)
-                );
-
-                const newBooks = results.filter(
-                    book => !existingIds.has(book.id)
-                );
-
-                return [
-                    ...previousBooks,
-                    ...newBooks,
-                ];
-            });
-
-            currentPageRef.current = pageNumber;
-            hasMoreRef.current = nextExists;
-            setHasMore(nextExists);
-
-            return nextExists;
-        } catch (err) {
-            console.error(
-                `Failed loading library page ${pageNumber}:`,
-                err
-            );
-            requestedPagesRef.current.delete(pageNumber);
-            setError("Could not load books.");
-            return false;
-        } finally {
-            loadingRef.current = false;
-            setLoading(false);
-            setLoadingMore(false);
-        }
-    }, []);
-
-    // ============================================
-    //      Initial Load
-    // ============================================
-
-    useEffect(() => {
-        loadBooks(1);
-    }, [loadBooks]);
-
-    // ============================================
-    //      Infinite Scroll
+    //      Infinite Scroll Listener
     // ============================================
 
     useEffect(() => {
         const handleScroll = () => {
-            if (
-                loadingRef.current ||
-                !hasMoreRef.current
-            ) {
+            if (!hasNextPage || isFetchingNextPage) {
                 return;
             }
 
@@ -137,10 +78,7 @@ export default function Library() {
                 700;
 
             if (scrollPosition >= threshold) {
-                const nextPage =
-                    currentPageRef.current + 1;
-
-                loadBooks(nextPage);
+                fetchNextPage();
             }
         };
 
@@ -156,7 +94,7 @@ export default function Library() {
                 handleScroll
             );
         };
-    }, [loadBooks]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     // ============================================
     //      Loading Initial
@@ -231,7 +169,7 @@ export default function Library() {
                         <p>{error}</p>
                         <button
                             type="button"
-                            onClick={() => loadBooks(1)}
+                            onClick={() => refetch()}
                             className="library-retry-btn"
                         >
                             {t("common.retry", "Retry")}

@@ -7,7 +7,8 @@ import SimpleNav from "../../Components/SimpleNav";
 import { useLanguage } from "../../Context/LanguageContext";
 
 import BookService from "../../Services/BookService";
-import PublisherService from "../../Services/PublisherService";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGenres, usePublicPublishers, useAuthors, queryKeys } from "../../Hooks/queries";
 import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Search.css";
@@ -58,6 +59,7 @@ function mapBookToSearchCard(book) {
 
 export default function Search() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { searchTerm } = useParams();
   const [searchParams] = useSearchParams();
   const { t } = useLanguage();
@@ -74,10 +76,25 @@ export default function Search() {
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [activeQuery, setActiveQuery] = useState(initialQuery);
 
-  // Metadata dropdowns
-  const [genresList, setGenresList] = useState([]);
-  const [publishersList, setPublishersList] = useState([]);
-  const [authorsList, setAuthorsList] = useState([]);
+  // Metadata dropdowns via React Query
+  const { data: genresData } = useGenres();
+  const { data: pubsData } = usePublicPublishers();
+  const { data: authorsData } = useAuthors({ page_size: 50 });
+
+  const genresList = useMemo(() => {
+    const list = genresData?.results || genresData || [];
+    return Array.isArray(list) ? list : [];
+  }, [genresData]);
+
+  const publishersList = useMemo(() => {
+    const list = pubsData?.results || pubsData || [];
+    return Array.isArray(list) ? list : [];
+  }, [pubsData]);
+
+  const authorsList = useMemo(() => {
+    const list = authorsData?.results || authorsData || [];
+    return Array.isArray(list) ? list : [];
+  }, [authorsData]);
 
   // Results & Pagination
   const [books, setBooks] = useState([]);
@@ -102,46 +119,6 @@ export default function Search() {
 
   // Refs
   const loadMoreRef = useRef(null);
-
-  // ============================================
-  // Load Filter Metadata (Genres, Publishers, Authors)
-  // ============================================
-  useEffect(() => {
-    let isMounted = true;
-    const loadMetadata = async () => {
-      try {
-        const [genresData, pubsData, authorsData] = await Promise.allSettled([
-          BookService.getGenres(),
-          PublisherService.getPublicPublishers(),
-          BookService.getAuthors({ page_size: 50 }),
-        ]);
-
-        if (!isMounted) return;
-
-        if (genresData.status === "fulfilled") {
-          const list = genresData.value?.results || genresData.value || [];
-          setGenresList(Array.isArray(list) ? list : []);
-        }
-
-        if (pubsData.status === "fulfilled") {
-          const list = pubsData.value?.results || pubsData.value || [];
-          setPublishersList(Array.isArray(list) ? list : []);
-        }
-
-        if (authorsData.status === "fulfilled") {
-          const list = authorsData.value?.results || authorsData.value || [];
-          setAuthorsList(Array.isArray(list) ? list : []);
-        }
-      } catch (err) {
-        console.error("Failed loading search filters metadata:", err);
-      }
-    };
-
-    loadMetadata();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // ============================================
   // Fetch Books from Backend
@@ -173,8 +150,11 @@ export default function Search() {
         params.author = filterAuthor;
       }
 
-      const response = await BookService.getBooks(params);
-      const rawBooks = response.results || [];
+      const response = await queryClient.fetchQuery({
+        queryKey: queryKeys.books.list(params),
+        queryFn: () => BookService.getBooks(params),
+      });
+      const rawBooks = response?.results || [];
       const mapped = rawBooks.map(mapBookToSearchCard);
 
       if (replace) {
@@ -187,7 +167,7 @@ export default function Search() {
       setHasMore(Boolean(response.next));
       setTotalCount(response.count || mapped.length);
     },
-    [activeQuery, filterGenre, filterFormat, filterPublisher, filterAuthor]
+    [activeQuery, filterGenre, filterFormat, filterPublisher, filterAuthor, queryClient]
   );
 
   // Trigger initial or filter change fetch

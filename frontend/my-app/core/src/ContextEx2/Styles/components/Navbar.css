@@ -131,8 +131,32 @@
     transform: translateY(-1px);
 }
 
+.nav-cart-btn {
+    position: relative;
+}
+
 .nav-cart-btn i {
     font-size: 1.05rem;
+}
+
+.nav-cart-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #d17842;
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    min-width: 17px;
+    height: 17px;
+    border-radius: 9px;
+    padding: 0 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 1.5px solid var(--bg-primary, #ffffff);
+    line-height: 1;
 }
 
 /* Auth Action Button */

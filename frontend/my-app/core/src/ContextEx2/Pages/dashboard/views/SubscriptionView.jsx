@@ -1,26 +1,65 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useLanguage } from "../../../Context/LanguageContext";
 import Notification from "../../../Components/feature/Notification";
-import SubscriptionService from "../../../Services/SubscriptionService";
 import { formatPrice } from "../../../utils/formatPrice";
+import {
+  useSubscriptionPlans,
+  useMySubscriptions,
+  usePurchaseSubscription,
+  useUpgradeSubscription,
+  useCancelSubscription,
+} from "../../../Hooks/queries";
 
 import "../../../Styles/components/Subscription.css";
+
+const extractErrorMessage = (err, fallback = "Subscription action failed.") => {
+  const data = err?.response?.data;
+  if (!data) return fallback;
+  if (typeof data === "string") return data;
+  if (data.detail) return data.detail;
+  if (data.error) return data.error;
+  if (Array.isArray(data.wallet) && data.wallet.length) return data.wallet[0];
+  if (typeof data.wallet === "string") return data.wallet;
+  if (Array.isArray(data.subscription) && data.subscription.length) return data.subscription[0];
+  if (typeof data.subscription === "string") return data.subscription;
+  if (Array.isArray(data.plan) && data.plan.length) return data.plan[0];
+  if (typeof data.plan === "string") return data.plan;
+  if (Array.isArray(data.non_field_errors) && data.non_field_errors.length) return data.non_field_errors[0];
+  return fallback;
+};
 
 export default function SubscriptionView() {
   const { t } = useLanguage();
   const notificationRef = useRef(null);
 
-  const [plans, setPlans] = useState([]);
-  const [subscriptions, setSubscriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [autoRenew, setAutoRenew] = useState(false);
   const [purchasingPlanId, setPurchasingPlanId] = useState(null);
 
   // Cancellation modal state
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [subToCancel, setSubToCancel] = useState(null);
-  const [cancelling, setCancelling] = useState(false);
+
+  // React Query domain hooks
+  const {
+    data: plans = [],
+    isLoading: plansLoading,
+    error: plansError,
+    refetch: refetchPlans,
+  } = useSubscriptionPlans();
+
+  const {
+    data: subscriptions = [],
+    isLoading: subsLoading,
+    error: subsError,
+    refetch: refetchSubs,
+  } = useMySubscriptions();
+
+  const purchaseMutation = usePurchaseSubscription();
+  const upgradeMutation = useUpgradeSubscription();
+  const cancelMutation = useCancelSubscription();
+
+  const loading = plansLoading || subsLoading;
+  const error = plansError || subsError;
 
   const activeSubscription = subscriptions.find(
     (sub) => sub.status === "ACTIVE"
@@ -30,50 +69,43 @@ export default function SubscriptionView() {
     (sub) => sub.status === "RESERVED"
   );
 
-  const loadData = async () => {
-    try {
-      setError("");
-      setLoading(true);
-      const plansResponse = await SubscriptionService.getPlans();
-      const plansList = plansResponse.data?.results || plansResponse.data || [];
-      setPlans(Array.isArray(plansList) ? plansList : []);
-
-      const subscriptionResponse = await SubscriptionService.getMySubscriptions();
-      const subList = subscriptionResponse.data?.results || subscriptionResponse.data || [];
-      setSubscriptions(Array.isArray(subList) ? subList : []);
-    } catch (err) {
-      console.error("Failed loading subscription data:", err);
-      setError("Failed to load subscription information.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const handleSubscribe = async (planId) => {
+  const handlePlanAction = async (plan) => {
     if (purchasingPlanId) return;
 
-    setPurchasingPlanId(planId);
-    try {
-      const response = await SubscriptionService.purchaseSubscription(planId, autoRenew);
-      const paymentUrl = response.data?.payment_url;
+    const isCurrent = activeSubscription?.plan?.id === plan.id;
+    if (isCurrent) return;
 
-      if (paymentUrl) {
-        notificationRef.current?.showNotif("Redirecting to payment gateway...", "info");
-        window.location.href = paymentUrl;
+    setPurchasingPlanId(plan.id);
+
+    try {
+      // If user has an active subscription and chooses a higher tier, call upgrade
+      const canUpgrade =
+        activeSubscription &&
+        Number(plan.tier) > Number(activeSubscription.plan?.tier || 0);
+
+      if (canUpgrade) {
+        await upgradeMutation.mutateAsync({ plan_id: plan.id });
+        notificationRef.current?.showNotif(
+          t("library.upgradedSuccess", "Subscription upgraded successfully!"),
+          "success"
+        );
       } else {
-        notificationRef.current?.showNotif("Subscription activated successfully!", "success");
-        await loadData();
+        const payload = {
+          plan_id: plan.id,
+          auto_renew: autoRenew,
+        };
+        await purchaseMutation.mutateAsync(payload);
+        const successMsg = activeSubscription
+          ? t("library.scheduledSuccess", "Subscription scheduled successfully for when your current term ends!")
+          : t("library.activatedSuccess", "Subscription activated successfully!");
+        notificationRef.current?.showNotif(successMsg, "success");
       }
     } catch (err) {
-      console.error("Failed purchasing subscription:", err);
-      const msg =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        "Could not initiate subscription purchase.";
+      console.error("Subscription purchase/upgrade error:", err);
+      const msg = extractErrorMessage(
+        err,
+        t("library.purchaseFailed", "Could not complete subscription transaction.")
+      );
       notificationRef.current?.showNotif(msg, "error");
     } finally {
       setPurchasingPlanId(null);
@@ -86,40 +118,57 @@ export default function SubscriptionView() {
   };
 
   const closeCancelModal = () => {
-    if (cancelling) return;
+    if (cancelMutation.isPending) return;
     setCancelModalOpen(false);
     setSubToCancel(null);
   };
 
   const handleConfirmCancel = async () => {
-    if (!subToCancel || cancelling) return;
+    if (!subToCancel || cancelMutation.isPending) return;
 
-    setCancelling(true);
     try {
-      await SubscriptionService.cancelSubscription(subToCancel.id);
-      notificationRef.current?.showNotif("Subscription has been cancelled.", "success");
+      const res = await cancelMutation.mutateAsync({
+        subscription_id: subToCancel.id,
+        refund: true,
+      });
+
+      const refundAmount = res?.data?.refunded_amount || res?.refunded_amount;
+      const refundMsg =
+        Number(refundAmount) > 0
+          ? t("library.cancelRefundSuccess", "Subscription cancelled. {amount} refunded to your wallet.", {
+              amount: formatPrice(refundAmount),
+            })
+          : t("library.cancelSuccess", "Subscription cancelled successfully.");
+
+      notificationRef.current?.showNotif(refundMsg, "success");
       closeCancelModal();
-      await loadData();
     } catch (err) {
       console.error("Failed cancelling subscription:", err);
-      const msg =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        "Failed to cancel subscription.";
+      const msg = extractErrorMessage(
+        err,
+        t("library.cancelFailed", "Failed to cancel subscription.")
+      );
       notificationRef.current?.showNotif(msg, "error");
-    } finally {
-      setCancelling(false);
     }
+  };
+
+  const handleRetry = () => {
+    refetchPlans();
+    refetchSubs();
   };
 
   return (
     <div className="dashboard-subscription-embed">
-      <div className="subscription-hero" style={{ textAlign: "left", marginBottom: "24px" }}>
-        <h2 className="sub-main-title" style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: 700 }}>
+      {/* Header section with responsive, theme-adaptive titles */}
+      <div className="subscription-hero">
+        <h2 className="sub-main-title">
           💎 {t("library.vipPlans", "VIP Subscription & Reader Plans")}
         </h2>
-        <p className="sub-main-subtitle" style={{ margin: "4px 0 0 0", color: "rgba(255,255,255,0.6)", fontSize: "0.85rem" }}>
-          {t("library.vipSubtitle", "Unlock exclusive percentage discounts on all digital and audiobooks with an active VIP membership.")}
+        <p className="sub-main-subtitle">
+          {t(
+            "library.vipSubtitle",
+            "Unlock exclusive percentage discounts on all digital and audiobooks with an active VIP membership."
+          )}
         </p>
       </div>
 
@@ -134,8 +183,8 @@ export default function SubscriptionView() {
       {/* Error State */}
       {!loading && error && (
         <div className="subscription-state-box sub-error">
-          <p>{error}</p>
-          <button type="button" onClick={loadData} className="sub-retry-btn">
+          <p>{error?.message || t("common.failedLoading", "Failed to load subscription information.")}</p>
+          <button type="button" onClick={handleRetry} className="sub-retry-btn">
             {t("common.retry", "Retry")}
           </button>
         </div>
@@ -149,7 +198,9 @@ export default function SubscriptionView() {
             <div className="sub-status-card active-status">
               <div className="sub-status-header">
                 <div className="sub-status-title-wrap">
-                  <span className="sub-status-pill active">{t("library.activeMembership", "Active Membership")}</span>
+                  <span className="sub-status-pill active">
+                    {t("library.activeMembership", "Active Membership")}
+                  </span>
                   <h3>{activeSubscription.plan?.name}</h3>
                 </div>
                 <button
@@ -169,7 +220,7 @@ export default function SubscriptionView() {
                     {new Date(activeSubscription.end_date).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
-                      day: "numeric"
+                      day: "numeric",
                     })}
                   </span>
                 </div>
@@ -194,7 +245,9 @@ export default function SubscriptionView() {
             <div className="sub-status-card reserved-status">
               <div className="sub-status-header">
                 <div className="sub-status-title-wrap">
-                  <span className="sub-status-pill reserved">{t("library.scheduledPlan", "Scheduled Plan")}</span>
+                  <span className="sub-status-pill reserved">
+                    {t("library.scheduledPlan", "Scheduled Plan")}
+                  </span>
                   <h3>{reservedSubscription.plan?.name}</h3>
                 </div>
                 <button
@@ -214,7 +267,7 @@ export default function SubscriptionView() {
                     {new Date(reservedSubscription.start_date).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
-                      day: "numeric"
+                      day: "numeric",
                     })}
                   </span>
                 </div>
@@ -228,7 +281,7 @@ export default function SubscriptionView() {
             </div>
           )}
 
-          {/* Auto-renew checkbox */}
+          {/* Auto-renew checkbox card */}
           <div className="auto-renew-card">
             <label className="auto-renew-label">
               <input
@@ -240,8 +293,14 @@ export default function SubscriptionView() {
             </label>
             <p className="auto-renew-help">
               {autoRenew
-                ? t("library.autoRenewOnHelp", "Your subscription will automatically extend at the end of each billing cycle.")
-                : t("library.autoRenewOffHelp", "Auto-renew is off. Your benefits will expire at the end of the current term.")}
+                ? t(
+                    "library.autoRenewOnHelp",
+                    "Your subscription will automatically extend at the end of each billing cycle."
+                  )
+                : t(
+                    "library.autoRenewOffHelp",
+                    "Auto-renew is off. Your benefits will expire at the end of the current term."
+                  )}
             </p>
           </div>
 
@@ -250,14 +309,21 @@ export default function SubscriptionView() {
             {plans.map((plan, index) => {
               const isCurrent = activeSubscription?.plan?.id === plan.id;
               const isBusy = purchasingPlanId === plan.id;
+              const canUpgrade =
+                activeSubscription &&
+                Number(plan.tier) > Number(activeSubscription.plan?.tier || 0);
 
               return (
                 <div
                   key={plan.id}
-                  className={`plan-card plan-tier-${(index % 3) + 1} ${isCurrent ? "current-tier" : ""}`}
+                  className={`plan-card plan-tier-${(index % 3) + 1} ${
+                    isCurrent ? "current-tier" : ""
+                  }`}
                 >
                   {isCurrent && (
-                    <span className="current-plan-badge">{t("library.currentPlan", "Current Plan")}</span>
+                    <span className="current-plan-badge">
+                      {t("library.currentPlan", "Current Plan")}
+                    </span>
                   )}
 
                   <div className="plan-card-header">
@@ -269,22 +335,20 @@ export default function SubscriptionView() {
                     </p>
                   </div>
 
-                  <div className="plan-price-wrap">
+                  <div className="plan-price-row">
                     <span className="plan-price-val">
-                      {formatPrice(plan.price)}
+                      {formatPrice(plan.monthly_price ?? plan.price)}
                     </span>
-                    <span className="plan-duration">/ {plan.duration_days} {t("library.days", "days")}</span>
+                    <span className="plan-price-unit">/ {t("library.month", "month")}</span>
                   </div>
 
-                  {plan.description && (
-                    <p className="plan-desc">{plan.description}</p>
-                  )}
+                  {plan.description && <p className="plan-desc">{plan.description}</p>}
 
-                  <ul className="plan-features-list">
+                  <ul className="plan-perks-list">
                     <li>
                       <i className="fa-solid fa-check"></i>
                       <span>
-                        <strong>{plan.digital_discount_percent}% discount</strong> on all digital titles
+                        <strong>{plan.digital_discount_percent}% discount</strong> on all digital & audiobook titles
                       </span>
                     </li>
                     <li>
@@ -297,14 +361,14 @@ export default function SubscriptionView() {
                     </li>
                     <li>
                       <i className="fa-solid fa-check"></i>
-                      <span>Valid for {plan.duration_days} {t("library.days", "days")}</span>
+                      <span>30-day billing cycle with auto-renewal support</span>
                     </li>
                   </ul>
 
                   <button
                     type="button"
-                    className="plan-cta-btn"
-                    onClick={() => handleSubscribe(plan.id)}
+                    className="plan-action-btn"
+                    onClick={() => handlePlanAction(plan)}
                     disabled={isCurrent || isBusy}
                   >
                     {isBusy ? (
@@ -313,6 +377,8 @@ export default function SubscriptionView() {
                       </span>
                     ) : isCurrent ? (
                       t("library.activePlan", "Active Plan")
+                    ) : canUpgrade ? (
+                      t("library.upgradePlan", "Upgrade to this Plan")
                     ) : (
                       t("library.subscribeNow", "Subscribe Now")
                     )}
@@ -326,55 +392,67 @@ export default function SubscriptionView() {
 
       {/* Cancel Confirmation Modal */}
       {cancelModalOpen && (
-        <div className="sub-modal-backdrop" onClick={closeCancelModal}>
+        <div className="modal-backdrop" onClick={closeCancelModal}>
           <div
-            className="sub-modal-panel"
+            className="cancel-modal-content"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="cancel-modal-title"
           >
-            <div className="sub-modal-header">
-              <h3 id="cancel-modal-title">{t("library.cancelConfirmTitle", "Cancel Subscription?")}</h3>
+            <div className="cancel-modal-header">
+              <h3 id="cancel-modal-title">
+                {t("library.cancelConfirmTitle", "Cancel Subscription?")}
+              </h3>
               <button
                 type="button"
-                className="sub-modal-close-btn"
+                className="modal-close-btn"
                 onClick={closeCancelModal}
-                disabled={cancelling}
+                disabled={cancelMutation.isPending}
+                aria-label="Close modal"
               >
                 &times;
               </button>
             </div>
 
-            <div className="sub-modal-body">
-              <p>
-                {t("library.cancelConfirmDesc", "Are you sure you want to cancel your {name} subscription?", {
-                  name: subToCancel?.plan?.name
-                })}
+            <div className="cancel-modal-body">
+              <div className="cancel-modal-icon">
+                <i className="fas fa-exclamation-triangle"></i>
+              </div>
+              <p className="cancel-modal-text">
+                {t(
+                  "library.cancelConfirmDesc",
+                  `Are you sure you want to cancel your ${subToCancel?.plan?.name || "active"} subscription?`
+                )}
               </p>
               <p className="sub-modal-warning">
-                {t("library.cancelConfirmWarning", "Your benefits will remain active until the end of the current term on {date}. After that, your digital discount will no longer apply.", {
-                  date: subToCancel?.end_date ? new Date(subToCancel.end_date).toLocaleDateString() : "the expiration date"
-                })}
+                {t(
+                  "library.cancelConfirmWarning",
+                  `Your benefits will remain active until the end of the current billing term on ${
+                    subToCancel?.end_date
+                      ? new Date(subToCancel.end_date).toLocaleDateString()
+                      : "the expiration date"
+                  }. Unused days will be credited to your wallet.`
+                )}
               </p>
             </div>
 
-            <div className="sub-modal-actions">
+            <div className="cancel-modal-actions">
               <button
                 type="button"
-                className="sub-modal-keep-btn"
+                className="modal-btn-dismiss"
                 onClick={closeCancelModal}
-                disabled={cancelling}
+                disabled={cancelMutation.isPending}
               >
                 {t("library.keepSubscription", "Keep Subscription")}
               </button>
               <button
                 type="button"
-                className="sub-modal-confirm-cancel-btn"
+                className="modal-btn-confirm"
                 onClick={handleConfirmCancel}
-                disabled={cancelling}
+                disabled={cancelMutation.isPending}
               >
-                {cancelling ? (
+                {cancelMutation.isPending ? (
                   <span>
                     <i className="fas fa-spinner fa-spin"></i> {t("library.cancelling", "Cancelling...")}
                   </span>

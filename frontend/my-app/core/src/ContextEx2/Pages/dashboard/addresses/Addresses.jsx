@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -25,40 +25,30 @@ import NewAddresses from "./NewAddresses";
 import Notification from "../../../Components/feature/Notification";
 import AddressService from "../../../Services/AddressService";
 import { useLanguage } from "../../../Context/LanguageContext";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useAddresses,
+  useCreateAddress,
+  useDeleteAddress,
+  queryKeys,
+} from "../../../Hooks/queries";
 
 export default function Addresses() {
   const { t } = useLanguage();
-  const [addresses, setAddresses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const queryClient = useQueryClient();
 
+  const { data: addresses = [], isLoading: loading, error: addrError, refetch: loadAddresses } = useAddresses();
+  const error = addrError ? "Failed to load shipping addresses. Please check your connection." : "";
+
+  const createAddressMutation = useCreateAddress();
+  const deleteAddressMutation = useDeleteAddress();
+
+  const [saving, setSaving] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const notificationRef = useRef();
-
-  // Load addresses from backend API
-  const loadAddresses = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await AddressService.getAddresses();
-      const list = response.data?.results || response.data || [];
-      setAddresses(list);
-    } catch (err) {
-      console.error("Failed to load addresses:", err);
-      setError("Failed to load shipping addresses. Please check your connection.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadAddresses();
-  }, [loadAddresses]);
 
   // Open modal for new address
   const handleAddNew = () => {
@@ -84,13 +74,13 @@ export default function Addresses() {
       setSaving(true);
       if (isEditing && editingId) {
         await AddressService.updateAddress(editingId, addressData);
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.addresses() });
         notificationRef.current?.showNotif("Address updated successfully!", "success");
       } else {
-        await AddressService.createAddress(addressData);
+        await createAddressMutation.mutateAsync(addressData);
         notificationRef.current?.showNotif("Address added successfully!", "success");
       }
       handleCloseModal();
-      await loadAddresses();
     } catch (err) {
       console.error("Failed to save address:", err);
       const errMsg =
@@ -107,10 +97,9 @@ export default function Addresses() {
   // Delete address
   const handleDelete = async (id) => {
     try {
-      await AddressService.deleteAddress(id);
+      await deleteAddressMutation.mutateAsync(id);
       notificationRef.current?.showNotif("Address removed.", "info");
       setDeleteConfirmId(null);
-      await loadAddresses();
     } catch (err) {
       console.error("Failed to delete address:", err);
       notificationRef.current?.showNotif("Could not delete address.", "error");
@@ -121,8 +110,8 @@ export default function Addresses() {
   const handleSetDefault = async (id) => {
     try {
       await AddressService.updateAddress(id, { is_default: true });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.addresses() });
       notificationRef.current?.showNotif("Default address updated.", "success");
-      await loadAddresses();
     } catch (err) {
       console.error("Failed to set default address:", err);
       notificationRef.current?.showNotif("Failed to update default address.", "error");

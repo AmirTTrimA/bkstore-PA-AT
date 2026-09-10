@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
 import Navbar from "../../Components/Navbar";
@@ -6,7 +6,7 @@ import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
 import { useLanguage } from "../../Context/LanguageContext";
 
-import BookService from "../../Services/BookService";
+import { useAuthorDetail, useBooks } from "../../Hooks/queries";
 import { formatPrice } from "../../utils/formatPrice";
 import { ppic1 } from "../../Constants";
 import "../../Styles/components/Author.css";
@@ -16,52 +16,40 @@ export default function Author() {
   const { authorId } = useParams();
   const { t } = useLanguage();
 
-  const [authorData, setAuthorData] = useState(null);
-  const [books, setBooks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
   const [formatFilter, setFormatFilter] = useState("ALL");
   const [isBioExpanded, setIsBioExpanded] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    setError("");
+  const {
+    data: authorData,
+    isLoading: isAuthorLoading,
+    error: authorErr,
+  } = useAuthorDetail(authorId);
 
-    const fetchAuthor = async () => {
-      try {
-        const data = await BookService.getAuthorById(authorId);
-        if (!isMounted) return;
-        setAuthorData(data);
+  const authorHasBooks = Boolean(
+    authorData?.books && Array.isArray(authorData.books) && authorData.books.length > 0
+  );
 
-        // If serializer includes books, use them; otherwise fetch books by author
-        if (data.books && Array.isArray(data.books)) {
-          setBooks(data.books);
-        } else {
-          const booksRes = await BookService.getBooks({ author: authorId });
-          const bookList = booksRes.results || booksRes || [];
-          if (isMounted) setBooks(bookList);
-        }
-      } catch (err) {
-        console.error("Failed to load author:", err);
-        if (isMounted) {
-          setError(
-            err.response?.status === 404
-              ? "Author not found."
-              : "Failed to load author information."
-          );
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
+  const {
+    data: booksData,
+    isLoading: isBooksLoading,
+  } = useBooks(
+    { author: authorId },
+    { enabled: Boolean(authorId && !authorHasBooks) }
+  );
 
-    fetchAuthor();
+  const books = useMemo(() => {
+    if (authorHasBooks) {
+      return authorData.books;
+    }
+    return booksData?.results || (Array.isArray(booksData) ? booksData : []);
+  }, [authorHasBooks, authorData?.books, booksData]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [authorId]);
+  const isLoading = isAuthorLoading || (!authorHasBooks && isBooksLoading);
+  const error = authorErr
+    ? authorErr.response?.status === 404
+      ? "Author not found."
+      : "Failed to load author information."
+    : "";
 
   const filteredBooks = useMemo(() => {
     if (formatFilter === "PHYSICAL") {

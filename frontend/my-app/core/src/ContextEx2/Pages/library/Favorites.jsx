@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 
 import Navbar from "../../Components/Navbar";
@@ -6,7 +6,7 @@ import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
 import { useAuth } from "../../Context/AuthContext";
 import { useLanguage } from "../../Context/LanguageContext";
-import WishlistService from "../../Services/WishlistService";
+import { useWishlist, useRemoveFromWishlist } from "../../Hooks/queries";
 import { formatPrice } from "../../utils/formatPrice";
 
 import "../../Styles/components/Favorites.css";
@@ -21,32 +21,20 @@ export default function Favorites() {
     const { t } = useLanguage();
 
     // ============================================
-    //      State
+    //      Queries & Mutations via React Query
     // ============================================
 
-    const [favItems, setFavItems] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const { data: wishlistData, isLoading: loading, error: wishlistErr, refetch: loadFavorites } = useWishlist({ enabled: Boolean(isLoggedIn) });
+    const removeMutation = useRemoveFromWishlist();
+
+    const favItems = useMemo(() => {
+        const items = wishlistData?.results || (Array.isArray(wishlistData) ? wishlistData : []);
+        return items;
+    }, [wishlistData]);
+
+    const error = wishlistErr ? "Could not load favorites." : "";
     const [clearing, setClearing] = useState(false);
     const [removingId, setRemovingId] = useState(null);
-
-    // ============================================
-    //      Load Wishlist
-    // ============================================
-
-    const loadFavorites = useCallback(async () => {
-        try {
-            setError("");
-            const response = await WishlistService.getWishlist();
-            const items = response.data?.results || response.data || [];
-            setFavItems(Array.isArray(items) ? items : []);
-        } catch (err) {
-            console.error("Failed loading wishlist:", err);
-            setError("Could not load favorites.");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
 
     // ============================================
     //      Remove Single Item
@@ -61,8 +49,7 @@ export default function Favorites() {
 
         setRemovingId(itemId);
         try {
-            await WishlistService.removeBook(itemId);
-            setFavItems(prev => prev.filter(item => item.id !== itemId));
+            await removeMutation.mutateAsync(itemId);
         } catch (err) {
             console.error("Failed removing item from favorites:", err);
         } finally {
@@ -87,24 +74,14 @@ export default function Favorites() {
 
         try {
             await Promise.all(
-                favItems.map(item => WishlistService.removeBook(item.id))
+                favItems.map(item => removeMutation.mutateAsync(item.id))
             );
-            setFavItems([]);
         } catch (err) {
             console.error("Failed clearing wishlist:", err);
-            setError("Could not clear favorites.");
         } finally {
             setClearing(false);
         }
     };
-
-    // ============================================
-    //      Effects
-    // ============================================
-
-    useEffect(() => {
-        loadFavorites();
-    }, [loadFavorites]);
 
     // ============================================
     //      Derived State

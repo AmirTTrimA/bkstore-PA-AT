@@ -18,7 +18,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 
-import UserService from "../../../Services/UserService";
+import { useUpdateProfile } from "../../../Hooks/queries";
 import { useLanguage } from "../../../Context/LanguageContext";
 import {
   ppic1, ppic2, ppic3, ppic4, ppic5, ppic6, ppic7,
@@ -38,6 +38,7 @@ export default function Accountpart({
   notificationRef
 }) {
   const { t } = useLanguage();
+  const updateProfileMutation = useUpdateProfile();
   const [userAccount, setUserAccount] = useState({
     username: "",
     first_name: "",
@@ -116,7 +117,7 @@ export default function Accountpart({
         hobbies_or_likings: userAccount.hobbies_or_likings.trim()
       };
 
-      const response = await UserService.updateProfile(data);
+      const response = await updateProfileMutation.mutateAsync(data);
       onProfileUpdated?.(response.data);
       notificationRef.current?.showNotif?.("Profile information updated successfully.", "success");
     } catch (err) {

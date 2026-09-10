@@ -14,6 +14,7 @@ dill==0.4.0
 dj-rest-auth==7.0.1
 Django==5.2.6
 django-allauth==65.13.1
+django-cors-headers==4.9.0
 django-extensions==4.1
 django-haystack==3.3.0
 django-stubs==6.0.7

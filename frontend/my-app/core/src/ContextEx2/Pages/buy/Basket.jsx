@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../Context/AuthContext";
 import { useLanguage } from "../../Context/LanguageContext";
-import BasketService from "../../Services/BasketService";
-import AddressService from "../../Services/AddressService";
+import {
+  useCart,
+  useUpdateCartQuantity,
+  useRemoveFromCart,
+  useValidateDiscount,
+  useAddresses,
+} from "../../Hooks/queries";
 import Navbar from "../../Components/Navbar";
 import SimpleNav from "../../Components/SimpleNav";
 import Footer from "../../Components/Footer";
@@ -24,53 +29,30 @@ export default function Basket() {
   const notificationRef = useRef();
 
   // ==============================
-  // State
+  // Queries via React Query
   // ==============================
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [hasSavedAddress, setHasSavedAddress] = useState(false);
+  const { data: cartData, isLoading: loading, error: cartError, refetch: loadBasket } = useCart();
+  const cartItems = useMemo(() => {
+    return Array.isArray(cartData) ? cartData : (cartData?.items || []);
+  }, [cartData]);
+
+  const { data: addressesData } = useAddresses({ enabled: Boolean(isLoggedIn) });
+  const hasSavedAddress = useMemo(() => {
+    return Boolean(Array.isArray(addressesData) && addressesData.length > 0);
+  }, [addressesData]);
+
+  const error = cartError ? "Failed to load your basket. Please try again." : "";
+
+  // Mutations
+  const updateQuantityMutation = useUpdateCartQuantity();
+  const removeItemMutation = useRemoveFromCart();
+  const validateDiscountMutation = useValidateDiscount();
 
   // Promo Code State
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [promoError, setPromoError] = useState("");
-
-  // ==============================
-  // Load Basket
-  // ==============================
-  const loadBasket = useCallback(async () => {
-    try {
-      const response = await BasketService.getBasket();
-      setCartItems(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error("Failed loading basket:", err);
-      setError("Failed to load your basket. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadBasket();
-  }, [loadBasket]);
-
-  // ==============================
-  // Address Check (Real check)
-  // ==============================
-  useEffect(() => {
-    if (isLoggedIn) {
-      AddressService.getAddresses()
-        .then((res) => {
-          const addrs = res.data?.results || res.data || [];
-          setHasSavedAddress(Array.isArray(addrs) && addrs.length > 0);
-        })
-        .catch(() => setHasSavedAddress(false));
-    } else {
-      setHasSavedAddress(false);
-    }
-  }, [isLoggedIn]);
 
   // ==============================
   // Helpers & Calculations
@@ -126,13 +108,10 @@ export default function Basket() {
   // ==============================
   const removeItems = async (item) => {
     try {
-      await BasketService.removeItem({
+      await removeItemMutation.mutateAsync({
         book_id: item.book_id,
         format_id: item.format_id,
       });
-
-      const response = await BasketService.getBasket();
-      setCartItems(Array.isArray(response.data) ? response.data : []);
       notificationRef.current?.showNotif("Item removed from basket", "info");
     } catch (err) {
       console.error("Failed removing item:", err);
@@ -153,14 +132,11 @@ export default function Basket() {
     }
 
     try {
-      await BasketService.setQuantity({
+      await updateQuantityMutation.mutateAsync({
         book_id: item.book_id,
         format_id: item.format_id,
         quantity: parsed,
       });
-
-      const response = await BasketService.getBasket();
-      setCartItems(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed updating quantity:", err);
       notificationRef.current?.showNotif(
@@ -182,7 +158,7 @@ export default function Basket() {
     setPromoError("");
 
     try {
-      const res = await BasketService.validateDiscount(code);
+      const res = await validateDiscountMutation.mutateAsync(code);
       if (res.data?.is_valid) {
         setAppliedCoupon(res.data);
         notificationRef.current?.showNotif(

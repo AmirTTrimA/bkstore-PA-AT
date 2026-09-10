@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Notification from '../../Components/feature/Notification';
 import { useLanguage } from '../../Context/LanguageContext';
 import PublisherService from '../../Services/PublisherService';
+import { useAuthors } from '../../Hooks/queries';
 import { ppic14 } from '../../Constants';
 import { formatPrice } from '../../utils/formatPrice';
 
@@ -45,9 +46,12 @@ export default function Upload({
     audio: { enabled: false, price: '', filePath: '' },
   });
 
-  // Authors list from API
-  const [authors, setAuthors] = useState([]);
-  const [loadingAuthors, setLoadingAuthors] = useState(true);
+  // Authors list via React Query
+  const { data: authorsData, isLoading: loadingAuthors } = useAuthors();
+  const authors = useMemo(() => {
+    const list = authorsData?.results || authorsData || [];
+    return Array.isArray(list) ? list : [];
+  }, [authorsData]);
 
   const isEditMode = bookToEdit !== null;
 
@@ -85,30 +89,12 @@ export default function Upload({
     submitting: false,
   });
 
-  // Load available authors
+  // Select initial author in create mode when authors load
   useEffect(() => {
-    let mounted = true;
-    const fetchAuthors = async () => {
-      try {
-        setLoadingAuthors(true);
-        const data = await PublisherService.getAuthors();
-        if (mounted) {
-          setAuthors(data || []);
-          if (!isEditMode && data && data.length > 0) {
-            setAuthorId(String(data[0].id));
-          }
-        }
-      } catch (err) {
-        console.error('Failed fetching authors:', err);
-      } finally {
-        if (mounted) setLoadingAuthors(false);
-      }
-    };
-    fetchAuthors();
-    return () => {
-      mounted = false;
-    };
-  }, [isEditMode]);
+    if (!isEditMode && authors.length > 0 && !authorId) {
+      setAuthorId(String(authors[0].id));
+    }
+  }, [isEditMode, authors, authorId]);
 
   // Populate data in Edit Mode
   useEffect(() => {

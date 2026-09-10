@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 // ---Components---
@@ -14,10 +14,16 @@ import { useLanguage } from "../../Context/LanguageContext";
 // --- Styles ---
 import "../../Styles/components/Home.css";
 
-// --- Services ---
-import BookService from "../../Services/BookService";
-import PublisherService from "../../Services/PublisherService";
-import RecommendationService from "../../Services/RecommendationService";
+// --- React Query Hooks ---
+import {
+  useNewBooks,
+  useBooks,
+  usePublicPublishers,
+  useGenres,
+  useForYouRecommendations,
+} from "../../Hooks/queries";
+
+// --- Services & Utils ---
 import { formatPrice } from "../../utils/formatPrice";
 
 // --- Constants ---
@@ -131,19 +137,71 @@ export default function Home() {
   const { t } = useLanguage();
 
   // ----------------------------------------
-  // Book & Catalog State
+  // Book & Catalog React Query Data
   // ----------------------------------------
-  const [heroBooks, setHeroBooks] = useState([]);
-  const [recommendedBooks, setRecommendedBooks] = useState([]);
-  const [newBooks, setNewBooks] = useState([]);
-  const [discountBooks, setDiscountBooks] = useState([]);
-  const [digitalBooks, setDigitalBooks] = useState([]);
-  const [audioBooks, setAudioBooks] = useState([]);
-  const [publishers, setPublishers] = useState([]);
-  const [genres, setGenres] = useState(FALLBACK_GENRES);
+  const { data: newBooksData, isLoading: loadingNew, isError: errorNew } = useNewBooks({ page_size: 10 });
+  const { data: allBooksData, isLoading: loadingAll, isError: errorAll } = useBooks({ page_size: 20 });
+  const { data: digitalBooksData } = useBooks({ format: "DIGITAL", page_size: 10 });
+  const { data: audioBooksData } = useBooks({ format: "AUDIO", page_size: 10 });
+  const { data: publishersData } = usePublicPublishers();
+  const { data: genresData } = useGenres();
+  const { data: recommendedData } = useForYouRecommendations({ limit: 8 });
 
-  const [loadingBooks, setLoadingBooks] = useState(true);
-  const [bookError, setBookError] = useState("");
+  const loadingBooks = loadingNew || loadingAll;
+  const bookError = (errorNew && errorAll) ? "Failed to load catalog data." : "";
+
+  // Memoized Sliders & Derivations (Cached by React Query)
+  const newBooks = useMemo(() => {
+    const rawNew = extractBooks(newBooksData);
+    return rawNew.map(mapBookForSlider);
+  }, [newBooksData]);
+
+  const heroBooks = useMemo(() => {
+    return newBooks.slice(0, 5);
+  }, [newBooks]);
+
+  const recommendedBooks = useMemo(() => {
+    const rawRec = extractBooks(recommendedData?.recommendations || recommendedData);
+    return rawRec.map(mapBookForSlider);
+  }, [recommendedData]);
+
+  const discountBooks = useMemo(() => {
+    const rawAll = extractBooks(allBooksData);
+    const discounts = rawAll.filter((b) => b.has_discount && b.discount_percent > 0);
+    return (discounts.length > 0 ? discounts : rawAll.slice(0, 10)).map(mapBookForSlider);
+  }, [allBooksData]);
+
+  const digitalBooks = useMemo(() => {
+    let digitalList = extractBooks(digitalBooksData);
+    if (digitalList.length === 0 && allBooksData) {
+      const rawAll = extractBooks(allBooksData);
+      digitalList = rawAll.filter(
+        (b) => b.is_digital || b.formats?.some((f) => f.format === "DIGITAL" || f.is_digital)
+      );
+    }
+    return digitalList.map(mapBookForSlider);
+  }, [digitalBooksData, allBooksData]);
+
+  const audioBooks = useMemo(() => {
+    let audioList = extractBooks(audioBooksData);
+    if (audioList.length === 0 && allBooksData) {
+      const rawAll = extractBooks(allBooksData);
+      audioList = rawAll.filter(
+        (b) => b.is_audio || b.formats?.some((f) => f.format === "AUDIO" || f.is_audio)
+      );
+    }
+    return audioList.map(mapBookForSlider);
+  }, [audioBooksData, allBooksData]);
+
+  const publishers = useMemo(() => {
+    const rawPubs = publishersData?.results || publishersData || [];
+    return Array.isArray(rawPubs) ? rawPubs : [];
+  }, [publishersData]);
+
+  const genres = useMemo(() => {
+    const rawGenres = genresData?.results || genresData || [];
+    return Array.isArray(rawGenres) && rawGenres.length >= 4 ? rawGenres : FALLBACK_GENRES;
+  }, [genresData]);
 
   // Search input
   const [searchInputValue, setSearchInputValue] = useState("");
@@ -151,119 +209,6 @@ export default function Home() {
   // Hero carousel
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-
-  // ============================================
-  // Load Dynamic Home Data
-  // ============================================
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadHomeData = async () => {
-      try {
-        setLoadingBooks(true);
-        setBookError("");
-
-        const [
-          newBooksRes,
-          allBooksRes,
-          digitalBooksRes,
-          audioBooksRes,
-          publishersRes,
-          genresRes,
-          recommendedRes,
-        ] = await Promise.allSettled([
-          BookService.getNewBooks({ page_size: 10 }),
-          BookService.getBooks({ page_size: 20 }),
-          BookService.getBooks({ format: "DIGITAL", page_size: 10 }),
-          BookService.getBooks({ format: "AUDIO", page_size: 10 }),
-          PublisherService.getPublicPublishers({ page_size: 8 }),
-          BookService.getGenres(),
-          RecommendationService.getForYouRecommendations({ limit: 8 }),
-        ]);
-
-        if (cancelled) return;
-
-        // 1. New Arrivals & Hero
-        if (newBooksRes.status === "fulfilled") {
-          const rawNew = extractBooks(newBooksRes.value);
-          const mappedNew = rawNew.map(mapBookForSlider);
-          setNewBooks(mappedNew);
-          setHeroBooks(mappedNew.slice(0, 5));
-        }
-
-        // 2. Recommendations (Phase 3 Semantic & Personalized Engine)
-        if (recommendedRes.status === "fulfilled") {
-          const rawRec = extractBooks(
-            recommendedRes.value?.recommendations || recommendedRes.value
-          );
-          setRecommendedBooks(rawRec.map(mapBookForSlider));
-        }
-
-        // 3. Best Offers / Discounted Editions
-        if (allBooksRes.status === "fulfilled") {
-          const rawAll = extractBooks(allBooksRes.value);
-          const discounts = rawAll.filter((b) => b.has_discount && b.discount_percent > 0);
-          // If few explicit discounts in first page, take all books with format discounts
-          setDiscountBooks((discounts.length > 0 ? discounts : rawAll.slice(0, 10)).map(mapBookForSlider));
-        }
-
-        // 4. Digital Editions (PDFs)
-        let digitalList = [];
-        if (digitalBooksRes.status === "fulfilled") {
-          digitalList = extractBooks(digitalBooksRes.value);
-        }
-        if (digitalList.length === 0 && allBooksRes.status === "fulfilled") {
-          const rawAll = extractBooks(allBooksRes.value);
-          digitalList = rawAll.filter(
-            (b) => b.is_digital || b.formats?.some((f) => f.format === "DIGITAL" || f.is_digital)
-          );
-        }
-        setDigitalBooks(digitalList.map(mapBookForSlider));
-
-        // 5. Audiobooks
-        let audioList = [];
-        if (audioBooksRes.status === "fulfilled") {
-          audioList = extractBooks(audioBooksRes.value);
-        }
-        if (audioList.length === 0 && allBooksRes.status === "fulfilled") {
-          const rawAll = extractBooks(allBooksRes.value);
-          audioList = rawAll.filter(
-            (b) => b.is_audio || b.formats?.some((f) => f.format === "AUDIO" || f.is_audio)
-          );
-        }
-        setAudioBooks(audioList.map(mapBookForSlider));
-
-        // 6. Iranian Publishers
-        if (publishersRes.status === "fulfilled") {
-          const rawPubs = publishersRes.value?.results || publishersRes.value || [];
-          setPublishers(Array.isArray(rawPubs) ? rawPubs : []);
-        }
-
-        // 7. Genres
-        if (genresRes.status === "fulfilled") {
-          const rawGenres = genresRes.value?.results || genresRes.value || [];
-          setGenres(Array.isArray(rawGenres) && rawGenres.length >= 4 ? rawGenres : FALLBACK_GENRES);
-        } else {
-          setGenres(FALLBACK_GENRES);
-        }
-      } catch (err) {
-        console.error("Failed loading home data:", err);
-        if (!cancelled) {
-          setBookError("Failed to load catalog data.");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingBooks(false);
-        }
-      }
-    };
-
-    loadHomeData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // ============================================
   // Search Submission
