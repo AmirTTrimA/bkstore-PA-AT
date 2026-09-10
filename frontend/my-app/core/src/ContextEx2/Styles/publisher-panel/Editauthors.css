@@ -1,152 +1,74 @@
 /* ============================================
-        EDIT AUTHORS 
+   PROPOSE / EDIT AUTHOR FORM STYLES
    ============================================ */
 
-
-/* Container */
-.edit-authors-container{
-    width:500px;
-    margin:25px auto;
-    padding:20px;
+.edit-authors-panel {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 18px;
+  padding: 24px;
+  max-width: 680px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
-
-
-/* Form */
-.edit-authors-form{
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    gap: 20px;
-    margin-bottom: 20px;
-
+.edit-authors-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
 }
 
-
-.edit-authors-profile-label{
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold; 
+.edit-authors-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primarys);
+  margin: 0 0 4px 0;
 }
 
-
-/* Inputs */
-.edit-inputs{
-    padding: 8px;
-    border-radius: 10px;
-    font-size: 16px;
-    resize: none;
-
+.edit-authors-header p {
+  font-size: 0.85rem;
+  color: var(--text-primarys);
+  opacity: 0.75;
+  margin: 0;
 }
 
-
-
-
-/* Preview */
-.selected-authors-pic{
-    display:flex;
-    justify-content:center;
-    margin-top: 20px;
+.author-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.selected-authors-pic img{
-    width: 100px; 
-    height: 100px; 
-    object-fit: cover;
-    border-radius: 50%;
+.author-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.edit-authors-pic-input{
-    
-    width: 95%;
-    padding: 10px;
-    border: 1px solid white;
-    border-radius: 4px;
-    font-size: 16px;
-      
+.author-form-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primarys);
+  opacity: 0.9;
 }
 
-
-
-/* Submit Button */
-.edit-submit{
-    display: flex;
-    justify-content: center;
-    margin: 0 auto;
-    width: 50%;
-    
+.author-form-field label .required {
+  color: #ef4444;
+  margin-left: 2px;
 }
 
-.edit-submit-btn{
-    width: 100%;
-    padding: 15px;
-    background-color: #00c711;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin: 30px 0px; 
+.char-counter {
+  font-size: 0.75rem;
+  color: var(--text-primarys);
+  opacity: 0.6;
+  text-align: right;
+  margin-top: 2px;
 }
 
-
-
-
-
-
-
-.edit-inputs
-.MuiOutlinedInput-notchedOutline
-{
-    border-color: white;
-}
-
-
-
-
-
-.edit-inputs .MuiInputBase-input,
-.edit-inputs .MuiFormLabel-root{
-    color: white;
-}
-
-
-
-
-
-/* Cancel Button */
-.edit-cancel-btn{
-    width: 100%;
-    padding: 15px;
-    background-color: #ff0000;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin: 30px 0px 30px 10px; 
-
-
-
-}
-
-
-
-/* ============================================
-        RESPONSIVE DESIGN
-   ============================================ */
-@media(max-width:769px){
-    .edit-authors-container{
-        width: 400px;
-        margin: 15px 0;
-    }
-}
-@media(max-width:600px){
-    .edit-authors-container{
-        width: 320px;
-        margin: 10px 0;
-    }
-    
+.author-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }

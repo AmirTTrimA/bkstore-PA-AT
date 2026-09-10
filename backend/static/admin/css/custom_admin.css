@@ -1,0 +1,1010 @@
+/* ==========================================================================
+   PageNet Bookstore - Executive Admin Theme Stylesheet
+   Full Light & Dark Theme Support (Django 4.2+ / 5.x)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. ROOT & THEME CSS VARIABLES OVERRIDES
+   -------------------------------------------------------------------------- */
+:root,
+html[data-theme="light"] {
+  --pn-primary: #d17842;
+  --pn-primary-hover: #b8622e;
+  --pn-primary-light: rgba(209, 120, 66, 0.12);
+  --pn-dark-bg: #1e1e24;
+  --pn-header-bg: #18181c;
+  --pn-surface: #ffffff;
+  --pn-border: #e2e8f0;
+
+  /* Django stock variable overrides (Light Mode) */
+  --primary: #d17842;
+  --secondary: #b8622e;
+  --accent: #e5935c;
+  --primary-fg: #ffffff;
+  --header-bg: #18181c;
+  --header-color: #ffffff;
+  --header-link-color: #f1f5f9;
+  --breadcrumbs-bg: #f8fafc;
+  --breadcrumbs-fg: #64748b;
+  --breadcrumbs-link-fg: #334155;
+  --link-fg: #c46830;
+  --link-hover-color: #9c4b1a;
+  --link-selected-fg: #d17842;
+  --body-bg: #ffffff;
+  --body-fg: #1e293b;
+  --body-quiet-color: #64748b;
+  --hairline-color: #e2e8f0;
+  --border-color: #cbd5e1;
+  --darkened-bg: #f8fafc;
+  --selected-bg: rgba(209, 120, 66, 0.12);
+  --selected-row: rgba(209, 120, 66, 0.1);
+  --button-bg: #d17842;
+  --button-hover-bg: #b8622e;
+  --default-button-bg: #18181c;
+  --default-button-hover-bg: #d17842;
+  --object-tools-bg: #d17842;
+  --object-tools-hover-bg: #b8622e;
+}
+
+html[data-theme="dark"],
+:root[data-theme="dark"] {
+  --pn-primary: #d17842;
+  --pn-primary-hover: #b8622e;
+  --pn-primary-light: rgba(209, 120, 66, 0.16);
+  --pn-dark-bg: #141418;
+  --pn-header-bg: #121216;
+  --pn-surface: #1e1e26;
+  --pn-border: #2d2d3a;
+
+  /* Django stock variable overrides (Dark Mode) */
+  --primary: #d17842;
+  --secondary: #272732;
+  --accent: #e5935c;
+  --primary-fg: #ffffff;
+  --body-bg: #141418;
+  --body-fg: #f1f5f9;
+  --body-quiet-color: #94a3b8;
+  --body-medium-color: #cbd5e1;
+  --body-loud-color: #ffffff;
+  --header-bg: #121216;
+  --header-color: #ffffff;
+  --header-link-color: #f1f5f9;
+  --breadcrumbs-bg: #1a1a22;
+  --breadcrumbs-fg: #94a3b8;
+  --breadcrumbs-link-fg: #e2e8f0;
+  --link-fg: #f59e0b;
+  --link-hover-color: #fbbf24;
+  --link-selected-fg: #f59e0b;
+  --hairline-color: #272732;
+  --border-color: #353545;
+  --darkened-bg: #1b1b22;
+  --selected-bg: rgba(209, 120, 66, 0.22);
+  --selected-row: rgba(209, 120, 66, 0.18);
+  --button-bg: #d17842;
+  --button-hover-bg: #b8622e;
+  --default-button-bg: #d17842;
+  --default-button-hover-bg: #b8622e;
+  --object-tools-bg: #d17842;
+  --object-tools-hover-bg: #b8622e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pn-primary: #d17842;
+    --pn-primary-hover: #b8622e;
+    --pn-primary-light: rgba(209, 120, 66, 0.16);
+    --pn-dark-bg: #141418;
+    --pn-header-bg: #121216;
+    --pn-surface: #1e1e26;
+    --pn-border: #2d2d3a;
+
+    --primary: #d17842;
+    --secondary: #272732;
+    --accent: #e5935c;
+    --primary-fg: #ffffff;
+    --body-bg: #141418;
+    --body-fg: #f1f5f9;
+    --body-quiet-color: #94a3b8;
+    --header-bg: #121216;
+    --header-color: #ffffff;
+    --header-link-color: #f1f5f9;
+    --breadcrumbs-bg: #1a1a22;
+    --breadcrumbs-fg: #94a3b8;
+    --breadcrumbs-link-fg: #e2e8f0;
+    --link-fg: #f59e0b;
+    --link-hover-color: #fbbf24;
+    --link-selected-fg: #f59e0b;
+    --hairline-color: #272732;
+    --border-color: #353545;
+    --darkened-bg: #1b1b22;
+    --selected-bg: rgba(209, 120, 66, 0.22);
+    --selected-row: rgba(209, 120, 66, 0.18);
+    --button-bg: #d17842;
+    --button-hover-bg: #b8622e;
+    --default-button-bg: #d17842;
+    --default-button-hover-bg: #b8622e;
+    --object-tools-bg: #d17842;
+    --object-tools-hover-bg: #b8622e;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. EXECUTIVE TOP HEADER & BRANDING
+   -------------------------------------------------------------------------- */
+#header {
+  background: var(--pn-header-bg) !important;
+  border-bottom: 3px solid var(--pn-primary) !important;
+  padding: 12px 24px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.pagenet-admin-brand,
+.bookkadeh-admin-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none !important;
+}
+
+.brand-badge-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.brand-title {
+  color: #ffffff !important;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 60%, var(--pn-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-subtitle {
+  color: var(--pn-primary) !important;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background: rgba(209, 120, 66, 0.16);
+  border: 1px solid rgba(209, 120, 66, 0.4);
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-left: 8px;
+}
+
+#user-tools {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+#user-tools a {
+  color: #f1f5f9 !important;
+  border-bottom: 1px dashed rgba(209, 120, 66, 0.6);
+  transition: color 0.15s ease;
+}
+
+#user-tools a:hover {
+  color: var(--pn-primary) !important;
+  border-bottom-color: var(--pn-primary);
+}
+
+/* --------------------------------------------------------------------------
+   3. BREADCRUMBS
+   -------------------------------------------------------------------------- */
+div.breadcrumbs {
+  background: var(--breadcrumbs-bg) !important;
+  border-bottom: 1px solid var(--hairline-color) !important;
+  padding: 10px 24px !important;
+  font-size: 0.85rem !important;
+  color: var(--breadcrumbs-fg) !important;
+}
+
+div.breadcrumbs a {
+  color: var(--breadcrumbs-link-fg) !important;
+  font-weight: 600 !important;
+}
+
+div.breadcrumbs a:hover {
+  color: var(--pn-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. NAVIGATION SIDEBAR (ELIMINATES STOCK TEAL/CYAN)
+   -------------------------------------------------------------------------- */
+#nav-sidebar {
+  background-color: var(--body-bg) !important;
+  border-right: 1px solid var(--hairline-color) !important;
+}
+
+.toggle-nav-sidebar {
+  background-color: var(--body-bg) !important;
+  color: var(--pn-primary) !important;
+  border-right: 1px solid var(--hairline-color) !important;
+}
+
+.toggle-nav-sidebar:hover,
+.toggle-nav-sidebar:focus {
+  background-color: var(--darkened-bg) !important;
+  color: var(--pn-primary-hover) !important;
+}
+
+/* Section / App headers in sidebar */
+#nav-sidebar .module th,
+#nav-sidebar .module caption {
+  background: #1f1f28 !important;
+  color: #f1f5f9 !important;
+  font-size: 0.74rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  border-bottom: 1px solid rgba(209, 120, 66, 0.25) !important;
+  padding: 9px 14px !important;
+}
+
+html[data-theme="light"] #nav-sidebar .module th,
+html[data-theme="light"] #nav-sidebar .module caption {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid var(--hairline-color) !important;
+}
+
+/* Model rows in sidebar */
+#nav-sidebar .module td,
+#nav-sidebar .module th {
+  transition: background-color 0.15s ease;
+}
+
+#nav-sidebar .module tr:hover {
+  background-color: var(--pn-primary-light) !important;
+}
+
+#nav-sidebar .module a {
+  color: var(--body-fg) !important;
+  font-size: 0.84rem !important;
+  font-weight: 500 !important;
+}
+
+#nav-sidebar .module a:hover {
+  color: var(--pn-primary) !important;
+}
+
+/* Active model row */
+#nav-sidebar .current-model {
+  background: var(--selected-row) !important;
+  border-left: 3px solid var(--pn-primary) !important;
+}
+
+#nav-sidebar .current-model th a {
+  color: var(--pn-primary) !important;
+  font-weight: 700 !important;
+}
+
+/* "+ Add" buttons in sidebar */
+#nav-sidebar .module a.addlink {
+  color: var(--pn-primary) !important;
+  font-weight: 700 !important;
+  font-size: 0.76rem !important;
+  opacity: 0.85;
+}
+
+#nav-sidebar .module a.addlink:hover {
+  opacity: 1;
+  text-decoration: underline !important;
+}
+
+/* Search input inside sidebar */
+#nav-filter {
+  background-color: var(--darkened-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  color: var(--body-fg) !important;
+  padding: 6px 10px !important;
+  font-size: 0.85rem !important;
+}
+
+#nav-filter:focus {
+  border-color: var(--pn-primary) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--pn-primary-light) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. CHANGELIST FILTER PANEL (ELIMINATES STOCK TEAL/CYAN)
+   -------------------------------------------------------------------------- */
+#changelist-filter {
+  background: var(--darkened-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Main "FILTER" header */
+#changelist-filter h2 {
+  background: #18181c !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid var(--pn-primary) !important;
+  padding: 9px 14px !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+}
+
+/* Subheadings / filter titles */
+#changelist-filter h3,
+#changelist-filter details summary {
+  color: var(--pn-primary) !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  padding: 10px 14px 4px !important;
+  letter-spacing: 0.3px !important;
+}
+
+#changelist-filter details > summary::before {
+  color: var(--pn-primary) !important;
+}
+
+/* Filter options links */
+#changelist-filter a {
+  color: var(--body-quiet-color) !important;
+  font-size: 0.83rem !important;
+  padding: 2px 0 !important;
+  transition: color 0.15s ease !important;
+}
+
+#changelist-filter a:hover {
+  color: var(--pn-primary) !important;
+}
+
+/* Active / selected filter */
+#changelist-filter li.selected {
+  border-left: 3px solid var(--pn-primary) !important;
+  padding-left: 10px !important;
+  margin-left: -14px !important;
+}
+
+#changelist-filter li.selected a {
+  color: var(--pn-primary) !important;
+  font-weight: 700 !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. OBJECT TOOLS & ACTION BUTTONS ("ADD USER +", ETC.)
+   -------------------------------------------------------------------------- */
+.object-tools a,
+.object-tools a:link,
+.object-tools a:visited {
+  background: var(--pn-primary) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.4px !important;
+  text-transform: uppercase !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  box-shadow: 0 2px 6px rgba(209, 120, 66, 0.35) !important;
+  border: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.object-tools a:hover {
+  background: var(--pn-primary-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(209, 120, 66, 0.5) !important;
+}
+
+.button,
+input[type=submit],
+input[type=button],
+.submit-row input,
+a.button {
+  background: var(--pn-primary) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 700 !important;
+  padding: 7px 16px !important;
+  transition: background-color 0.15s ease, transform 0.1s ease !important;
+  cursor: pointer !important;
+}
+
+.button:hover,
+input[type=submit]:hover,
+input[type=button]:hover,
+.submit-row input:hover {
+  background: var(--pn-primary-hover) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. SEARCH TOOLBAR & ACTIONS BAR
+   -------------------------------------------------------------------------- */
+#toolbar {
+  background: transparent !important;
+  border: none !important;
+  padding: 8px 0 16px !important;
+}
+
+#toolbar #searchbar {
+  background: var(--darkened-bg) !important;
+  color: var(--body-fg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  padding: 7px 12px !important;
+  font-size: 0.88rem !important;
+  width: 300px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#toolbar #searchbar:focus {
+  border-color: var(--pn-primary) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--pn-primary-light) !important;
+}
+
+#toolbar input[type="submit"] {
+  background: var(--pn-primary) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  padding: 7px 16px !important;
+  margin-left: 6px !important;
+}
+
+.actions {
+  background: var(--darkened-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  padding: 8px 14px !important;
+  margin-bottom: 15px !important;
+}
+
+.actions select {
+  background: var(--body-bg) !important;
+  color: var(--body-fg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  padding: 5px 10px !important;
+  font-size: 0.85rem !important;
+}
+
+.actions select:focus {
+  border-color: var(--pn-primary) !important;
+  outline: none !important;
+}
+
+.actions button.button {
+  background: var(--pn-primary) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  padding: 5px 14px !important;
+  margin-left: 6px !important;
+}
+
+.actions .action-counter {
+  color: var(--body-quiet-color) !important;
+  font-size: 0.84rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. CHANGELIST TABLES
+   -------------------------------------------------------------------------- */
+#changelist table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+#changelist thead th {
+  background: #18181f !important;
+  color: #e2e8f0 !important;
+  font-weight: 700 !important;
+  font-size: 0.78rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  padding: 11px 12px !important;
+  border-bottom: 2px solid var(--pn-primary) !important;
+}
+
+html[data-theme="light"] #changelist thead th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border-bottom: 2px solid var(--pn-primary) !important;
+}
+
+#changelist thead th a {
+  color: #e2e8f0 !important;
+  font-weight: 700 !important;
+  transition: color 0.15s ease !important;
+}
+
+html[data-theme="light"] #changelist thead th a {
+  color: #334155 !important;
+}
+
+#changelist thead th a:hover {
+  color: var(--pn-primary) !important;
+}
+
+#changelist tbody tr {
+  transition: background-color 0.15s ease !important;
+}
+
+#changelist tbody tr:hover {
+  background-color: var(--pn-primary-light) !important;
+}
+
+#changelist tbody td,
+#changelist tbody th {
+  padding: 9px 12px !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid var(--hairline-color) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. VISUAL MEDIA THUMBNAILS
+   -------------------------------------------------------------------------- */
+.book-cover-thumb {
+  width: 38px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  vertical-align: middle;
+  background: #252530;
+  cursor: pointer;
+}
+
+.book-cover-thumb:hover {
+  transform: scale(2.8);
+  transform-origin: left center;
+  z-index: 999;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+}
+
+.book-cover-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 54px;
+  border-radius: 4px;
+  background: var(--darkened-bg);
+  border: 1px solid var(--border-color);
+  color: var(--body-quiet-color);
+  font-size: 1.2rem;
+  vertical-align: middle;
+}
+
+.author-avatar-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--pn-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  vertical-align: middle;
+  background: var(--darkened-bg);
+}
+
+.publisher-logo-thumb {
+  width: 44px;
+  height: 30px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #ffffff;
+  padding: 2px 4px;
+  border: 1px solid var(--pn-border);
+  vertical-align: middle;
+}
+
+/* --------------------------------------------------------------------------
+   10. CURRENCY & CODE FORMATTING
+   -------------------------------------------------------------------------- */
+.currency-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: var(--body-fg) !important;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.currency-tag span.irr-unit {
+  color: var(--body-quiet-color) !important;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+.order-id-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: var(--pn-primary) !important;
+  letter-spacing: 0.5px;
+}
+
+.promo-code-pill {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  background: rgba(209, 120, 66, 0.12);
+  color: #f59e0b !important;
+  border: 1px solid rgba(209, 120, 66, 0.35);
+  border-radius: 4px;
+  padding: 2px 8px;
+  display: inline-block;
+}
+
+/* Semantic Link Utilities */
+.admin-user-link,
+.admin-book-link,
+.admin-accent-link {
+  color: var(--link-fg) !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease;
+}
+
+.admin-user-link:hover,
+.admin-book-link:hover,
+.admin-accent-link:hover {
+  color: var(--link-hover-color) !important;
+  text-decoration: underline !important;
+}
+
+.admin-title-cell {
+  font-weight: 700;
+  color: var(--body-fg) !important;
+}
+
+.cell-secondary {
+  color: var(--body-quiet-color) !important;
+  font-size: 0.85rem;
+}
+
+.cell-muted {
+  color: var(--body-quiet-color) !important;
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   11. COLOR-CODED STATUS BADGES (ADAPTIVE LIGHT & DARK)
+   -------------------------------------------------------------------------- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border-radius: 12px;
+  padding: 3px 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Light Theme Badges */
+html[data-theme="light"] .status-badge.status-success {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+html[data-theme="light"] .status-badge.status-warning {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+html[data-theme="light"] .status-badge.status-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+html[data-theme="light"] .status-badge.status-info {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+html[data-theme="light"] .status-badge.status-purple {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+html[data-theme="light"] .status-badge.status-neutral {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+html[data-theme="light"] .status-badge.status-accent {
+  background: rgba(209, 120, 66, 0.12);
+  color: #d17842;
+  border: 1px solid rgba(209, 120, 66, 0.35);
+}
+
+/* Dark Theme Badges */
+html[data-theme="dark"] .status-badge.status-success,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .status-badge.status-success {
+    background: rgba(34, 197, 94, 0.16) !important;
+    color: #4ade80 !important;
+    border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  }
+  :root:not([data-theme="light"]) .status-badge.status-warning {
+    background: rgba(245, 158, 11, 0.16) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  }
+  :root:not([data-theme="light"]) .status-badge.status-danger {
+    background: rgba(239, 68, 68, 0.16) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  }
+  :root:not([data-theme="light"]) .status-badge.status-info {
+    background: rgba(56, 189, 248, 0.16) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  }
+  :root:not([data-theme="light"]) .status-badge.status-purple {
+    background: rgba(168, 85, 247, 0.16) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  }
+  :root:not([data-theme="light"]) .status-badge.status-neutral {
+    background: rgba(148, 163, 184, 0.12) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  }
+  :root:not([data-theme="light"]) .status-badge.status-accent {
+    background: rgba(209, 120, 66, 0.18) !important;
+    color: #f59e0b !important;
+    border: 1px solid rgba(209, 120, 66, 0.4) !important;
+  }
+}
+
+/* Language and Tag Pills */
+.pill-en {
+  background: rgba(99, 102, 241, 0.16) !important;
+  color: #818cf8 !important;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.pill-fa {
+  background: rgba(236, 72, 153, 0.16) !important;
+  color: #f472b6 !important;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+}
+
+.item-count-badge {
+  background: var(--darkened-bg) !important;
+  color: var(--body-fg) !important;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.76rem;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. PAGINATOR
+   -------------------------------------------------------------------------- */
+.paginator {
+  background: var(--darkened-bg) !important;
+  color: var(--body-quiet-color) !important;
+  border-top: 1px solid var(--hairline-color) !important;
+  padding: 10px 14px !important;
+  font-size: 0.84rem !important;
+}
+
+.paginator a:link,
+.paginator a:visited {
+  color: var(--link-fg) !important;
+  font-weight: 600 !important;
+}
+
+.paginator .this-page {
+  background: var(--pn-primary) !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  font-weight: 700 !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. BILINGUAL & RTL ADMIN SUPPORT
+   -------------------------------------------------------------------------- */
+.lang-switch-container button {
+  transition: all 0.2s ease;
+}
+
+.lang-switch-container button:hover {
+  filter: brightness(1.2);
+}
+
+html[dir="rtl"], body.rtl {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Vazirmatn, Shabnam, Tahoma, sans-serif !important;
+}
+
+html[dir="rtl"] #user-tools {
+  text-align: left !important;
+  float: left !important;
+}
+
+html[dir="rtl"] .pagenet-admin-brand,
+html[dir="rtl"] .bookkadeh-admin-brand {
+  flex-direction: row-reverse;
+}
+
+/* --------------------------------------------------------------------------
+   14. PROPOSAL MANAGEMENT & APPROVAL ENHANCEMENTS
+   -------------------------------------------------------------------------- */
+.admin-quick-actions-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.admin-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none !important;
+  line-height: 1.2;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-quick-approve {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border: 1px solid #15803d;
+}
+
+.btn-quick-approve:hover {
+  background: #15803d !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+}
+
+.btn-quick-reject {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c;
+}
+
+.btn-quick-reject:hover {
+  background: #b91c1c !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+}
+
+/* List preview card */
+.proposal-preview-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.proposal-thumb-mini {
+  width: 36px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--pn-border, #cbd5e1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.proposal-thumb-placeholder {
+  width: 36px;
+  height: 50px;
+  border-radius: 4px;
+  background: var(--darkened-bg, #f1f5f9);
+  border: 1px solid var(--pn-border, #cbd5e1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.proposal-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.proposal-preview-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--body-loud-color, #0f172a);
+}
+
+.proposal-preview-sub {
+  font-size: 0.78rem;
+  color: var(--body-quiet-color, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Inspection & Diff Card */
+.proposal-inspection-container {
+  background: var(--pn-surface, #ffffff);
+  border: 1px solid var(--pn-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+
+.diff-comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.diff-comparison-table th {
+  background: var(--darkened-bg, #f8fafc);
+  padding: 10px 14px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid var(--hairline-color, #e2e8f0);
+}
+
+.diff-comparison-table td {
+  padding: 12px 14px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--hairline-color, #e2e8f0);
+}
+
+.diff-row-changed {
+  background: rgba(209, 120, 66, 0.06);
+}
+
+.diff-badge-changed {
+  background: #f59e0b;
+  color: #000000;
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.diff-badge-same {
+  background: var(--darkened-bg, #f1f5f9);
+  color: var(--body-quiet-color, #64748b);
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+

@@ -374,3 +374,106 @@ class SubscriptionService:
             end_date=cls._calculate_end_date(now),
             auto_renew=False,
         )
+
+    @classmethod
+    @transaction.atomic
+    def cancel(cls, user, subscription_id=None, refund=True):
+        """
+        Cancels a user's active or reserved subscription.
+
+        If subscription_id is provided, cancels that specific subscription
+        belonging to the user (must be ACTIVE or RESERVED).
+        If subscription_id is not provided:
+        - If the user has a RESERVED subscription, it cancels the RESERVED subscription first.
+        - Otherwise, it cancels the ACTIVE subscription.
+
+        For a RESERVED subscription:
+        Since the user prepaid for a future subscription that has not started,
+        the full monthly price is refunded back to the user's wallet.
+
+        For an ACTIVE subscription:
+        The subscription status is set to CANCELLED and auto_renew to False.
+        If refund is True, the prorated remaining unused monetary value is credited
+        back to the user's wallet.
+        """
+        now = timezone.now()
+
+        if subscription_id is not None:
+            try:
+                subscription = (
+                    UserSubscription.objects
+                    .select_for_update()
+                    .select_related("plan")
+                    .get(
+                        id=subscription_id,
+                        user=user,
+                        status__in=[
+                            UserSubscription.Status.ACTIVE,
+                            UserSubscription.Status.RESERVED,
+                        ],
+                    )
+                )
+            except UserSubscription.DoesNotExist:
+                raise serializers.ValidationError({
+                    "subscription": "Subscription not found or not eligible for cancellation."
+                })
+        else:
+            subscription = (
+                UserSubscription.objects
+                .select_for_update()
+                .select_related("plan")
+                .filter(
+                    user=user,
+                    status=UserSubscription.Status.RESERVED,
+                )
+                .order_by("-created_at")
+                .first()
+            )
+            if subscription is None:
+                subscription = (
+                    UserSubscription.objects
+                    .select_for_update()
+                    .select_related("plan")
+                    .filter(
+                        user=user,
+                        status=UserSubscription.Status.ACTIVE,
+                    )
+                    .first()
+                )
+            if subscription is None:
+                raise serializers.ValidationError({
+                    "subscription": "You do not have an active or scheduled subscription to cancel."
+                })
+
+        refunded_amount = Decimal("0.00")
+
+        if subscription.status == UserSubscription.Status.RESERVED:
+            if refund:
+                refunded_amount = subscription.plan.monthly_price
+                WalletService.deposit(
+                    user=user,
+                    amount=refunded_amount,
+                    description=f"Refund for cancelled scheduled subscription: {subscription.plan.name}",
+                )
+        elif subscription.status == UserSubscription.Status.ACTIVE:
+            if refund:
+                remaining_value = cls._calculate_remaining_value(subscription, now=now)
+                if remaining_value > Decimal("0.00"):
+                    refunded_amount = remaining_value
+                    WalletService.deposit(
+                        user=user,
+                        amount=refunded_amount,
+                        description=f"Refund for cancelled subscription: {subscription.plan.name}",
+                    )
+
+        subscription.status = UserSubscription.Status.CANCELLED
+        subscription.auto_renew = False
+        subscription.save(
+            update_fields=[
+                "status",
+                "auto_renew",
+                "updated_at",
+            ]
+        )
+
+        return subscription, refunded_amount

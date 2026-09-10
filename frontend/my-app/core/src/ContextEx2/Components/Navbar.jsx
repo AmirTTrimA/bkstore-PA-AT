@@ -1,13 +1,10 @@
-// ✅
 import React from 'react'
-import { useState,useRef,useEffect } from 'react';
-import { useNavigate,useLocation , matchPath , Link } from 'react-router-dom';
-
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import Notification from './feature/Notification';
 
 import {
-  Modal,
   Box,
-  TextField,
   Typography,
   Avatar,
   Button,
@@ -15,107 +12,97 @@ import {
   Menu,
   Divider,
   ListItemIcon,
-  Chip,
-
 } from '@mui/material'
-
 
 import {
   Person,
   Help,
   Logout,
-  Search,
-  History,
-  Delete,
+  Business,
 } from '@mui/icons-material';
 
 // ---Components---
 import { useAuth } from '../Context/AuthContext';
+import { useLanguage } from '../Context/LanguageContext';
 import { ThemeToggle } from './common/ThemeToggle';
-import {search_results} from '../Pages/search/Search';
+import { LanguageToggle } from './common/LanguageToggle';
+import { useMyPublishers, useCart } from '../Hooks/queries';
+import { ppic13 } from "../Constants"
 
-
-// ---Styles---
 import '../Styles/components/Navbar.css'
 
 // ---Constants---
 const MAX_RECENT_SEARCHES = 10;
 const SEARCH_MIN_LENGTH = 2;
 
-
 export default function Navbar() {
-
 
     const navigate = useNavigate();
     const location = useLocation();
-    const {isLoggedIn,user,logout,} = useAuth();
-    const inputRef= useRef(null)
-    const secondaryNavRef = useRef(null)
-
+    const { isLoggedIn, user, logout } = useAuth();
+    const { t } = useLanguage();
+    const inputRef = useRef(null);
+    const searchDropdownRef = useRef(null);
+    const notificationRef = useRef();
 
     // ---States---
-    const [open,setOpen] = useState(false);
-    // eslint-disable-next-line no-unused-vars
-    const [searchTerm,setSearchTerm]= useState([]);
-    const [searchInputValue,setSearchInputValue] = useState('');
-    const [recentSearches,setRecentSearches] = useState([]);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchInputValue, setSearchInputValue] = useState('');
+    const [recentSearches, setRecentSearches] = useState([]);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [isSecondaryVisible,setIsSecondaryVisible] = useState(true)
 
+    // Queries via React Query
+    const { data: myPublishers } = useMyPublishers({ enabled: Boolean(isLoggedIn) });
+    const hasPublisher = useMemo(() => {
+      return Boolean(Array.isArray(myPublishers) && myPublishers.length > 0);
+    }, [myPublishers]);
 
-
+    const { data: cartData } = useCart({ enabled: Boolean(isLoggedIn) });
+    const cartCount = useMemo(() => {
+      if (!cartData) return 0;
+      const items = cartData.items || cartData.order_items || (Array.isArray(cartData) ? cartData : []);
+      return items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    }, [cartData]);
 
     // ---Memorized Values--- 
-    const username = user?.username  || "";
+    const username = user?.username || "";
     const dashboardopen = Boolean(anchorEl);
 
+    // Focus input and listen for outside clicks / escape when search opens
+    useEffect(() => {
+      if (!isSearchOpen) return;
 
-    // ---Route Detection---
-    const isLibraryPage = matchPath('/library',location.pathname);
-    const isBookPage = matchPath('/book/:bookId',location.pathname);
-    const isAllPublisherPage = matchPath('/all-publisher',location.pathname);
-    const isSearchPage = matchPath('/search/:searchTerm',location.pathname);
-
-
-
-
-
-
-
-  // ---Modal Handlers---
-  const handleopen = () =>setOpen(true);
-  const handleClose = () =>{
-    setOpen(false);
-    setSearchTerm([]);
-    setSearchInputValue('');
-  }
-  
-
-
-
-
-
-
-
-  // ---Recent Searches---
-  useEffect(()=>{
-    const savedsearch = localStorage.getItem('recentSearches');
-    if(savedsearch){
-      try{
-        setRecentSearches(JSON.parse(savedsearch));
-      }catch (e){
-          console.log('failed to load recent ' , e);
+      if (inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 80);
       }
-    }
 
-  },[])
+      const handleClickOutside = (e) => {
+        if (
+          searchDropdownRef.current &&
+          !searchDropdownRef.current.contains(e.target) &&
+          !e.target.closest('.search_bar_btn')
+        ) {
+          setIsSearchOpen(false);
+        }
+      };
 
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setIsSearchOpen(false);
+        }
+      };
 
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [isSearchOpen]);
 
-
-
-
-
+    // ---Handlers---
 
     const saveRecentSearch = (searchTerm)=>{
       if(!searchTerm || searchTerm.length < SEARCH_MIN_LENGTH) return ;
@@ -128,375 +115,317 @@ export default function Navbar() {
       })
     }
 
-
-
-
-// ---Search Handlers---
-    const handleSearch = (e) => {
-    const value = e.target.value?.toLowerCase().trim() || '';
-    setSearchInputValue(value);
-    if(value.length < SEARCH_MIN_LENGTH ){
-      setSearchTerm([])
-      return
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = searchInputValue.trim();
+    if (trimmed.length >= SEARCH_MIN_LENGTH) {
+      saveRecentSearch(trimmed);
+      setIsSearchOpen(false);
+      navigate(`/search/${encodeURIComponent(trimmed)}`);
+    } else if (trimmed.length === 0) {
+      setIsSearchOpen(false);
+      navigate('/search');
     }
-  
+  };
 
-  const foundResult = search_results.filter(book=>{
+  const handleRecentSearchClick = (term) => {
+    setSearchInputValue(term);
+    saveRecentSearch(term);
+    setIsSearchOpen(false);
+    navigate(`/search/${encodeURIComponent(term)}`);
+  };
 
-    const idMatch = book.searchId === value;
-    const categoryMatch = book.category.toLocaleLowerCase().includes(value);
-    const nameMatch = book.name.toLocaleLowerCase().includes(value);
+  const removeRecentSearch = (termToRemove, e) => {
+    e.stopPropagation();
+    const updated = recentSearches.filter((term) => term !== termToRemove);
+    setRecentSearches(updated);
+    localStorage.setItem('recentSearches', JSON.stringify(updated));
+  };
 
-    return idMatch || categoryMatch || nameMatch;
+  const clearAllRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('recentSearches');
+  };
 
-    }) 
+  // Dashboard Menu Handler
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-    
-      setSearchTerm(foundResult);
-  
-    };
+  const handleClickout = () => {
+    setAnchorEl(null);
+  };
 
-    const handleKeyPress = (e)=>{
-      if(e.key === 'Enter' && searchInputValue.trim().length >= SEARCH_MIN_LENGTH){
-        handleSearchNavigate(searchInputValue.trim())
+  const handleLoginCheck = useCallback((e) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      if (notificationRef.current) {
+        notificationRef.current.showNotif('Login required', 'error', {
+          linkText: "login",
+          linkHref: "/login"
+        });
       }
-    };
-
-    const handleSearchNavigate = (searchTerm) => {
-      if(searchTerm && searchInputValue.length >= SEARCH_MIN_LENGTH){
-        saveRecentSearch(searchTerm);
-        handleClose();
-        navigate(`/search/${encodeURIComponent(searchTerm)}`)
-
-      }
-    };
-
-
-
-
-
-    const handleRecentSearchClick = (term) => {
-      setSearchInputValue(term);
-      handleSearchNavigate(term);
-    };
-
-    const removeRecentSearch = (termToRemove, e) => {
-      e.stopPropagation();
-      const updated = recentSearches.filter(term => term !== termToRemove);
-      setRecentSearches(updated);
-      localStorage.setItem('recentSearches', JSON.stringify(updated));
-    };
-  
-    
-    const clearAllRecentSearches = () => {
-      setRecentSearches([]);
-      localStorage.removeItem('recentSearches');
-    };
-  
-  // Focus input when modal open
-    useEffect(() => {
-      if (open && inputRef.current) {
-        setTimeout(() => {
-          inputRef.current.focus();
-        }, 100);
-      }
-    }, [open]);
-
-
-
-
-
-
-
-
-    // ---Dashboard Menu Handler---
-    const handleClick = (event) => {
-      setAnchorEl(event.currentTarget);
-    };
-
-    const handleClickout = () => {
-      setAnchorEl(null);
-    };
-
-
-
-
-
-
-
-
-
-
-
-
-    //---Scroll Handler for Secondary Nav---
-    useEffect(() => {
-      let lastY = window.scrollY;
-    
-      const handleScroll = () => {
-        const currentY = window.scrollY;
-      
-        if (currentY < 100 || currentY < lastY) {
-          setIsSecondaryVisible(true);
-        } else {setIsSecondaryVisible(false);}
-      
-        lastY = currentY;
-      };
-
-       window.addEventListener('scroll', handleScroll, { passive: true });
-       return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-
-
-
+      return false;
+    }
+    return true;
+  }, [isLoggedIn]);
 
   return (
     <>
-    {/* Primary Navigation */}
-      <nav className='upper_nav'>
-        <ul >
-            <div className="first_middle_nav">
-                  <li>
-                    <Link to="/basket" id='shop_cart' className='fas fa-shopping-cart'/>
-                  </li>
+      {/* Unified Primary Navigation Bar */}
+      <header className='bookkadeh-navbar pagenet-navbar'>
+        <div className="navbar-container">
+          {/* Left: Brand & Navigation Links */}
+          <div className="navbar-left">
+            <Link to="/home" className='nav-brand-logo'>
+              <span className="brand-dot">●</span> {t('nav.brandName', 'Bookkadeh')}
+            </Link>
 
-                  {!isLoggedIn ?(
-                    <button 
-                      className='login_check'
-                      onClick={()=>navigate('/login')}
-                    >
-                      login|signup
-                    </button>
-                  ):(
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Button
-                            onClick={handleClick}
-                            sx={{ textTransform: 'none' , mt:1 }}
-                          >
-                              <Avatar 
-                                sx={{ width: 24, height: 24 }}
-                                src="https://boom-zrbn.mohtava.cloud/thumbs/api/v1/image/f0a6ff04-787e-3038-a474-a3784fe6c9e8?zb_svc=fajr-im-prod&zb_dmn=ipm&zb_type=internal&zb_pl=0&zb_referer=zarebin.ir"
-                              />
-                          </Button>
-                      
-                          <Menu
-                            anchorEl={anchorEl}
-                            open={dashboardopen}
-                            onClose={handleClickout}
-                            PaperProps={{
-                              elevation: 3,
-                              sx: { width: 250, maxWidth: '100%' }
-                            }}
-                          >
-                       
-                              <MenuItem >
-                                <Box sx={{ display: 'flex', alignItems: 'center', py: 1 }}>
-                                  <Avatar 
-                                    sx={{ width: 40, height: 40, mr: 2 }}
-                                    src="https://boom-zrbn.mohtava.cloud/thumbs/api/v1/image/f0a6ff04-787e-3038-a474-a3784fe6c9e8?zb_svc=fajr-im-prod&zb_dmn=ipm&zb_type=internal&zb_pl=0&zb_referer=zarebin.ir"
-                                  />
-                                  <Box>
-                                    <Typography variant="subtitle1">{username}</Typography>
-                                    
-                                  </Box>
-                                </Box>
-                              </MenuItem>
-                        
-                              <Divider />
-                        
-                              <MenuItem onClick={()=>navigate('/dashboard')}>
-                                <ListItemIcon>
-                                  <Person fontSize="small" />
-                                </ListItemIcon>
-                                My Profile
-                              </MenuItem>
-                        
+            <nav className="nav-links-menu">
+              <Link 
+                to='/library' 
+                className={`nav-link-item ${location.pathname === '/library' ? 'active' : ''}`}
+              >
+                {t('nav.catalog', 'Catalog')}
+              </Link>
+              <Link 
+                to='/favorites' 
+                onClick={handleLoginCheck} 
+                className={`nav-link-item ${location.pathname === '/favorites' ? 'active' : ''}`}
+              >
+                {t('nav.wishlist', 'Wishlist')}
+              </Link>
+              <Link 
+                to='/all-publisher' 
+                className={`nav-link-item ${location.pathname.startsWith('/all-publisher') || location.pathname.startsWith('/publisher') ? 'active' : ''}`}
+              >
+                {t('nav.publishers', 'Publishers')}
+              </Link>
+              <Link 
+                to='/faq' 
+                className={`nav-link-item ${location.pathname === '/faq' ? 'active' : ''}`}
+              >
+                {t('nav.aboutUs', 'About Us')}
+              </Link>
+            </nav>
+          </div>
 
-                              <Divider />
-                        
-                      
-                              <MenuItem onClick={()=>navigate('/faq')}>
-                                <ListItemIcon>
-                                  <Help fontSize="small" />
-                                </ListItemIcon>
-                                Question
-                              </MenuItem>
-
-
-                              <Divider />
-
-
-                              <MenuItem 
-                                onClick={logout}
-                                sx={{ color: 'error.main' }}
-                              >
-                                <ListItemIcon>
-                                  <Logout fontSize="small" color="error" />
-                                </ListItemIcon>
-                                Logout
-                              </MenuItem>
-
-
-                          </Menu>
-                      </Box>   
-                  )}
-            </div>
-
-            <li><Link to="/home" className='nav-logo'>PageNet</Link></li>
-            
-            <div className="second_middle_nav">
-              
-                  <li><Link to="#" className='search_bar' onClick={handleopen}><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"></path><path  d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg></Link></li>
-                  <li><Link to="/subscription" className='sub-battery'><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" ><path d="M160-240q-50 0-85-35t-35-85v-240q0-50 35-85t85-35h540q50 0 85 35t35 85v240q0 50-35 85t-85 35H160Zm0-80h540q17 0 28.5-11.5T740-360v-240q0-17-11.5-28.5T700-640H160q-17 0-28.5 11.5T120-600v240q0 17 11.5 28.5T160-320Zm700-60v-200h20q17 0 28.5 11.5T920-540v120q0 17-11.5 28.5T880-380h-20Zm-700 20v-240h540v240H160Z"/></svg></Link></li>
-            </div>
-            
-        </ul>
-      </nav>
-
-
-
-
-
-      {/* Secondary Navigation */}
-      <nav
-        ref={secondaryNavRef}
-        className={`secondary_nav ${isSecondaryVisible ? 'visible':'hidden'}`}
-      >
-          {(!isLibraryPage && !isBookPage && !isSearchPage && !isAllPublisherPage) && (
-              <div className="secondary_nav_left">
-                <ThemeToggle page='home'/>
-              </div>
-          )}
-        <ul className='secondary_nav_right'>
-          {!isLibraryPage && (
-            <li ><Link to='/library' className='category'>library</Link></li>
-          )}
-          <li ><Link to='/favorites' className='favorites'>favorites</Link></li>
-          <li ><Link to='/faq' className='anyquestion'>any question</Link></li>
-        </ul>
-
-      </nav>
-
-
- {/* Search Modal */}
- <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="login-modal-title"
-        >
-          <Box 
-            className='mod-box mod-special mod-search'
+          {/* Right: Controls & User Actions */}
+          <div className="navbar-right">
+            {/* Search Trigger */}
+            <button
+              type="button"
+              className={`nav-icon-btn search_bar_btn ${isSearchOpen ? 'active' : ''}`}
+              onClick={() => setIsSearchOpen((prev) => !prev)}
+              title={t('common.search', 'Search books...')}
+              aria-label="Toggle Search"
             >
-                      <Typography 
-                        variant="h4"
-                        color='black'
-                        style={{textAlign:'center',fontWeight:'700'}}
-                      >
-                         Search
+              <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20" fill="currentColor">
+                <path d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"></path>
+              </svg>
+            </button>
+
+            {/* Theme Toggle */}
+            <div className="nav-control-wrapper">
+              <ThemeToggle page="home" />
+            </div>
+
+            {/* Language Toggle */}
+            <div className="nav-control-wrapper">
+              <LanguageToggle page="home" />
+            </div>
+
+            {/* Subscriptions */}
+            <Link to="/subscription" className='nav-icon-btn' title={t('nav.subscription', 'Subscriptions')}>
+              <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                <path d="M160-240q-50 0-85-35t-35-85v-240q0-50 35-85t85-35h540q50 0 85 35t35 85v240q0 50-35 85t-85 35H160Zm0-80h540q17 0 28.5-11.5T740-360v-240q0-17-11.5-28.5T700-640H160q-17 0-28.5 11.5T120-600v240q0 17 11.5 28.5T160-320Zm700-60v-200h20q17 0 28.5 11.5T920-540v120q0 17-11.5 28.5T880-380h-20Zm-700 20v-240h540v240H160Z"/>
+              </svg>
+            </Link>
+
+            {/* Shopping Cart */}
+            <Link to="/basket" className='nav-icon-btn nav-cart-btn' title={t('nav.cart', 'Shopping Cart')}>
+              <i className="fas fa-shopping-cart"></i>
+              {cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
+            </Link>
+
+            {/* User Auth Section */}
+            {!isLoggedIn ? (
+              <button 
+                className='nav-auth-btn'
+                onClick={() => navigate('/login')}
+              >
+                <span>{t('nav.login', 'Sign In')}</span>
+                <span className="auth-sep">|</span>
+                <span>{t('nav.signup', 'Sign Up')}</span>
+              </button>
+            ) : (
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Button
+                  onClick={handleClick}
+                  sx={{ p: 0.5, minWidth: 'auto', borderRadius: '50%' }}
+                >
+                  <Avatar 
+                    sx={{ width: 34, height: 34, border: '2px solid #d17842' }}
+                    src={ppic13}
+                  />
+                </Button>
+            
+                <Menu
+                  anchorEl={anchorEl}
+                  open={dashboardopen}
+                  onClose={handleClickout}
+                  PaperProps={{
+                    elevation: 3,
+                    sx: { width: 250, maxWidth: '100%', mt: 1 }
+                  }}
+                >
+                  <MenuItem onClick={() => { handleClickout(); navigate('/dashboard'); }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
+                      <Avatar 
+                        sx={{ width: 36, height: 36, mr: 1.5 }}
+                        src={ppic13}
+                      />
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{username}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {hasPublisher ? t('dashboard.readerAndPublisher', 'Reader & Publisher') : t('dashboard.readerAccount', 'Reader Account')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+              
+                  <Divider />
+              
+                  <MenuItem onClick={() => { handleClickout(); navigate('/dashboard'); }}>
+                    <ListItemIcon>
+                      <Person fontSize="small" />
+                    </ListItemIcon>
+                    {t('dashboard.profile', 'My Profile')}
+                  </MenuItem>
+
+                  {hasPublisher && (
+                    <MenuItem onClick={() => { handleClickout(); navigate('/pub-dashboard'); }}>
+                      <ListItemIcon>
+                        <Business fontSize="small" sx={{ color: "#d17842" }} />
+                      </ListItemIcon>
+                      <Typography sx={{ color: "#d17842", fontWeight: 700 }}>
+                        {t('dashboard.publisherPanel', 'Publisher Panel')}
                       </Typography>
-                
-                        <div style={{marginBottom:'20px'}}>
-                               <Box sx={{ display: 'flex',alignContent:'center', gap: 1, mb: 3 , mt: 2 }}>
-                                  <TextField
-                                    fullWidth
-                                    size="medium"
-                                    placeholder="Search by name, category, or author..."
-                                    name="search"
-                                    type="search"
-                                    inputref={inputRef}
-                                    value={searchInputValue}
-                                    
-                                    onChange={handleSearch}
-                                    onKeyDown={handleKeyPress}
-                                    sx={{ flex: 1 , margin:'normal' }}
-                                  />
-                                  <Button 
-                                    variant="contained" 
-                                    onClick={() => handleSearchNavigate(searchInputValue.trim())}
-                                    disabled={searchInputValue.trim().length < 2}
-                                    sx={{ minWidth: 'auto', px: 2 }}
-                                  >
-                                    <Search />
-                                  </Button>
-                                </Box>
+                    </MenuItem>
+                  )}
+              
+                  <Divider />
+            
+                  <MenuItem onClick={() => { handleClickout(); navigate('/faq'); }}>
+                    <ListItemIcon>
+                      <Help fontSize="small" />
+                    </ListItemIcon>
+                    {t('nav.aboutUs', 'Help & FAQ')}
+                  </MenuItem>
 
-                              {/* Recent Search */}
-                                {recentSearches.length > 0 && (
-                                  <Box sx={{ mb: 3 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                      <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <History fontSize="small" /> Recent Searches
-                                      </Typography>
-                                      <Button size="small" onClick={clearAllRecentSearches} color="error">
-                                        <Delete/>
-                                      </Button>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                      {recentSearches.map((term, index) => (
-                                        <Chip
-                                          key={index}
-                                          label={term}
-                                          onClick={() => handleRecentSearchClick(term)}
-                                          onDelete={(e) => removeRecentSearch(term, e)}
-                                          variant="outlined"
-                                          sx={{ cursor: 'pointer' }}
-                                        />
-                                      ))}
-                                    </Box>
-                                  </Box>
-                                )}
+                  <Divider />
 
-                           </div>
+                  <MenuItem 
+                    onClick={() => { handleClickout(); logout(); }}
+                    sx={{ color: 'error.main' }}
+                  >
+                    <ListItemIcon>
+                      <Logout fontSize="small" color="error" />
+                    </ListItemIcon>
+                    {t('nav.logout', 'Logout')}
+                  </MenuItem>
+                </Menu>
+              </Box>   
+            )}
+          </div>
+        </div>
 
+        {/* Sleek Expandable Search Bar */}
+        {isSearchOpen && (
+          <div className="navbar-search-bar-dropdown" ref={searchDropdownRef}>
+            <form className="nav-search-form" onSubmit={handleSearchSubmit}>
+              <div className="nav-search-input-box">
+                <i className="fas fa-search nav-search-icon"></i>
+                <input
+                  ref={inputRef}
+                  type="search"
+                  className="nav-search-input"
+                  placeholder={t('nav.searchPlaceholder', 'Search books by title, author, genre, or ISBN...')}
+                  value={searchInputValue}
+                  onChange={(e) => setSearchInputValue(e.target.value)}
+                  autoComplete="off"
+                />
+                {searchInputValue && (
+                  <button
+                    type="button"
+                    className="nav-search-clear"
+                    onClick={() => setSearchInputValue('')}
+                    title="Clear input"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="nav-search-submit-btn"
+                  disabled={searchInputValue.trim().length > 0 && searchInputValue.trim().length < SEARCH_MIN_LENGTH}
+                >
+                  {t('common.search', 'Search')}
+                </button>
+                <button
+                  type="button"
+                  className="nav-search-close-btn"
+                  onClick={() => setIsSearchOpen(false)}
+                  title="Close search"
+                >
+                  ✕
+                </button>
+              </div>
+            </form>
 
+            {/* Recent Searches Panel */}
+            {recentSearches.length > 0 && (
+              <div className="nav-recent-searches-panel">
+                <div className="nav-recent-searches-header">
+                  <span className="nav-recent-title">
+                    <i className="fas fa-history"></i> Recent Searches
+                  </span>
+                  <button
+                    type="button"
+                    className="nav-recent-clear-all"
+                    onClick={clearAllRecentSearches}
+                  >
+                    {t('common.clear', 'Clear all')}
+                  </button>
+                </div>
+                <div className="nav-recent-chips-list">
+                  {recentSearches.map((term) => (
+                    <span key={term} className="nav-recent-chip">
+                      <span
+                        className="nav-recent-chip-text"
+                        onClick={() => handleRecentSearchClick(term)}
+                      >
+                        {term}
+                      </span>
+                      <button
+                        type="button"
+                        className="nav-recent-chip-remove"
+                        onClick={(e) => removeRecentSearch(term, e)}
+                        title="Remove"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </header>
 
-                        {/* NO Item Found in Search */}
-                           
-                           {/* <div style={{color:'black' , overflowY:'auto'}}>
-                                  
-                                  {searchTerm.length >0 ?(
-
-                                       searchTerm.map(item=>(
-                                           <div 
-                                            key={item.searchId}
-                                            onClick={()=>{
-                                              handleClose();
-                                              navigate(`/search/${item.searchId}`);
-                                            }}
-                                            >
-                                               <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                                                    {item.name}
-                                                  </Typography>
-                                                  <Typography variant="body2" color="textSecondary">
-                                                    Category: {item.category} | Price: {item.price}$
-                                                  </Typography>
-                  
-                                           </div>
-                                       ))
-
-                                            // <div>
-                                            //   found something
-                                            // </div>
-
-
-                                           ):(
-
-                                              searchInputValue.length >= 2 && (
-                                                              <Typography variant="body2" color="error" style={{ textAlign: 'center', padding: '20px' }}>
-                                                                No results found for "{searchInputValue}"
-                                                              </Typography>
-                                                  )                                           
-                                                  )} 
-
-                              
-
-                            </div> */}
-                            
-
-          </Box>
-</Modal>
-
-</>
-  )
+      <Notification ref={notificationRef} />
+    </>
+  );
 }

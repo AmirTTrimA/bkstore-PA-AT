@@ -166,6 +166,7 @@ from .serializers import (
     UserSubscriptionSerializer,
     SubscriptionPurchaseSerializer,
     SubscriptionUpgradeSerializer,
+    SubscriptionCancelSerializer,
 )
 from .subscription_services import SubscriptionService
 
@@ -281,5 +282,34 @@ class SubscriptionUpgradeView(generics.GenericAPIView):
 
         return Response(
             UserSubscriptionSerializer(subscription).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class SubscriptionCancelView(generics.GenericAPIView):
+    """
+    Cancels the user's active or scheduled subscription.
+    Refunds any prepaid or unused balance back to the user's wallet.
+    """
+
+    serializer_class = SubscriptionCancelSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        subscription, refunded_amount = SubscriptionService.cancel(
+            user=request.user,
+            subscription_id=serializer.validated_data.get("subscription_id"),
+            refund=serializer.validated_data.get("refund", True),
+        )
+
+        return Response(
+            {
+                "detail": "Subscription cancelled successfully.",
+                "refunded_amount": str(refunded_amount),
+                "subscription": UserSubscriptionSerializer(subscription).data,
+            },
             status=status.HTTP_200_OK,
         )

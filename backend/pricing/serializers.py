@@ -18,6 +18,46 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
     Outputs the discount information if the code is valid.
     """
 
+    name = serializers.CharField(source="discount.name", read_only=True)
+    discount_type = serializers.CharField(
+        source="discount.discount_type", read_only=True
+    )
+    value = serializers.DecimalField(
+        source="discount.value", max_digits=15, decimal_places=0, read_only=True
+    )
+    is_valid = serializers.SerializerMethodField()
+    is_percentage = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DiscountCode
+        fields = (
+            "id",
+            "code",
+            "name",
+            "discount_type",
+            "value",
+            "is_valid",
+            "is_percentage",
+        )
+        read_only_fields = fields
+
+    def get_is_valid(self, obj):
+        if not obj.is_active:
+            return False
+        if obj.max_uses is not None and obj.times_used >= obj.max_uses:
+            return False
+        if not obj.discount or not obj.discount.is_active_now():
+            return False
+        return True
+
+    def get_is_percentage(self, obj):
+        if not obj.discount:
+            return False
+        return str(obj.discount.discount_type).upper() in (
+            "PERCENT",
+            "PERCENTAGE",
+        )
+
 # -------------------------------------------------------------
 # 3. PRICE SERIALIZERS
 # -------------------------------------------------------------
@@ -125,3 +165,14 @@ class SubscriptionPurchaseSerializer(serializers.Serializer):
 
 class SubscriptionUpgradeSerializer(serializers.Serializer):
     plan_id = serializers.IntegerField()
+
+
+class SubscriptionCancelSerializer(serializers.Serializer):
+    subscription_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
+    refund = serializers.BooleanField(
+        required=False,
+        default=True,
+    )

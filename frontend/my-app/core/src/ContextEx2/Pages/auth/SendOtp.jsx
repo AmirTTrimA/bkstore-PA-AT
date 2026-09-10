@@ -1,38 +1,20 @@
-// ✅
-import emailjs from "emailjs-com"
+import AuthService from "../../Services/AuthService";
 
+/**
+ * Sends a 6-digit OTP code to the specified email or username via the backend API.
+ * @param {string} userEmailOrUsername - User's email address or username.
+ * @returns {Promise<boolean>} True if OTP was requested successfully.
+ */
+export const SendOtp = async (userEmailOrUsername) => {
+  try {
+    const res = await AuthService.requestOtp({
+      username_or_email: userEmailOrUsername,
+    });
+    return res.status === 200;
+  } catch (error) {
+    console.error("Failed to send OTP via backend API:", error);
+    return false;
+  }
+};
 
-
-
-// ============================================
-//    Constants
-// ============================================
-const SERVICE_ID = "service_zt7yky5";
-const TEMPLATE_ID = "template_umfz3l5";
-const PUBLIC_KEY = "2OmvEVGag2HVCj8Ri";
-
-
-
-// ============================================
-//      Main 
-// ============================================
-export const  SendOtp =async(userEmail,otp) =>{
-
-    try {
-        await emailjs.send(
-          SERVICE_ID,
-          TEMPLATE_ID,
-          {
-            to_email: userEmail,
-            from_name: "HeiDar",
-            name: "User",
-            message: otp.toString()
-          },
-          PUBLIC_KEY
-        );
-        return true;
-      } catch (error) {
-        console.error("Failed to send OTP:", error);
-        return false;
-      }
-    };
+export default SendOtp;

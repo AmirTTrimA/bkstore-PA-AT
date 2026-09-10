@@ -1,83 +1,160 @@
+/* ============================================
+      FORGOT PASSWORD / CONFIRM EMAIL STYLES (THEMED)
+   ============================================ */
 
-:root{
-  --bg-light: #efefef;
-  --bg-dark: #707070;
-  /* --clr: #d17842; */
-  --clr:#9e5b31;
-  --dark-clr:#9e5b31;
-  --clr-alpha: #9c9c9c60;
+.confirm-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.25rem;
+  background: var(--auth-bg-gradient);
+  box-sizing: border-box;
+  transition: background 0.3s ease;
 }
-.form-title{
-  color: #707070;
-  font-size:x-large;
-  font-weight: 800;
-  margin-bottom: 5px;
+
+.confirm-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--auth-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: var(--auth-card-border);
+  border-radius: 18px;
+  padding: 2.25rem 2rem;
+  box-shadow: var(--auth-card-shadow);
+  box-sizing: border-box;
+  animation: confirmCardFadeIn 0.35s ease-out;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
-.confirm-container{
-      /* padding: 14rem 7rem; */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 90vh;
+
+@keyframes confirmCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.confirm-form {
-   
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    width: 350px;
-    /* keep responsive */
-    max-width: 90%;
-    
+
+.confirm-icon-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(209, 120, 66, 0.12);
+  border: 1px solid rgba(209, 120, 66, 0.25);
+  color: #d17842;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin: 0 auto 1.25rem auto;
+}
+
+.dark .confirm-icon-circle,
+html.dark .confirm-icon-circle {
+  background: rgba(209, 120, 66, 0.15);
+  border-color: rgba(209, 120, 66, 0.3);
+}
+
+.confirm-success-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  animation: confirmSuccessFade 0.3s ease;
+}
+
+.dark .confirm-success-box,
+html.dark .confirm-success-box {
+  background: rgba(46, 213, 115, 0.12);
+  border-color: rgba(46, 213, 115, 0.3);
+}
+
+@keyframes confirmSuccessFade {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.confirm-success-icon {
+  font-size: 2rem;
+  color: #16a34a;
+  margin-bottom: 0.5rem;
+}
+
+.dark .confirm-success-icon,
+html.dark .confirm-success-icon {
+  color: #2ed573;
+}
+
+.confirm-success-title {
+  color: #166534;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem 0;
+}
+
+.dark .confirm-success-title,
+html.dark .confirm-success-title {
+  color: #ffffff;
+}
+
+.confirm-success-text {
+  color: #15803d;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dark .confirm-success-text,
+html.dark .confirm-success-text {
+  color: #c9d1d9;
+}
+
+.confirm-alt-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.confirm-alt-link {
+  color: #d17842;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.confirm-alt-link:hover {
+  color: #e5905c;
+  text-decoration: underline;
+}
+
+.confirm-subtle-link {
+  color: var(--auth-link-subtle);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.confirm-subtle-link:hover {
+  color: var(--auth-link-subtle-hover);
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .confirm-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 14px;
   }
-  
-  .input-span {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    /* gap: 0.5rem; */
-  }
-  
-  .confirm-form input[type="email"] {
-    border-radius: 0.5rem;
-    padding: 1.3rem 0.75rem;
-    width: 100%;
-    border: none;
-    display: flex;
-    /* align-items: center;
-    gap: 0.5rem; */
-    color: white;
-    background-color: var(--clr-alpha);
-    outline: 2px solid var(--bg-dark);
-  }
-  
-  .confirm-form input[type="email"]:focus {
-    outline: 3px solid var(--clr);
-  }
-  
- /* submit in form */           /*.c1 .c2 =>.class2 inside .c1 , .c1.c2 =>both class*/
-  .confirm-form .submit {
-    padding: 1rem 0.75rem;
-    width: 40%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: 3rem;
-    background-color: var(--bg-dark);
-    color: var(--bg-light);
-    border: none;
-    cursor: pointer;
-    transition: all 300ms;
-    
-    font-weight: 800;
-    font-size: 0.7rem;
-  }
-  
-   .submit:hover {
-    background-color: var(--dark-clr);
-    /* color: white; */
-  }
-  
-/* #aa0000 */
+}

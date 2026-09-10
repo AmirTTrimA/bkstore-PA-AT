@@ -11,7 +11,7 @@ from rest_framework.response import Response
 
 from .models import Author, Book
 from .pagination import BookPagination
-from .serializers import (AuthorSerializer, BookDetailSerializer,
+from .serializers import (AuthorDetailSerializer, AuthorSerializer, BookDetailSerializer,
                           BookListSerializer, GenreSerializer)
 
 TRUE_VALUES = {"true", "1", "yes"}
@@ -28,10 +28,14 @@ class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
     def get_serializer_class(self):
-        # Use a simpler serializer for listing, and the detail serializer for single retrieval
-        if self.action == "list":
-            return AuthorSerializer
-        return AuthorSerializer  # Both use the same serializer for now
+        if self.action == "retrieve":
+            return AuthorDetailSerializer
+        return AuthorSerializer
+
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get("all") == "true" or self.request.query_params.get("page_size") == "all":
+            return None
+        return super().paginate_queryset(queryset)
 
 
 # class BookViewSet(viewsets.ReadOnlyModelViewSet):
@@ -76,7 +80,7 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     # Start with the default queryset
-    queryset = Book.objects.all().select_related("author")
+    queryset = Book.objects.all().select_related("author", "creation_proposal__proposal__publisher")
     permission_classes = [AllowAny]
     pagination_class = BookPagination
 
@@ -106,19 +110,29 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
         author = self.request.query_params.get("author")
         is_digital = self.request.query_params.get("is_digital")
         is_audio = self.request.query_params.get("is_audio")
+        publisher = self.request.query_params.get("publisher")
+        format_param = self.request.query_params.get("format") or self.request.query_params.get("book_format")
+        language = self.request.query_params.get("language")
 
-        # 🔑 ANNOTATE QUERYSET: Add a SearchVector field to the queryset that combines relevant text fields.
-        queryset = self.queryset.annotate(
-            search=SearchVector("title", weight="A", config="english")
-            + SearchVector("description", weight="B", config="english")
-            + SearchVector("author__name", weight="B", config="english")
-        )
+        queryset = self.queryset
+
+        if language:
+            queryset = queryset.filter(language=language.lower())
 
         if genre:
-            queryset = queryset.filter(genre=genre)
+            queryset = queryset.filter(genre__iexact=genre)
 
         if author:
             queryset = queryset.filter(author_id=author)
+
+        if publisher:
+            if publisher.isdigit():
+                queryset = queryset.filter(creation_proposal__proposal__publisher_id=int(publisher))
+            else:
+                queryset = queryset.filter(creation_proposal__proposal__publisher__slug=publisher)
+
+        if format_param:
+            queryset = queryset.filter(formats__format_type=format_param.upper(), formats__is_available=True).distinct()
 
         if is_digital is not None:
             queryset = queryset.filter(
@@ -131,15 +145,27 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         if search_query_param:
-            # Create the SearchQuery object from the user's input
-            query = SearchQuery(search_query_param, config="english")
+            from django.db import connection
 
-            # Filter the queryset using the SearchQuery, then apply ranking
-            return (
-                queryset.filter(search=query)
-                .annotate(rank=SearchRank(F("search"), query))
-                .order_by("-rank")
-            )
+            if connection.vendor == "postgresql":
+                search_vector = (
+                    SearchVector("title", weight="A", config="english")
+                    + SearchVector("description", weight="B", config="english")
+                    + SearchVector("author__name", weight="B", config="english")
+                )
+                query = SearchQuery(search_query_param, config="english")
+                return (
+                    queryset.annotate(search=search_vector)
+                    .filter(search=query)
+                    .annotate(rank=SearchRank(F("search"), query))
+                    .order_by("-rank")
+                )
+            else:
+                return queryset.filter(
+                    Q(title__icontains=search_query_param)
+                    | Q(description__icontains=search_query_param)
+                    | Q(author__name__icontains=search_query_param)
+                ).distinct().order_by("-created_at")
 
         # Fallback: If no search query, return all books ordered by creation date
         return queryset.order_by("-created_at")

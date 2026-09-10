@@ -1,515 +1,357 @@
-// ✅
-import React,{useState,useEffect,useRef,useCallback,useMemo} from 'react'
-import {Box,Button,TextField,Grid,Autocomplete} from '@mui/material';
-import iranData from "../../../../iranData.json";
-// style in Profile.css
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Box,
+  Button,
+  TextField,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Checkbox,
+  CircularProgress
+} from "@mui/material";
+import { IRAN_PROVINCES, IRAN_CITIES_BY_PROVINCE } from "../../../utils/iranLocations";
+import { useLanguage } from "../../../Context/LanguageContext";
 
-
-
-// ============================================
-// Constants
-// ============================================
-const PHONE_REGEX = /^09\d{9}$/;   // start 09 and must have 9 more num
+const PHONE_REGEX = /^09\d{9}$/;
 const POSTCODE_REGEX = /^\d{10}$/;
-const MIN_NAME_LENGTH = 3;
-const MIN_ADDRESS_LENGTH = 2;
+const MIN_NAME_LENGTH = 2;
+const MIN_ADDRESS_LENGTH = 5;
 
-
-// ============================================
-//    Main 
-// ============================================
-export default function Manually({notificationRef, onSave, editingAddress, isEditing}) {
-
-  //---Ref---
-  const isLoadingEdit = useRef(false)
-
-  //---State---
-  const[useradd,setUserAdd]=useState({
-
-    province:"",
-    city:"",
-    address:"",
-    
-
-    receivername:"",
-    phone:"",
-    
-    platenum:"",
-    postcode:"",
-
-    
-   
-
-  })
-
-  const [errors, setErrors] = useState({
-
-    province:"",
-    city:"",
-    address: "",
-
-
-    receivername:"",
-    phone:"",
-    
-    platenum:"",
-    postcode: "",
-
+export default function Manually({
+  notificationRef,
+  onSave,
+  editingAddress,
+  isEditing,
+  onCancel,
+  saving = false
+}) {
+  const { t } = useLanguage();
+  const [formData, setFormData] = useState({
+    title: "",
+    recipient_name: "",
+    phone_number: "",
+    province: "",
+    city: "",
+    address_line: "",
+    postal_code: "",
+    is_default: false
   });
 
+  const [errors, setErrors] = useState({});
 
-  const [provinces, setProvinces] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [selectedProvince, setSelectedProvince] = useState(null);
-  const [selectedCity, setSelectedCity] = useState(null);
-
-
-  // ---Memoized Values---
-  const isFormValid = useMemo(() => {
-    return (
-      useradd.province?.trim() &&
-      useradd.city?.trim() &&
-      useradd.receivername?.trim().length >= MIN_NAME_LENGTH &&
-      useradd.address?.trim() &&
-      useradd.phone?.trim() &&
-      useradd.platenum?.trim() &&
-      useradd.postcode?.trim()
-    );
-  }, [useradd]);
-
-
-
-//---Effects---
-
-// Load provience
-useEffect(() => {
-  setProvinces(iranData.provinces);
-}, []);
-
-
-// Load editing address
+  // Initialize editing data
   useEffect(() => {
     if (editingAddress && isEditing) {
-      isLoadingEdit.current = true;
-
-      // Set form data
-      setUserAdd({
+      setFormData({
+        title: editingAddress.title || "",
+        recipient_name: editingAddress.recipient_name || "",
+        phone_number: editingAddress.phone_number || "",
         province: editingAddress.province || "",
         city: editingAddress.city || "",
-        address: editingAddress.address || "",
-        receivername: editingAddress.receivername || "",
-        phone: editingAddress.phone || "",
-        platenum: editingAddress.platenum || "",
-        postcode: editingAddress.postcode || "",
+        address_line: editingAddress.address_line || "",
+        postal_code: editingAddress.postal_code || "",
+        is_default: Boolean(editingAddress.is_default)
       });
-
-
-
-
-      // Set province Autocomplete
-      const foundProvince = provinces.find(p => p.name === editingAddress.province);
-      if (foundProvince) {
-        setSelectedProvince(foundProvince);
-        
-        // Set city for province 
-        const provinceCities = iranData.cities[foundProvince.id] || [];
-        const formattedCities  = provinceCities.map(cityName=>({
-          id: `${foundProvince.id}-${cityName}`,
-          name:cityName
-        }));
-
-        setCities(formattedCities);
-        
-        // Set city for AutoComplete
-        const foundCity = formattedCities.find(c => c.name === editingAddress.city);
-        if (foundCity) {
-          setSelectedCity(foundCity)
-        }
-      }
-      setTimeout(() => {
-        isLoadingEdit.current = false;
-      }, 100);
-    }else{
-
-      setUserAdd({
+    } else {
+      setFormData({
+        title: "",
+        recipient_name: "",
+        phone_number: "",
         province: "",
         city: "",
-        address: "",
-        receivername: "",
-        phone: "",
-        platenum: "",
-        postcode: "",
+        address_line: "",
+        postal_code: "",
+        is_default: false
       });
-      setSelectedProvince(null);
-      setSelectedCity(null);
-      setCities([]);
-
-
     }
-  }, [editingAddress, isEditing, provinces]);
+    setErrors({});
+  }, [editingAddress, isEditing]);
 
+  // Derived available cities based on chosen province
+  const availableCities = useMemo(() => {
+    if (!formData.province) return [];
+    return IRAN_CITIES_BY_PROVINCE[formData.province] || [];
+  }, [formData.province]);
 
-
-
-  
- // Handle province selection
-  useEffect(() => {
-    if (selectedProvince) {
-      const provinceCities = iranData.cities[selectedProvince.id] || [];
-      setCities(provinceCities.map(cityName => ({ 
-        id: `${selectedProvince.id}-${cityName}`, 
-        name: cityName 
-      })));
-
-      setUserAdd(prev=>({
+  const handleChange = useCallback((e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => {
+      const next = {
         ...prev,
-        province: selectedProvince.name
-      }));
-
-      if(!isLoadingEdit.current){
-          setSelectedCity(null);
-          setUserAdd(prev => ({
-            ...prev,
-            city: ''
-          }));
-      }
-
-    } else {
-      setCities([]);
-      if(!isLoadingEdit.current){
-      setSelectedCity(null);
-      setUserAdd(prev=>({...prev,city:''}));
-
-      }
-  }
-    
-  }, [selectedProvince]);
-
-
-// Handle city selection
-  useEffect(() => {
-    if (selectedCity) {
-      setUserAdd(prev => ({ 
-        ...prev, 
-        city: selectedCity.name 
-      }));
-
-
-      setErrors(prev=>{
-        if(prev.city){
-          return { ...prev, city:''}
-        }
-        return prev;
-      })
-      
-
-
-    } else {
-      setUserAdd(prev => ({ 
-        ...prev, 
-        city: "" 
-      }));
-    }
-  }, [selectedCity]);
-
-
-  //---Validtions---
-
-  const Validations = useCallback(()=> {
-
-          let isValid = true;
-          const newErrors = {
-              province:'',
-              city:'',
-              address:'',
-              receivername:'',
-              phone:'',
-              platenum:'',
-              postcode:'',
-    
-          };
-    
-    
-    
-          // Province validations
-          if (!useradd.province || useradd.province.trim() === '') {
-            newErrors.province = 'province is required';
-            isValid = false;
-          }
-    
-          // City validations
-          if (!useradd.city || useradd.city.trim() === '') {
-            newErrors.city = 'city is required';
-            isValid = false;
-          }
-
-          // Receiver name validation
-          if(!useradd.receivername || useradd.receivername.trim() === ''){
-            newErrors.receivername = 'receivername required';
-            isValid=false;
-          }else if(useradd.receivername.trim().length < 3){
-            newErrors.receivername = 'receivername must be at least 3 character';
-            isValid=false;
-          }
-    
-    
-    
-          // Address validation
-          if (!useradd.address || useradd.address.trim() === '') {
-            
-            newErrors.address = 'Address is required';
-            isValid = false;
-          } else {
-
-              const parts = useradd.address.split(',').map(part=>part.trim()).filter(part=> part !== '');
-             
-              if(parts.length === 0){
-                newErrors.address = 'Address is required';
-                isValid = false;
-              }else{
-
-              const invalidParts = parts.some(part => part.length < MIN_ADDRESS_LENGTH);
-              if (invalidParts) {
-                newErrors.address = `Each address part must be at least ${MIN_ADDRESS_LENGTH} characters`;
-                isValid = false;
-              }
-            }
-          }
-    
-    
-    
-            // Platenum validation
-            if(!useradd.platenum || useradd.platenum.trim() === ''){
-              newErrors.platenum = 'platenum required';
-              isValid = false;
-            }else if(useradd.platenum <=0){
-              newErrors.platenum = 'platenum cant be 0 or less ';
-              isValid = false;
-            }
-    
-    
-    
-            
-            // Postcode validation
-            if(!useradd.postcode || useradd.postcode.trim() === ''){
-              newErrors.postcode = 'post-code required';
-              isValid = false;
-            }else if(!POSTCODE_REGEX.test(useradd.postcode)){
-              newErrors.postcode = 'post-code is 10 number ';
-              isValid = false;
-            }
-    
-    
-            // Phone validation
-            if(!useradd.phone || useradd.phone.trim() === ''){
-              newErrors.phone = 'phone required';
-              isValid = false;
-            } else if(!PHONE_REGEX.test(useradd.phone) ){
-              newErrors.phone = 'phone contain 11 digits (start with 09)';
-              isValid = false;
-            }
-    
-            setErrors(newErrors);
-            return isValid;
-    
-  },[useradd])
-    
-
-
-    //---Handlers---
-    const handleChange = useCallback((e) => {
-      const { name, value } = e.target;
-      setUserAdd(prev=>({ ...prev , [name]:value}));
-
-      if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: '' }));
-      }
-    },[errors])
-
-  
-    const handleSubmit = useCallback((e) => {
-      e.preventDefault();
-
-       // Validate before save
-       if (!Validations()) {
-        notificationRef.current.showNotif('Please fix the errors','error')
-
-        return;
-      }
-
-
-
-      const cleanData = {
-
-        province:useradd.province.trim(),
-        city:useradd.city.trim(),
-        platenum:useradd.platenum.toString().trim(),
-        receivername: useradd.receivername.trim(),
-        address:useradd.address.trim(),
-        postcode: useradd.postcode.toString().trim(),
-        phone: useradd.phone.trim(),
+        [name]: type === "checkbox" ? checked : value
       };
+      // Reset city when province changes
+      if (name === "province") {
+        next.city = "";
+      }
+      return next;
+    });
 
-      
-      onSave(cleanData);
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  }, [errors]);
 
-    },[useradd,Validations,notificationRef,onSave])
+  const validate = () => {
+    const newErrors = {};
 
+    if (!formData.recipient_name?.trim()) {
+      newErrors.recipient_name = "Recipient name is required.";
+    } else if (formData.recipient_name.trim().length < MIN_NAME_LENGTH) {
+      newErrors.recipient_name = `Name must be at least ${MIN_NAME_LENGTH} characters.`;
+    }
 
+    if (!formData.province) {
+      newErrors.province = "Please select a province.";
+    }
 
-    const getValue = (value) => {
-      return value || "";
-    };
+    if (!formData.city) {
+      newErrors.city = "Please select a city.";
+    }
 
+    if (!formData.address_line?.trim()) {
+      newErrors.address_line = "Address line is required.";
+    } else if (formData.address_line.trim().length < MIN_ADDRESS_LENGTH) {
+      newErrors.address_line = `Address must be at least ${MIN_ADDRESS_LENGTH} characters.`;
+    }
 
+    if (formData.phone_number?.trim() && !PHONE_REGEX.test(formData.phone_number.trim())) {
+      newErrors.phone_number = "Enter a valid 11-digit Iranian mobile (e.g. 09121234567).";
+    }
 
+    if (formData.postal_code?.trim() && !POSTCODE_REGEX.test(formData.postal_code.trim())) {
+      newErrors.postal_code = "Postal code must be exactly 10 digits.";
+    }
 
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validate()) {
+      notificationRef?.current?.showNotif?.("Please resolve form errors.", "error");
+      return;
+    }
 
-
-
+    onSave({
+      title: formData.title.trim() || "Address",
+      recipient_name: formData.recipient_name.trim(),
+      phone_number: formData.phone_number.trim(),
+      province: formData.province,
+      city: formData.city,
+      address_line: formData.address_line.trim(),
+      postal_code: formData.postal_code.trim(),
+      is_default: formData.is_default
+    });
+  };
 
   return (
-    <Box>
-    <Grid container spacing={2} sx={{mt:2}}>
-        <Grid size={12} >
-          {/* Province */}
-            <Autocomplete
-              options={provinces}
-              getOptionLabel={(option) => option?.name || ""}
-              sx={{mb:2}}
-              value={selectedProvince}
-              onChange={(event, newValue) => setSelectedProvince(newValue)}
-              renderInput={(params) =>(
-                  <TextField 
-                    {...params}
-                    label="province" 
-                    error={!!errors.province}
-                    helperText={errors.province}
-                  />
-                )}
-            />
-            {/* City */}
-            <Autocomplete
-              options={cities}
-              getOptionLabel={(option) => option?.name || ''}
-              sx={{mb:2}}
-              value={selectedCity}
-              onChange={(event, newValue) => setSelectedCity(newValue)}
-              disabled={!selectedProvince}
-              renderInput={(params) =>(
-                  <TextField 
-                    {...params}
-                    label="city"
-                    error={!!errors.city}
-                    helperText={errors.city}
-                    disabled={!selectedProvince}
-                    />)}
-            />
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+      <Grid container spacing={2}>
+        {/* Address Title */}
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label={t("dashboard.addressTitle", "Address Title (e.g. Home, Office)")}
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="e.g. Home, Office, Studio"
+            size="small"
+          />
+        </Grid>
 
+        {/* Recipient Name */}
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            required
+            label={t("dashboard.recipient", "Recipient Full Name")}
+            name="recipient_name"
+            value={formData.recipient_name}
+            onChange={handleChange}
+            error={Boolean(errors.recipient_name)}
+            helperText={errors.recipient_name}
+            size="small"
+          />
+        </Grid>
 
+        {/* Phone */}
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label={t("dashboard.phone", "Phone Number")}
+            name="phone_number"
+            value={formData.phone_number}
+            onChange={handleChange}
+            placeholder="0912xxxxxxx"
+            error={Boolean(errors.phone_number)}
+            helperText={errors.phone_number}
+            size="small"
+          />
+        </Grid>
 
-            {/* Reciver Name */}
-            <TextField
-              fullWidth
-              label="receivername"
-              name="receivername"
-              className="customTextField"
-              value={getValue(useradd.receivername)}
+        {/* Postal Code */}
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label={t("dashboard.postalCode", "Postal Code (10 digits)")}
+            name="postal_code"
+            value={formData.postal_code}
+            onChange={handleChange}
+            placeholder="1234567890"
+            error={Boolean(errors.postal_code)}
+            helperText={errors.postal_code}
+            size="small"
+          />
+        </Grid>
+
+        {/* Province Select */}
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth size="small" error={Boolean(errors.province)} required>
+            <InputLabel id="province-select-label">{t("dashboard.province", "Province")}</InputLabel>
+            <Select
+              labelId="province-select-label"
+              id="province-select"
+              name="province"
+              value={formData.province}
+              label={t("dashboard.province", "Province")}
               onChange={handleChange}
-              error={!!errors.receivername}
-              helperText={errors.receivername}
-              sx={{ mb: 2,}}
-              required
-            />
+            >
+              <MenuItem value="" disabled>
+                <em>{t("dashboard.selectProvince", "Select Province")}</em>
+              </MenuItem>
+              {IRAN_PROVINCES.map((prov) => (
+                <MenuItem key={prov.id} value={prov.id}>
+                  {prov.name}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.province && (
+              <Box sx={{ color: "#f44336", fontSize: "0.75rem", mt: 0.5, ml: 1.5 }}>
+                {errors.province}
+              </Box>
+            )}
+          </FormControl>
+        </Grid>
 
-            {/* Phone */}
-            <TextField
-              fullWidth
-              label="Phone"
-              name="phone"
-              className="customTextField"
-              value={getValue(useradd.phone)}
+        {/* City Select */}
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth size="small" error={Boolean(errors.city)} required>
+            <InputLabel id="city-select-label">{t("dashboard.city", "City")}</InputLabel>
+            <Select
+              labelId="city-select-label"
+              id="city-select"
+              name="city"
+              value={formData.city}
+              label={t("dashboard.city", "City")}
               onChange={handleChange}
-              error={!!errors.phone}
-              helperText={errors.phone}
-              sx={{mb: 2}}
-              required
-            />
+              disabled={!formData.province || availableCities.length === 0}
+            >
+              <MenuItem value="" disabled>
+                <em>
+                  {!formData.province
+                    ? t("dashboard.selectProvinceFirst", "Select province first")
+                    : t("dashboard.selectCity", "Select City")}
+                </em>
+              </MenuItem>
+              {availableCities.map((cityName) => (
+                <MenuItem key={cityName} value={cityName}>
+                  {cityName}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.city && (
+              <Box sx={{ color: "#f44336", fontSize: "0.75rem", mt: 0.5, ml: 1.5 }}>
+                {errors.city}
+              </Box>
+            )}
+          </FormControl>
+        </Grid>
 
-            {/* Address */}
-            <TextField
-              fullWidth
-              label="Address (separate by comma)"
-              name="address"
-              className="customTextField"
-              value={getValue(useradd.address)}
-              onChange={handleChange}
-              error={!!errors.address}
-              helperText={errors.address}
-              multiline
-              rows={3}
-              sx={{
-                 mb: 2,
-                 '& .MuiInputBase-root': {
-                  height: '100px', 
-                }
+        {/* Address Line */}
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            required
+            multiline
+            minRows={2}
+            label={t("dashboard.street", "Street Address / Alley / Unit / Plate")}
+            name="address_line"
+            value={formData.address_line}
+            onChange={handleChange}
+            placeholder="Detailed street address, building number, floor and unit"
+            error={Boolean(errors.address_line)}
+            helperText={errors.address_line}
+            size="small"
+          />
+        </Grid>
+
+        {/* Is Default */}
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={formData.is_default}
+                onChange={handleChange}
+                name="is_default"
+                sx={{
+                  color: "var(--text-secondary)",
+                  "&.Mui-checked": { color: "#d17842" }
                 }}
-              required
-            />
-
-          {/* Plate Number & Postcode */}
-          <Grid container spacing={2}>
-              <Grid size={{ xs: 6, sm: 6, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="platenum"
-                        name="platenum"
-                        className="customTextField"
-                        value={getValue(useradd.platenum) }
-                        error={!!errors.platenum}
-                        helperText={errors.platenum}
-                        onChange={handleChange}
-                        sx={{mb:2}}
-                        required
-                       />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 6, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="postcode"
-                        name="postcode"
-                        className="customTextField"
-                        value={getValue(useradd.postcode) }
-                        error={!!errors.postcode}
-                        helperText={errors.postcode}
-                        onChange={handleChange}
-                        sx={{mb:2}}
-                        required
-                      />
-              </Grid>
-          </Grid>
+              />
+            }
+            label={t("dashboard.setAsDefault", "Set as default shipping address")}
+            sx={{ "& .MuiFormControlLabel-label": { color: "var(--text-primarys)" } }}
+          />
+        </Grid>
       </Grid>
-  </Grid>
 
-
-        <Button 
+      {/* Action Buttons */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={onCancel}
+            disabled={saving}
+            sx={{
+              color: "var(--text-secondary)",
+              borderColor: "var(--border-color)",
+              "&:hover": { borderColor: "#d17842" }
+            }}
+          >
+            {t("common.cancel", "Cancel")}
+          </Button>
+        )}
+        <Button
           type="submit"
-          onClick={handleSubmit}
-          variant="contained" 
-          className='save-btn'
-          disabled={!isFormValid}
+          variant="contained"
+          disabled={saving}
           sx={{
-            p:1.5,
-            mt:1,
-           backgroundColor:'red'
-           }} 
+            backgroundColor: "#d17842",
+            color: "#fff",
+            fontWeight: "bold",
+            px: 3,
+            "&:hover": { backgroundColor: "#b35e2e" }
+          }}
         >
-          {isEditing ? 'Update ' : 'Save '}
+          {saving ? (
+            <>
+              <CircularProgress size={18} sx={{ color: "white", mr: 1 }} />
+              {t("common.saving", "Saving...")}
+            </>
+          ) : isEditing ? (
+            t("common.save", "Update Address")
+          ) : (
+            t("common.save", "Save Address")
+          )}
         </Button>
-
-</Box>
-  )
+      </Box>
+    </Box>
+  );
 }

@@ -1,161 +1,146 @@
-// ✅
-import { useCallback, useEffect, useRef, useState } from 'react';
-
+import React, { useState, useCallback } from "react";
 import {
-  Box,
-  IconButton,
   Modal,
-  Tab,
+  Box,
   Tabs,
-  Typography
-} from '@mui/material';
+  Tab,
+  Typography,
+  IconButton
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
-import CloseIcon from '@mui/icons-material/Close';
-import Notification from '../../../Components/feature/Notification';
-import History from './History';
-import Wallet from './Wallet';
-import Transactions from './Transactions';
-// style in globals.css
+import Wallet from "./Wallet";
+import History from "./History";
+import Transactions from "./Transactions";
+import { useLanguage } from "../../../Context/LanguageContext";
 
+export default function Financial({ open, onClose, defaultTab = 0 }) {
+  const { t } = useLanguage();
+  const [value, setValue] = useState(defaultTab);
 
-
-// ============================================
-//    Main 
-// ============================================
-export default function Financial({ open, onClose }) {
-
-
-  //---State--- 
-  const [value, setValue] = useState(0); // 0 Wallet, 1 History,
-  const [profileData, setProfileData] = useState({
-    username: '',
-    age: '',
-    fullname: '',
-    phone: '',
-    postcode: '',
-  });
-
-
-
-
-
-
-  //---Ref---
-  const notificationRef = useRef();
-
-
-
-
-
-
-  //---Effects---
-  useEffect(() => {
-    const savedData = localStorage.getItem('user-profile');
-    if (savedData) {
-      setProfileData(JSON.parse(savedData));
-    }
-  }, [])
-
-
-  //---Handlers---
   const handleTabChange = useCallback((_, newValue) => {
     setValue(newValue);
-  }, [])
-
-  const saveProfileToLocalStorage = useCallback((data) => {
-    localStorage.setItem('user-profile', JSON.stringify(data));
   }, []);
 
-  const updateProfile = useCallback((updates) => {
-    setProfileData(prev => {
-      const updated = { ...prev, ...updates };
-      saveProfileToLocalStorage(updated);
-      return updated
-    });
-
-  }, [saveProfileToLocalStorage]);
-
-
-
   return (
-    <div>
-      <Modal
-        open={open}
-        onClose={onClose}
-        aria-labelledby="profile-modal-title"
-        aria-describedby="profile-modal-description"
+    <Modal
+      open={open}
+      onClose={onClose}
+      aria-labelledby="financial-modal-title"
+    >
+      <Box
+        className="mod-box mod-special"
+        sx={{
+          background: "var(--bg-primary)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid var(--border-color)",
+          borderRadius: "18px",
+          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.18)",
+          maxWidth: "850px",
+          width: "92%",
+          p: { xs: 2.5, sm: 4 },
+          color: "var(--text-primarys)",
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column"
+        }}
       >
-        <Box className="mod-box mod-special">
-          {/* Close Button */}
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            pb: 1.5,
+            borderBottom: "1px solid var(--border-color)"
+          }}
+        >
+          <Typography
+            variant="h5"
+            component="h2"
+            sx={{ fontWeight: "800", color: "var(--text-primarys)", letterSpacing: "0.5px" }}
+          >
+            💳 {t("dashboard.financialHub", "Financial Hub")}
+          </Typography>
           <IconButton
             onClick={onClose}
+            size="small"
             sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              width: 'fit-content',
-              mt: 0.2,
-              p: 0.2,
-              '&:hover': { bgcolor: 'white' }
-            }}>
-            <CloseIcon />
-          </IconButton>
-
-          <Typography
-            variant="h4"
-            component='h2'
-            gutterBottom
-            sx={{ mb: 1, mt: 1, textAlign: 'center', fontWeight: '800' }}
-          >
-            Financial
-          </Typography>
-
-          {/* Tabs */}
-          <Tabs
-            value={value}
-            onChange={handleTabChange}
-            aria-label='setting navigation tabs'
-            variant='fullWidth'
-            sx={{
-              borderBottom: 2,
-              borderColor: 'divider',
-              mb: 1,
-              mt: 2,
-
-              '& .Mui-selected': {
-                color: "red !important"
-              },
-              '& .MuiTabs-indicator': {
-                backgroundColor: 'red'
-              },
-
-              position: 'sticky',
-              top: 0,
-              zIndex: 1
+              color: "var(--text-secondary)",
+              "&:hover": { color: "var(--text-primarys)", bgcolor: "var(--bg-secondary)" }
             }}
           >
-            <Tab label="Wallet" />
-            <Tab label="Transactions" />
-            <Tab label="History" />
-          </Tabs>
-          {/* Tab Content */}
-          <Box p={3} border={1} borderColor="grey.200" borderRadius={1} sx={{ overflowY: 'auto', flex: 1 }}>
-
-            {value === 0 && (
-              <Wallet
-                profileData={profileData}
-                updateProfile={updateProfile}
-                notificationRef={notificationRef}
-              />
-            )}
-            { value === 1 && <Transactions />}
-
-            {value === 2 && <History />}
-
-          </Box>
+            <CloseIcon />
+          </IconButton>
         </Box>
-      </Modal>
-      <Notification ref={notificationRef} />
-    </div>
 
-  )
+        {/* Tabs */}
+        <Tabs
+          value={value}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={{
+            mt: 2,
+            borderBottom: "1px solid var(--border-color)",
+            "& .MuiTab-root": {
+              color: "var(--text-secondary)",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              textTransform: "none",
+              py: 1.5,
+              transition: "all 0.2s ease",
+              "&.Mui-selected": {
+                color: "#d17842 !important"
+              }
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#d17842",
+              height: 3,
+              borderRadius: "3px"
+            }
+          }}
+        >
+          <Tab
+            icon={<AccountBalanceWalletIcon sx={{ fontSize: 18 }} />}
+            iconPosition="start"
+            label={t("dashboard.walletTopup", "Wallet & Top-up")}
+          />
+          <Tab
+            icon={<ShoppingBagIcon sx={{ fontSize: 18 }} />}
+            iconPosition="start"
+            label={t("dashboard.orderHistory", "Order History")}
+          />
+          <Tab
+            icon={<ReceiptLongIcon sx={{ fontSize: 18 }} />}
+            iconPosition="start"
+            label={t("dashboard.transactions", "Transactions")}
+          />
+        </Tabs>
+
+        {/* Tab Content Body */}
+        <Box
+          sx={{
+            mt: 2.5,
+            overflowY: "auto",
+            flex: 1,
+            pr: { xs: 0, sm: 1 },
+            "&::-webkit-scrollbar": {
+              width: "6px"
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "var(--border-color)",
+              borderRadius: "3px"
+            }
+          }}
+        >
+          {value === 0 && <Wallet />}
+          {value === 1 && <History />}
+          {value === 2 && <Transactions />}
+        </Box>
+      </Box>
+    </Modal>
+  );
 }

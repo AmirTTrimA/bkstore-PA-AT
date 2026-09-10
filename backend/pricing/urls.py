@@ -4,7 +4,7 @@ from django.urls import path
 from .views import (BookPriceListCreateView,  # UserSubscriptionDetailView)
                     DiscountValidationView, MySubscriptionView,
                     SubscriptionPlanListView, SubscriptionPurchaseView,
-                    SubscriptionUpgradeView)
+                    SubscriptionUpgradeView, SubscriptionCancelView)
 
 urlpatterns = [
     # GET /api/v1/pricing/plans/ -> List all available subscription plans
@@ -39,5 +39,10 @@ urlpatterns = [
         "subscriptions/upgrade/",
         SubscriptionUpgradeView.as_view(),
         name="subscription-upgrade",
+    ),
+    path(
+        "subscriptions/cancel/",
+        SubscriptionCancelView.as_view(),
+        name="subscription-cancel",
     ),
 ]

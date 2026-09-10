@@ -1,93 +1,66 @@
-
 /* ============================================
-        PROFILE STYLES
+   PROFILE & SECURITY STYLES
    ============================================ */
 
-/* Accountpart  */
-.account-pic{
-    margin: 0 auto;
-    text-align: center;
+.profile-modal-container {
+  color: var(--text-primarys);
 }
 
-
-
-/* Accountpart,Manually */
-.save-btn{
-    padding: 20px;
-    color: white;
-    border-radius: 20px;
-    border: none;
-    width: 100%;
-    font-size: medium;
-    font-weight: 500;
-}
-.save-btn:hover{
-    background-color: rgb(222, 0, 0);
-
+/* Modal text fields customization */
+.profile-modal-container .MuiOutlinedInput-root,
+.mod-box .MuiOutlinedInput-root {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  color: var(--text-primarys);
+  transition: all 0.2s ease;
 }
 
-
-/* Addresses */
-.addresses-container{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 20px;
-    margin-top: 16px;
-      
+.profile-modal-container .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline,
+.mod-box .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: var(--border-color);
 }
 
-
-
-/* Addresses */
-.addresses-empty-state{
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: center;
-    color: red;
-    font-weight: 700;
-    font-size: clamp(2.5rem,5vw,3.5rem);
-    margin: 100px 0 200px;
-      
+.profile-modal-container .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.mod-box .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #d17842;
 }
 
-
-
-
-/* Passwordpart */
-.pass-btn{
-    margin: 0 auto;
+.profile-modal-container .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
+.mod-box .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #d17842 !important;
+  box-shadow: 0 0 8px rgba(209, 120, 66, 0.25);
 }
 
-
-.modal-title{ 
-    font-weight: 800;
+.profile-modal-container .MuiInputLabel-root,
+.mod-box .MuiInputLabel-root {
+  color: var(--text-secondary) !important;
 }
 
-
-
-
-
-
-/* Accountpart,Passwordpart,Manually */
-.customTextField 
-.MuiFormLabel-root.Mui-focused,
-.modal-profile-pic:active{
-    color: red;
-    
+.profile-modal-container .MuiInputLabel-root.Mui-focused,
+.mod-box .MuiInputLabel-root.Mui-focused {
+  color: #d17842 !important;
 }
 
-/* Accountpart,Passwordpart,Manually */
-.customTextField 
-.MuiOutlinedInput-root.Mui-focused
-.MuiOutlinedInput-notchedOutline{
-    border-color: red;
-
+.profile-modal-container .MuiInputBase-input::placeholder,
+.mod-box .MuiInputBase-input::placeholder {
+  color: var(--text-secondary) !important;
 }
 
-/* Accountpart,Passwordpart,Manually */
-.customTextField .MuiInputBase-input,
-.customTextField .MuiFormLabel-root{
-    color: grey;
+.profile-modal-container .MuiFormHelperText-root,
+.mod-box .MuiFormHelperText-root {
+  color: var(--text-secondary);
 }
 
+.profile-modal-container .MuiFormHelperText-root.Mui-error,
+.mod-box .MuiFormHelperText-root.Mui-error {
+  color: #ef5350 !important;
+}
+
+.mod-box .MuiSelect-select {
+  color: var(--text-primarys);
+}
+
+.mod-box .MuiSelect-icon {
+  color: var(--text-secondary);
+}
 

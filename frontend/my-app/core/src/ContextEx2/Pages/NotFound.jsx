@@ -1,11 +1,11 @@
-// ✅
 import React from 'react'
 import '../Styles/components/NotFound.css'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '../Context/LanguageContext'
 
 export default function NotFound() {  
     const navigate = useNavigate();
-  
+    const { t } = useLanguage();
   
     return (
     <div className='not-found-container'>
@@ -19,10 +19,10 @@ export default function NotFound() {
               <div className="tv-stand"></div>
             </div>
 
-            <h2>Locked in Books </h2>
-            <p>Oops! The page not found</p>
+            <h2>{t('notFound.title')}</h2>
+            <p>{t('notFound.subtitle')}</p>
             <button onClick={() => navigate('/home')} className="not-found-home-button">
-               Back to Home
+               {t('notFound.backToHome')}
             </button>
         </div>
       

@@ -1,0 +1,92 @@
+/* ============================================
+   WALLET STYLES - Modern Glassmorphism
+   ============================================ */
+
+.wallet-hub-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 0;
+}
+
+/* Virtual Wallet Card */
+.virtual-wallet-card {
+  background: linear-gradient(135deg, #1e1e24 0%, #2b1f1a 50%, #1a1715 100%);
+  border: 1px solid rgba(209, 120, 66, 0.3);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.virtual-wallet-card::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(209, 120, 66, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-balance-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.balance-value {
+  color: #fff;
+  font-weight: 800 !important;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, #ffffff 0%, #e0c8b0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Deposit Section */
+.wallet-deposit-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.presets-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.preset-btn {
+  text-transform: none !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.preset-btn.selected {
+  box-shadow: 0 4px 14px rgba(209, 120, 66, 0.35);
+}

@@ -1,245 +1,328 @@
 /* ============================================
-        PAYMENT RESULT PAGE
+      PAYMENT RESULT ROOT & CONTAINER
    ============================================ */
 
-.payment-result-page {
-    min-height: 100vh;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 30px;
-
-    box-sizing: border-box;
+.payment-result-page-root {
+  max-width: 1100px;
+  margin: 0 auto;
+  border-radius: 0 0 10px 10px;
+  background-color: var(--bg-primary);
+  width: 90%;
+  min-height: 100vh;
 }
 
+.payment-result-container {
+  padding-bottom: 60px;
+  min-height: 60vh;
+}
 
 /* ============================================
-        RESULT CARD
+      NAVIGATION
    ============================================ */
+
+.full-payment-nav {
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+  display: block;
+}
+
+.payment-nav {
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+  display: none;
+}
+
+/* ============================================
+      TOP BAR & BREADCRUMBS
+   ============================================ */
+
+.payment-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  background: var(--bg-primary);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.payment-back-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  color: var(--text-primarys);
+  border-radius: 20px;
+  padding: 7px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.payment-back-btn:hover {
+  border-color: #d17842;
+  color: #d17842;
+  transform: translateX(-3px);
+}
+
+.payment-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.payment-breadcrumbs a {
+  color: var(--text-primarys);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.payment-breadcrumbs a:hover {
+  color: #d17842;
+}
+
+.payment-breadcrumbs .current {
+  color: #d17842;
+  font-weight: 600;
+}
+
+/* ============================================
+      RESULT CARD
+   ============================================ */
+
+.payment-card-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px 60px;
+}
 
 .payment-result-card {
-    width: min(90%, 500px);
-
-    padding: 50px 40px;
-
-    border-radius: 18px;
-
-    text-align: center;
-
-    background: rgba(255, 255, 255, 0.12);
-
-    border: 1px solid rgba(255, 255, 255, 0.25);
-
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.25);
-
-    animation: payment-result-appear 0.35s ease-out;
+  width: min(100%, 520px);
+  padding: 48px 36px;
+  border-radius: 22px;
+  text-align: center;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  animation: paymentResultAppear 0.35s ease-out;
 }
 
-
-/* ============================================
-        SUCCESS / FAILURE
-   ============================================ */
+@keyframes paymentResultAppear {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .payment-result-success {
-    border-color: rgba(0, 168, 89, 0.55);
-
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.25),
-        0 0 25px rgba(0, 168, 89, 0.12);
+  border-color: rgba(72, 187, 120, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 30px rgba(72, 187, 120, 0.1);
 }
-
 
 .payment-result-failed {
-    border-color: rgba(220, 40, 40, 0.55);
-
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.25),
-        0 0 25px rgba(220, 40, 40, 0.12);
+  border-color: rgba(229, 62, 62, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 30px rgba(229, 62, 62, 0.1);
 }
 
-
-/* ============================================
-        ICON
-   ============================================ */
-
+/* Icon */
 .payment-result-icon {
-    width: 70px;
-    height: 70px;
-
-    margin: 0 auto 25px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    font-size: 42px;
-    font-weight: 800;
-
-    line-height: 1;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
 }
-
 
 .payment-result-success .payment-result-icon {
-    color: #00a859;
-
-    border: 2px solid #00a859;
-
-    background: rgba(0, 168, 89, 0.12);
-
-    box-shadow:
-        0 0 20px rgba(0, 168, 89, 0.18);
+  color: #48bb78;
+  border: 2px solid #48bb78;
+  background: rgba(72, 187, 120, 0.12);
+  box-shadow: 0 0 20px rgba(72, 187, 120, 0.2);
 }
-
 
 .payment-result-failed .payment-result-icon {
-    color: #dc2828;
-
-    border: 2px solid #dc2828;
-
-    background: rgba(220, 40, 40, 0.12);
-
-    box-shadow:
-        0 0 20px rgba(220, 40, 40, 0.18);
+  color: #e53e3e;
+  border: 2px solid #e53e3e;
+  background: rgba(229, 62, 62, 0.12);
+  box-shadow: 0 0 20px rgba(229, 62, 62, 0.2);
 }
 
-
-/* ============================================
-        TITLE
-   ============================================ */
-
+/* Titles & Messages */
 .payment-result-title {
-    margin: 0 0 15px;
-
-    font-size: 36px;
-
-    font-weight: 800;
-
-    background:
-        linear-gradient(to top,
-            var(--sub-text-second),
-            var(--sub-text-first));
-
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  margin: 0 0 12px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primarys);
 }
-
-
-/* ============================================
-        MESSAGE
-   ============================================ */
 
 .payment-result-message {
-    margin: 0 auto 30px;
-
-    max-width: 380px;
-
-    font-size: 16px;
-
-    line-height: 1.6;
-
-    color: var(--sub-text-second);
+  margin: 0 0 24px;
+  font-size: 0.98rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
+/* Details Box */
+.payment-details-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.payment-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.payment-detail-row strong {
+  color: var(--text-primarys);
+}
+
+.payment-detail-row .amount-highlight {
+  color: #48bb78;
+  font-weight: 700;
+}
+
+/* Actions Row */
+.payment-actions-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.payment-primary-btn {
+  background: #d17842;
+  color: #ffffff;
+  border: none;
+  border-radius: 22px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.payment-primary-btn:hover {
+  background: #e08b54;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(209, 120, 66, 0.35);
+}
+
+.payment-secondary-btn {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-primarys);
+  border-radius: 22px;
+  padding: 12px 22px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.payment-secondary-btn:hover {
+  border-color: #d17842;
+  color: #d17842;
+}
 
 /* ============================================
-        BUTTON
+      RESPONSIVE DESIGN
    ============================================ */
 
-.payment-result-button {
-    min-width: 200px;
-
-    padding: 12px 24px;
-
-    border: 2px solid var(--sub-text-first);
-
-    border-radius: 6px;
-
-    background: transparent;
-
-    color: var(--sub-text-first);
-
-    font-size: 15px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+.BottomNav {
+  display: none;
 }
 
+@media (max-width: 768px) {
+  .payment-result-page-root {
+    width: 100%;
+    border-radius: 0;
+  }
 
-.payment-result-button:hover {
-    background: var(--sub-text-first);
+  .full-payment-nav {
+    display: none !important;
+  }
 
-    color: var(--bg-primary);
+  .payment-nav {
+    display: block !important;
+  }
 
-    transform: translateY(-2px);
+  .payment-result-card {
+    padding: 36px 20px;
+    border-radius: 16px;
+  }
 
-    box-shadow:
-        0 5px 15px rgba(0, 0, 0, 0.2);
-}
+  .payment-actions-row {
+    flex-direction: column;
+  }
 
+  .BottomNav {
+    display: block;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    margin-top: 20px;
+  }
 
-.payment-result-button:active {
-    transform: translateY(0);
-}
+  .bottom-navbar {
+    display: flex;
+    justify-content: space-around;
+    background-color: var(--bg-top-res, #1e1e1e);
+    height: 65px;
+    box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.3);
+    border-radius: 14px 14px 0 0;
+    padding: 0 10px;
+    align-items: center;
+  }
 
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #999;
+    font-size: 11px;
+    gap: 4px;
+    padding: 6px 0;
+    transition: color 0.2s;
+  }
 
-/* ============================================
-        ANIMATION
-   ============================================ */
+  .nav-item.active {
+    color: #d17842;
+  }
 
-@keyframes payment-result-appear {
-
-    from {
-        opacity: 0;
-        transform: translateY(15px) scale(0.98);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-
-}
-
-
-/* ============================================
-        RESPONSIVE
-   ============================================ */
-
-@media (max-width: 600px) {
-
-    .payment-result-page {
-        padding: 20px;
-    }
-
-    .payment-result-card {
-        padding: 40px 25px;
-    }
-
-    .payment-result-title {
-        font-size: 29px;
-    }
-
-    .payment-result-message {
-        font-size: 15px;
-    }
-
-    .payment-result-button {
-        width: 100%;
-    }
-
+  .nav-item i {
+    font-size: 18px;
+  }
 }

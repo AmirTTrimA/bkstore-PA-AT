@@ -72,6 +72,9 @@ class CartItemOutputSerializer(serializers.Serializer):
 
     subtotal = serializers.SerializerMethodField()
     unit_price = serializers.SerializerMethodField()
+    original_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    has_discount = serializers.SerializerMethodField()
 
     cover_image_url = serializers.URLField(
         allow_null=True,
@@ -94,6 +97,18 @@ class CartItemOutputSerializer(serializers.Serializer):
             Decimal("0.00"),
         )
 
+    def get_original_price(self, item):
+        return item.get(
+            "original_price",
+            item.get("unit_price", Decimal("0.00")),
+        )
+
+    def get_discount_percent(self, item):
+        return item.get("discount_percent", 0)
+
+    def get_has_discount(self, item):
+        return item.get("has_discount", False)
+
 
 class WishlistItemSerializer(serializers.ModelSerializer):
     """
@@ -106,9 +121,10 @@ class WishlistItemSerializer(serializers.ModelSerializer):
     cover_image_url = serializers.URLField(
         source="book.cover_image_url", read_only=True
     )
-
-    # 🔑 Note: Price is NOT included here, as it changes frequently.
-    # The frontend should pull the current price separately via the public /books/ endpoint.
+    price = serializers.SerializerMethodField()
+    original_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    has_discount = serializers.SerializerMethodField()
 
     class Meta:
         model = WishlistItem
@@ -118,9 +134,64 @@ class WishlistItemSerializer(serializers.ModelSerializer):
             "title",
             "author_name",
             "cover_image_url",
+            "price",
+            "original_price",
+            "discount_percent",
+            "has_discount",
             "added_at",
         )
         read_only_fields = fields  # All output fields are read-only
+
+    def _get_pricing(self, obj):
+        if not hasattr(obj, "_cached_pricing"):
+            from pricing.services import PricingEngine
+
+            request = self.context.get("request")
+            user = request.user if request and request.user.is_authenticated else None
+            format_obj = obj.book.formats.first()
+            if not format_obj:
+                obj._cached_pricing = None
+                return None
+            try:
+                engine = PricingEngine(book_format=format_obj, user=user)
+                obj._cached_pricing = engine.calculate()
+            except Exception:
+                obj._cached_pricing = None
+        return obj._cached_pricing
+
+    def get_price(self, obj):
+        res = self._get_pricing(obj)
+        if res:
+            return str(int(round(res.final_price)))
+        format_obj = obj.book.formats.first()
+        if format_obj:
+            from pricing.services import PricingEngine
+
+            price = PricingEngine(book_format=format_obj).get_current_price()
+            return str(price.value) if price else None
+        return None
+
+    def get_original_price(self, obj):
+        res = self._get_pricing(obj)
+        if res:
+            return str(int(round(res.base_price)))
+        format_obj = obj.book.formats.first()
+        if format_obj:
+            from pricing.services import PricingEngine
+
+            price = PricingEngine(book_format=format_obj).get_current_price()
+            return str(price.value) if price else None
+        return None
+
+    def get_discount_percent(self, obj):
+        res = self._get_pricing(obj)
+        if res and res.final_price < res.base_price and res.base_price > 0:
+            return int(round((res.base_price - res.final_price) / res.base_price * 100))
+        return 0
+
+    def get_has_discount(self, obj):
+        res = self._get_pricing(obj)
+        return bool(res and res.final_price < res.base_price)
 
 
 class WishlistCreateSerializer(serializers.Serializer):
@@ -145,29 +216,53 @@ class WishlistCreateSerializer(serializers.Serializer):
 class CheckoutInputSerializer(serializers.Serializer):
     """
     Serializer for input data during final order submission (checkout).
+    Supports either selecting a saved address_id or providing manual shipping details.
+    Shipping details are only mandatory if the cart contains physical books.
     """
 
-    # --- Shipping Address Snapshot (Required for physical delivery) ---
+    address_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        label=_("Saved Address ID"),
+    )
     shipping_name = serializers.CharField(
-        max_length=255, required=True, label=_("Recipient Name")
+        max_length=255,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("Recipient Name"),
     )
     shipping_address_line1 = serializers.CharField(
-        max_length=255, required=True, label=_("Address Line 1")
+        max_length=255,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("Address Line 1"),
     )
     shipping_city = serializers.CharField(
-        max_length=100, required=True, label=_("City")
+        max_length=100,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("City"),
     )
     shipping_country = serializers.CharField(
-        max_length=100, required=True, label=_("Country")
+        max_length=100,
+        required=False,
+        allow_blank=True,
+        default="Iran",
+        label=_("Country"),
     )
 
     # --- Optional Discount Code ---
     discount_code = serializers.CharField(
-        max_length=50, required=False, allow_blank=True, label=_("Discount Code")
+        max_length=50,
+        required=False,
+        allow_blank=True,
+        default="",
+        label=_("Discount Code"),
     )
 
-    # Validation: We don't need extensive validation here; it will happen in the View/Service layer
-    # to enforce business rules (like checking code validity and availability).
 
 
 class OrderItemOutputSerializer(serializers.ModelSerializer):
@@ -178,6 +273,9 @@ class OrderItemOutputSerializer(serializers.ModelSerializer):
     # Display the book title and author name from the saved snapshots
     book_title = serializers.CharField(source="snapshot_title", read_only=True)
     author_name = serializers.CharField(source="snapshot_author_name", read_only=True)
+    format_type = serializers.CharField(source="book_format.format_type", read_only=True)
+    format_name = serializers.CharField(source="book_format.name", read_only=True)
+    cover_image_url = serializers.URLField(source="book.cover_image_url", read_only=True)
 
     class Meta:
         model = OrderItem
@@ -187,6 +285,9 @@ class OrderItemOutputSerializer(serializers.ModelSerializer):
             "author_name",
             "quantity",
             "book_format",
+            "format_type",
+            "format_name",
+            "cover_image_url",
             "snapshot_price",  # The price locked in at the time of purchase
         )
 

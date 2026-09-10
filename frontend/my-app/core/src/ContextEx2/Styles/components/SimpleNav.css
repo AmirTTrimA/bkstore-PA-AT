@@ -106,7 +106,7 @@
     .simple-navbar{
         display: flex;
         justify-content: space-between;
-        width:86%;
+        width:85.5%;
         margin: 0 auto;  
     }    
 }
@@ -115,6 +115,7 @@
 @media(max-width:600px){
     .simple-navbar{
         padding: 0 10px;
+        width: 86%;
     }
 
 }
@@ -123,7 +124,7 @@
 /* Extra Small Mobile */
 @media (max-width: 480px) {
     .simple-navbar {
-      width: 95%;
+      max-width: 86.5%;
       height: 60px;
       padding: 0 8px;
     }
@@ -135,6 +136,6 @@
     .simple-navbar > .left,
     .simple-navbar > .right {
       gap: 3px;
-      padding: 0 3px;
+      padding: 0 5px;
     }
   }

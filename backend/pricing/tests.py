@@ -124,6 +124,42 @@ class PricingTestCase(PricingBaseTestCase):
 
         self.assertIsNone(serializer.data["price"])
 
+    def test_book_list_serializer_exposes_discount_fields(self):
+        """Serializer returns original_price, discount_percent, and has_discount when discounts apply."""
+        from catalog.models import BookFormat
+        from pricing.models import Discount
+
+        format_obj = BookFormat.objects.create(
+            book=self.book,
+            format_type=BookFormat.FormatType.DIGITAL,
+            is_available=True,
+        )
+        Price.objects.create(
+            book=self.book,
+            book_format=format_obj,
+            value=Decimal("1000000"),
+            effective_from=timezone.now() - timedelta(days=1),
+        )
+        Discount.objects.create(
+            name="20% Off Promotion",
+            discount_type=Discount.DiscountType.PERCENT,
+            value=Decimal("20"),
+            scope=Discount.Scope.BOOK,
+            book=self.book,
+            is_active=True,
+            activation=Discount.Activation.AUTOMATIC,
+        )
+
+        serializer = BookListSerializer(self.book)
+        self.assertEqual(serializer.data["price"], "800000")
+        self.assertEqual(serializer.data["original_price"], "1000000")
+        self.assertEqual(serializer.data["discount_percent"], 20)
+        self.assertTrue(serializer.data["has_discount"])
+        self.assertEqual(serializer.data["formats"][0]["price"], "800000")
+        self.assertEqual(serializer.data["formats"][0]["original_price"], "1000000")
+        self.assertEqual(serializer.data["formats"][0]["discount_percent"], 20)
+        self.assertTrue(serializer.data["formats"][0]["has_discount"])
+
 class BookPriceChangeTestCase(PricingBaseTestCase):
 
     def test_change_price_creates_first_price(self):
@@ -1436,7 +1472,7 @@ class SubscriptionServiceTest(APITestCase):
 
         self.assertEqual(
             reserved.end_date,
-            current.end_date + timezone.timedelta(days=30),
+            SubscriptionService._calculate_end_date(current.end_date),
         )
 
         self.user.wallet.refresh_from_db()
@@ -2040,3 +2076,134 @@ class PricingEngineSubscriptionTestCase(PricingEngineTestBase):
             result.subscription_discount_amount,
             Decimal("2"),
         )
+
+
+class SubscriptionCancelTests(TestCase):
+    def setUp(self):
+        from accounts.models import User
+        from wallet.models import Wallet
+        from rest_framework.test import APIClient
+        from django.urls import reverse
+        from rest_framework import status
+
+        self.user = User.objects.create_user(
+            username="cancel_user",
+            email="cancel@example.com",
+            password="testpassword123",
+        )
+        self.wallet, _ = Wallet.objects.get_or_create(user=self.user)
+        self.wallet.balance = Decimal("500000")
+        self.wallet.save(update_fields=["balance"])
+        self.plan = SubscriptionPlan.objects.create(
+            name="Pro Tier",
+            slug="pro-tier-cancel",
+            tier=99,
+            monthly_price=Decimal("100000"),
+            digital_discount_percent=20,
+            is_active=True,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_cancel_active_subscription_with_prorated_refund(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        now = timezone.now()
+        sub = UserSubscription.objects.create(
+            user=self.user,
+            plan=self.plan,
+            status=UserSubscription.Status.ACTIVE,
+            start_date=now - timedelta(days=15),
+            end_date=now + timedelta(days=15),
+            auto_renew=True,
+        )
+        initial_balance = self.wallet.balance
+        url = reverse("subscription-cancel")
+        response = self.client.post(url, {"subscription_id": sub.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, UserSubscription.Status.CANCELLED)
+        self.assertFalse(sub.auto_renew)
+        self.wallet.refresh_from_db()
+        self.assertGreater(self.wallet.balance, initial_balance)
+
+    def test_cancel_reserved_subscription_with_full_refund(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        now = timezone.now()
+        sub = UserSubscription.objects.create(
+            user=self.user,
+            plan=self.plan,
+            status=UserSubscription.Status.RESERVED,
+            start_date=now + timedelta(days=10),
+            end_date=now + timedelta(days=40),
+            auto_renew=True,
+        )
+        initial_balance = self.wallet.balance
+        url = reverse("subscription-cancel")
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, UserSubscription.Status.CANCELLED)
+        self.wallet.refresh_from_db()
+        self.assertEqual(self.wallet.balance, initial_balance + Decimal("100000"))
+
+    def test_cancel_without_active_subscription_returns_400(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        url = reverse("subscription-cancel")
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class DiscountCodeValidationEndpointTestCase(PricingEngineTestBase):
+    """Tests POST /api/v1/pricing/validate/ and is_percentage output."""
+
+    def test_validate_percentage_discount_code(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        discount = self.create_discount(
+            name="VIP 30% Off",
+            discount_type=Discount.DiscountType.PERCENT,
+            value=Decimal("30"),
+            activation=Discount.Activation.COUPON,
+        )
+        self.create_coupon(discount=discount, code="VIP30")
+
+        url = reverse("discount-validate")
+        response = self.client.post(url, {"code": "VIP30"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["code"], "VIP30")
+        self.assertEqual(data["discount_type"], "PERCENT")
+        self.assertEqual(Decimal(data["value"]), Decimal("30"))
+        self.assertTrue(data["is_valid"])
+        self.assertTrue(data["is_percentage"])
+
+    def test_validate_fixed_discount_code(self):
+        from django.urls import reverse
+        from rest_framework import status
+
+        discount = self.create_discount(
+            name="Flat 5000 Off",
+            discount_type=Discount.DiscountType.FIXED,
+            value=Decimal("5000"),
+            activation=Discount.Activation.COUPON,
+        )
+        self.create_coupon(discount=discount, code="FLAT5K")
+
+        url = reverse("discount-validate")
+        response = self.client.post(url, {"code": "FLAT5K"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["code"], "FLAT5K")
+        self.assertEqual(data["discount_type"], "FIXED")
+        self.assertEqual(Decimal(data["value"]), Decimal("5000"))
+        self.assertTrue(data["is_valid"])
+        self.assertFalse(data["is_percentage"])

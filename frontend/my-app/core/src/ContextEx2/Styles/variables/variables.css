@@ -23,9 +23,10 @@
         /* fav/sub card, home-res-nav */
         --res-btn: #f0f0f0;
     
-        /* default slider */
-        --slider-card:#ffffff;
-        --slider-bg:#e4e4e4;
+        /* default slider & cards */
+        --bg-card: #ffffff;
+        --slider-card: #ffffff;
+        --slider-bg: #f8fafc;
 
         /* book slider */
         --slider-bg2: #eeeeee;
@@ -102,19 +103,20 @@
         --text-primarys2: #e59f36;
         --bg-secondary: #3d3d3d;
         --text-primarys: #ffffff;
-        --bg-nav: #26282c;
-        --text-secondary-nav:#c20000;
+        --bg-nav: #1e2126;
+        --text-secondary-nav: #d1d5db;
 
-        --bg-top-res: #26282c;
-        --res-btn: #454545;
+        --bg-top-res: #1e2126;
+        --res-btn: #2d3036;
 
-        /* default slider */
-        --slider-card:#616161;
-        --slider-bg:#454545;
+        /* default slider & cards */
+        --bg-card: #282b31;
+        --slider-card: #282b31;
+        --slider-bg: #1f2227;
         
         /* book slider */
-        --slider-bg2: #00102f;
-        --slider-card2:#ca7900;
+        --slider-bg2: #191c21;
+        --slider-card2: #282b31;
 
         /* publisher slider */
         --slider-bg3: #780000;
@@ -126,19 +128,20 @@
         --slider-bg6: #00315b;
         --slider-card6:#4a6ce8;
 
-
         /* corner-card-bg */
         --corner-card-bg:#ca7900;
 
         --bg-int:#555555;
         --card-int:#c5c5c5;
         --text-secondary: #9ca3af;
-        --border-color: #374151;
+        --border-color: rgba(255, 255, 255, 0.1);
         --text-primarys3: #ffffff;
         --text-primarys4:#ffffff;
         
         /* home-category */
-        --category-box-shadow:rgba(247, 0, 0, 0.08);
-        --ux-card: #26282c;
+        --bg-category: #282b31;
+        --bg-category-hover: #32363d;
+        --category-box-shadow: rgba(0, 0, 0, 0.25);
+        --ux-card: #1e2126;
       }
       

@@ -1,5 +1,6 @@
-# publishing/api/views.py
-from django.db.models import F
+from django.db.models import F, Q
+from catalog.models import Book
+from catalog.serializers import BookListSerializer
 from publishing.models import Proposal, Publisher
 from rest_framework import generics, permissions, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -19,18 +20,37 @@ from .serializers import (BookCreateProposalResponseSerializer,
                           PublisherSerializer, AuthorCreateProposalResponseSerializer,
                           AuthorCreateProposalSubmissionSerializer,
                           AuthorUpdateProposalResponseSerializer,
-                          AuthorUpdateProposalSubmissionSerializer,)
+                          AuthorUpdateProposalSubmissionSerializer,
+                          PublisherBookSerializer,)
 
 
 class MyPublishersView(generics.ListAPIView):
     """
     Returns the publishers where the current user has an active membership.
+    Staff and superusers receive active publishers for administrative access.
     """
 
     serializer_class = PublisherSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            user_memberships = (
+                Publisher.objects.filter(
+                    members__user=user, members__is_active=True
+                )
+                .annotate(role=F("members__role"))
+                .order_by("name")
+            )
+            if user_memberships.exists():
+                return user_memberships
+            return (
+                Publisher.objects.filter(is_active=True)
+                .annotate(role=F("members__role"))
+                .order_by("name")
+            )
+
         return (
             Publisher.objects
             .filter( members__user=self.request.user, members__is_active=True )
@@ -38,11 +58,58 @@ class MyPublishersView(generics.ListAPIView):
             .order_by("name")
         )
 
-from publishing.models import Proposal
-from rest_framework.permissions import IsAuthenticated
 
-from .permissions import IsPublisherMember
-from .serializers import ProposalListSerializer
+class PublicPublisherListView(generics.ListAPIView):
+    """
+    Public list of active publishers for the storefront.
+    """
+
+    serializer_class = PublisherSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Publisher.objects.filter(is_active=True).order_by("name")
+
+
+class PublicPublisherDetailView(generics.RetrieveAPIView):
+    """
+    Public detail of an active publisher by ID or slug.
+    """
+
+    serializer_class = PublisherSerializer
+    permission_classes = [AllowAny]
+
+    def get_object(self):
+        lookup = self.kwargs["id_or_slug"]
+        if str(lookup).isdigit():
+            return generics.get_object_or_404(Publisher, id=int(lookup), is_active=True)
+        return generics.get_object_or_404(Publisher, slug=lookup, is_active=True)
+
+
+class PublisherBooksView(generics.ListAPIView):
+    """
+    Returns books associated with a specific publisher.
+    Accessible to active members of the publisher and staff/superusers.
+    """
+
+    serializer_class = PublisherBookSerializer
+    permission_classes = [IsAuthenticated, IsPublisherMember]
+
+    def get_queryset(self):
+        pub_id = self.kwargs["publisher_id"]
+        return (
+            Book.objects.filter(
+                Q(creation_proposal__proposal__publisher_id=pub_id)
+                | Q(update_proposals__proposal__publisher_id=pub_id)
+                | Q(price_change_proposals__proposal__publisher_id=pub_id)
+                | Q(deletion_proposals__proposal__publisher_id=pub_id)
+            )
+            .select_related("author")
+            .prefetch_related("formats", "formats__prices")
+            .distinct()
+            .order_by("-created_at")
+        )
 
 
 class PublisherProposalListView(generics.ListAPIView):

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 // ---Style---
 import '../../Styles/components/ReusableSlider.css';
+import { formatPrice } from '../../utils/formatPrice';
 
 
 // ============================================
@@ -71,9 +72,13 @@ return (
     {/* Header */}
     <div className={`section-header ${customClass} `}>
       <h3 className="header-text">{title}</h3>
-      <a href={viewAllLink} className='view-all'>
+      <button
+        onClick={() => navigate(viewAllLink)}
+        className='view-all'
+        type="button"
+      >
         <small>more {'>'}</small>
-      </a>
+      </button>
     </div>
 
     {/* Carousel */}
@@ -104,22 +109,49 @@ return (
               tabIndex={0}
               >
               {/* Image Container */}
-              <div className="card-image-wrapper">
+              <div className="card-image-wrapper" style={{ position: "relative" }}>
+                  {item.has_discount && item.discount_percent > 0 && (
+                    <span className="slider-discount-badge">
+                      -{item.discount_percent}%
+                    </span>
+                  )}
                   <img 
-                    src={item.img}
+                    src={item.img} 
                     alt={item.title}
                     id="card-main" 
+                    loading='lazy'
                    />
                   <img 
                     src={item.author_profile}
                     onClick={(e)=>handleAuthor(e,item.authorId)} 
                     alt="profile pic" 
                     id="card-profile"
+                    loading='lazy'
                   />
                 </div>
                 {/* Card Content */}
                 <h4>{item.title}</h4>
-                <p>{item.price}</p>
+                {item.match_reasons && item.match_reasons.length > 0 && (
+                  <div className="slider-match-badge" title={item.match_reasons.join(" • ")}>
+                    <span className="slider-match-text">
+                      💡 {item.match_reasons[0]}
+                    </span>
+                  </div>
+                )}
+                <div className="slider-pricing-row">
+                  {item.has_discount && item.original_price ? (
+                    <>
+                      <span className="slider-original-price">
+                        {item.original_price}
+                      </span>
+                      <p className="slider-discounted-price">
+                        {typeof item.price === 'number' || (!isNaN(Number(item.price)) && !String(item.price).includes(' ')) ? formatPrice(item.price) : item.price}
+                      </p>
+                    </>
+                  ) : (
+                    <p>{typeof item.price === 'number' || (!isNaN(Number(item.price)) && !String(item.price).includes(' ')) ? formatPrice(item.price) : item.price}</p>
+                  )}
+                </div>
               </div>
             ))}
         </div>

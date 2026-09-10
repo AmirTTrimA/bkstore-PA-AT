@@ -1,5 +1,6 @@
 # publishing/api/serializers.py
 from catalog.models import Book
+from catalog.serializers import BookListSerializer
 from django.utils import timezone
 from pricing.models import Price
 from publishing.models import (BookCreateProposal, BookUpdateProposal, BookDeleteProposal,
@@ -10,8 +11,29 @@ from requests import Response
 from rest_framework import serializers
 
 
+class PublisherBookSerializer(BookListSerializer):
+    """
+    Detailed serializer for books listed within the Publisher Dashboard.
+    Extends BookListSerializer with author_id, isbn, genre, and description.
+    """
+    author_id = serializers.IntegerField(source="author.id", read_only=True)
+    isbn = serializers.CharField(read_only=True)
+    genre = serializers.CharField(read_only=True)
+    description = serializers.CharField(read_only=True)
+
+    class Meta(BookListSerializer.Meta):
+        fields = BookListSerializer.Meta.fields + (
+            "author_id",
+            "isbn",
+            "genre",
+            "description",
+        )
+
+
 class PublisherSerializer(serializers.ModelSerializer):
     role = serializers.CharField(read_only=True)
+    books_count = serializers.SerializerMethodField()
+    authors_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Publisher
@@ -22,7 +44,15 @@ class PublisherSerializer(serializers.ModelSerializer):
             "description",
             "website",
             "role",
+            "books_count",
+            "authors_count",
         ]
+
+    def get_books_count(self, obj):
+        return Book.objects.filter(creation_proposal__proposal__publisher=obj).count()
+
+    def get_authors_count(self, obj):
+        return Book.objects.filter(creation_proposal__proposal__publisher=obj).values("author_id").distinct().count()
 
 class ProposalListSerializer(serializers.ModelSerializer):
     proposal_type_display = serializers.CharField(
@@ -44,6 +74,7 @@ class ProposalListSerializer(serializers.ModelSerializer):
             "proposal_type_display",
             "status",
             "status_display",
+            "created_at",
             "submitted_at",
             "reviewed_at",
             "applied_at",
@@ -237,6 +268,9 @@ class BookCreateProposalSubmissionSerializer(serializers.ModelSerializer):
     def validate_publisher_id(self, publisher):
         user = self.context["request"].user
 
+        if user.is_staff or user.is_superuser:
+            return publisher
+
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,
             user=user,
@@ -351,6 +385,9 @@ class BookUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
     def validate_publisher_id(self, publisher_id):
         user = self.context["request"].user
 
+        if user.is_staff or user.is_superuser:
+            return publisher_id
+
         is_member = PublisherMembership.objects.filter(
             publisher=publisher_id,
             user=user,
@@ -463,8 +500,11 @@ class BookDeleteProposalSubmissionSerializer(serializers.ModelSerializer):
             "reason",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher):
         user = self.context["request"].user
+
+        if user.is_staff or user.is_superuser:
+            return publisher
 
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,
@@ -582,17 +622,19 @@ class PriceChangeProposalSubmissionSerializer(serializers.Serializer):
     def validate(self, attrs):
 
         request = self.context["request"]
+        user = request.user
 
-        membership = PublisherMembership.objects.filter(
-            user=request.user,
-            publisher=attrs["publisher"],
-            is_active=True,
-        ).exists()
+        if not (user.is_staff or user.is_superuser):
+            membership = PublisherMembership.objects.filter(
+                user=user,
+                publisher=attrs["publisher"],
+                is_active=True,
+            ).exists()
 
-        if not membership:
-            raise serializers.ValidationError(
-                "You are not a member of this publisher."
-            )
+            if not membership:
+                raise serializers.ValidationError(
+                    "You are not a member of this publisher."
+                )
 
         if attrs["value"] <= 0:
             raise serializers.ValidationError(
@@ -703,8 +745,11 @@ class AuthorCreateProposalSubmissionSerializer(serializers.ModelSerializer):
             "biography",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher):
         user = self.context["request"].user
+
+        if user.is_staff or user.is_superuser:
+            return publisher
 
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,
@@ -771,8 +816,11 @@ class AuthorUpdateProposalSubmissionSerializer(serializers.ModelSerializer):
             "biography",
         ]
 
-    def validate_publisher(self, publisher):
+    def validate_publisher_id(self, publisher):
         user = self.context["request"].user
+
+        if user.is_staff or user.is_superuser:
+            return publisher
 
         is_member = PublisherMembership.objects.filter(
             publisher=publisher,

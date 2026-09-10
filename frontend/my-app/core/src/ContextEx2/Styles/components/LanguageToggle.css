@@ -1,0 +1,127 @@
+/* LanguageToggle.css */
+.lang-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background-color: var(--res-btn, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary, #ffffff);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 20px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.25s ease;
+  user-select: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  height: 38px;
+}
+
+.lang-toggle-btn:hover {
+  background-color: var(--res-btn-hover, rgba(255, 255, 255, 0.16));
+  border-color: var(--primary, #d17842);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(209, 120, 66, 0.25);
+}
+
+.lang-toggle-btn:active {
+  transform: translateY(0);
+}
+
+.lang-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary, #d17842);
+}
+
+.lang-toggle-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.lang-toggle-label {
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.lang-toggle-pill {
+  background: var(--primary, #d17842);
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+/* Page Specific Overrides matching ThemeToggle */
+.home-lang-btn {
+  height: 42px;
+}
+
+.dash-lang-btn {
+  height: 36px;
+  padding: 4px 10px;
+}
+
+.pdf-lang-btn {
+  height: 34px;
+}
+
+/* Dark mode adaptivity */
+html.dark .lang-toggle-btn {
+  background-color: rgba(30, 30, 40, 0.65);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+html.dark .lang-toggle-btn:hover {
+  background-color: rgba(45, 45, 60, 0.85);
+  border-color: #d17842;
+}
+
+/* ===== AUTH PAGES LANGUAGE BUTTON ===== */
+.auth-lang-btn {
+  position: static !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  box-shadow: none;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.auth-lang-btn:hover {
+  background-color: rgba(209, 120, 66, 0.12);
+  border-color: #d17842;
+  color: #d17842;
+  box-shadow: none;
+}
+
+html.dark .auth-lang-btn,
+.dark .auth-lang-btn {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #c9d1d9;
+}
+
+html.dark .auth-lang-btn:hover,
+.dark .auth-lang-btn:hover {
+  background-color: rgba(209, 120, 66, 0.2);
+  border-color: #d17842;
+  color: #ffffff;
+}

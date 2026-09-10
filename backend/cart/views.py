@@ -1,5 +1,8 @@
 # cart/views.py
+import logging
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 from catalog.models import Book
 from content.models import License
@@ -208,6 +211,13 @@ class CartItemHandlerView(generics.GenericAPIView):
             ).calculate()
 
             unit_price = pricing.final_price
+            base_price = pricing.base_price
+            has_discount = unit_price < base_price
+            discount_percent = (
+                int(round((base_price - unit_price) / base_price * 100))
+                if has_discount and base_price > 0
+                else 0
+            )
 
             cart_output.append(
                 {
@@ -217,6 +227,9 @@ class CartItemHandlerView(generics.GenericAPIView):
                     "format_type": book_format.get_format_type_display(),
                     "quantity": quantity,
                     "unit_price": unit_price,
+                    "original_price": base_price,
+                    "discount_percent": discount_percent,
+                    "has_discount": has_discount,
                     "cover_image_url": book.cover_image_url,
                 }
             )
@@ -252,11 +265,40 @@ class CartItemHandlerView(generics.GenericAPIView):
 
         cart_data = get_storage_manager(request)
 
-        cart_data[cart_key] = cart_data.get(cart_key, 0) + quantity
+        if request.data.get("override") or request.data.get("action") == "set":
+            if quantity <= 0:
+                cart_data.pop(cart_key, None)
+            else:
+                cart_data[cart_key] = quantity
+        else:
+            cart_data[cart_key] = cart_data.get(cart_key, 0) + quantity
 
         save_storage_manager(request, cart_data)
 
         return Response({"detail": _("Item added to cart.")}, status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        """Directly sets the exact quantity of a cart item."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        book_id = serializer.validated_data["book_id"]
+        book_format = serializer.validated_data["book_format"]
+        quantity = serializer.validated_data.get("quantity", 1)
+
+        cart_key = f"{book_id}:{book_format.pk}"
+        cart_data = get_storage_manager(request)
+
+        if quantity <= 0:
+            cart_data.pop(cart_key, None)
+        else:
+            cart_data[cart_key] = quantity
+
+        save_storage_manager(request, cart_data)
+        return Response({"detail": _("Cart item quantity updated.")}, status=status.HTTP_200_OK)
+
+    def patch(self, request, *args, **kwargs):
+        return self.put(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         """Deletes a specific item entirely from the cart."""
@@ -410,9 +452,17 @@ class CheckoutView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        transaction.on_commit(
-            lambda: send_order_confirmation_email.delay(order.id)
-        )
+        def _dispatch_confirmation_email():
+            try:
+                send_order_confirmation_email.delay(order.id)
+            except Exception as exc:
+                logger.exception(
+                    "CheckoutView: Failed to dispatch order confirmation email for order #%s: %s",
+                    order.id,
+                    exc,
+                )
+
+        transaction.on_commit(_dispatch_confirmation_email)
 
         return Response(
             OrderOutputSerializer(order).data,

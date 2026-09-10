@@ -2,6 +2,7 @@ import random
 from datetime import timedelta
 from decimal import Decimal
 
+from accounts.models import Address
 from cart.models import Cart, CartItem, Order, OrderItem, WishlistItem
 from cart.services import CheckoutService
 from catalog.models import Author, Book, BookFormat
@@ -119,34 +120,35 @@ class Command(BaseCommand):
     }
 
     PRICE_RANGES = {
-        "FICTION": (12, 25),
-        "SCI_FI": (15, 30),
-        "HISTORY": (18, 35),
-        "SCIENCE": (25, 60),
-        "TECH": (30, 80),
-        "BUSINESS": (20, 50),
+        "FICTION": (350000, 750000),
+        "SCI_FI": (450000, 850000),
+        "HISTORY": (600000, 1200000),
+        "SCIENCE": (750000, 1800000),
+        "TECH": (900000, 2500000),
+        "BUSINESS": (600000, 1500000),
     }
 
     SUBSCRIPTION_PLANS = [
         {
             "name": "Reader",
-            "price": Decimal("4.99"),
+            "price": Decimal("490000"),
             "discount": 10,
             "tier": 1,
         },
         {
             "name": "Scholar",
-            "price": Decimal("9.99"),
+            "price": Decimal("990000"),
             "discount": 20,
             "tier": 2,
         },
         {
             "name": "Professional",
-            "price": Decimal("19.99"),
+            "price": Decimal("1990000"),
             "discount": 35,
             "tier": 3,
         },
     ]
+
 
     AUTOMATIC_DISCOUNTS = [
         {
@@ -274,7 +276,10 @@ class Command(BaseCommand):
 
         self.create_users()
 
+        self.create_addresses()
+
         self.create_wallets()
+
 
         self.create_publishers()
 
@@ -330,9 +335,13 @@ class Command(BaseCommand):
         OrderItem.objects.all().delete()
         Order.objects.all().delete()
 
+        # --- Addresses ---
+        Address.objects.all().delete()
+
         # --- Wallets ---
         WalletTransaction.objects.all().delete()
         Wallet.objects.all().delete()
+
 
         # --- Licensing ---
         License.objects.all().delete()
@@ -380,7 +389,37 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"Created {len(self.users)} demo users."
             )
-    )
+        )
+
+    def create_addresses(self):
+        """
+        Creates realistic saved shipping addresses for demo users.
+        """
+        self.stdout.write("Creating addresses...")
+        cities = [
+            ("Tehran", "Tehran", "Valiasr Ave, No 124"),
+            ("Isfahan", "Isfahan", "Chaharbagh Abbasi, Bldg 42"),
+            ("Shiraz", "Fars", "Zand Blvd, Alley 7"),
+            ("Tabriz", "East Azerbaijan", "Imam Khomeini St, No 88"),
+            ("Mashhad", "Razavi Khorasan", "Ahmadabad St, No 15"),
+        ]
+        created_count = 0
+        for i, user in enumerate(self.user_list):
+            city, province, address_line = cities[i % len(cities)]
+            Address.objects.create(
+                user=user,
+                title="Home",
+                recipient_name=f"{user.first_name} {user.last_name}",
+                phone_number=f"0912{random.randint(1000000, 9999999)}",
+                country="Iran",
+                province=province,
+                city=city,
+                address_line=address_line,
+                postal_code=f"1{random.randint(100000000, 999999999)}",
+                is_default=True,
+            )
+            created_count += 1
+        self.stdout.write(self.style.SUCCESS(f"Created {created_count} addresses."))
 
     def create_wallets(self):
         """
@@ -393,10 +432,8 @@ class Command(BaseCommand):
 
         for user in self.user_list:
 
-            # Give each user an initial deposit between $40 and $250.
-            initial_balance = Decimal(
-                str(round(random.uniform(40, 250), 2))
-            )
+            # Give each user an initial deposit between 5,000,000 and 25,000,000 IRR.
+            initial_balance = Decimal(random.randint(50, 250) * 100000)
 
             # Wallets are automatically created by signals.
             wallet, _ = Wallet.objects.get_or_create(
@@ -426,12 +463,11 @@ class Command(BaseCommand):
             # Roughly half the users get a second deposit transaction.
             if random.random() < 0.50:
 
-                extra_amount = Decimal(
-                    str(round(random.uniform(10, 75), 2))
-                )
+                extra_amount = Decimal(random.randint(10, 80) * 100000)
 
                 wallet.balance += extra_amount
                 wallet.save(update_fields=["balance"])
+
 
                 extra_deposit = WalletTransaction.objects.create(
                     wallet=wallet,
@@ -501,6 +537,18 @@ class Command(BaseCommand):
                     role=roles[position % len(roles)],
                     is_active=True,
                 )
+
+        # Ensure superusers also have an active membership for testing
+        first_publisher = publishers[0] if publishers else None
+        if first_publisher:
+            for su in User.objects.filter(is_superuser=True):
+                if not PublisherMembership.objects.filter(user=su).exists():
+                    PublisherMembership.objects.create(
+                        publisher=first_publisher,
+                        user=su,
+                        role=PublisherMembership.Role.OWNER,
+                        is_active=True,
+                    )
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -644,38 +692,33 @@ class Command(BaseCommand):
 
             minimum, maximum = self.PRICE_RANGES[book.genre]
 
-            # Base physical-style price for this title
+            # Base physical-style price for this title (rounded to 5,000 IRR)
             base_price = Decimal(
-                str(
-                    round(
-                        random.uniform(minimum, maximum),
-                        2,
-                    )
-                )
+                random.randint(minimum // 5000, maximum // 5000) * 5000
             )
 
             for book_format in book.formats.all():
 
                 # --------------------------------------------------
-                # Format-specific price adjustment
+                # Format-specific price adjustment in whole IRR
                 # --------------------------------------------------
 
                 if book_format.format_type == BookFormat.FormatType.PHYSICAL:
                     current_price = base_price
 
                 elif book_format.format_type == BookFormat.FormatType.DIGITAL:
-                    current_price = (
-                        base_price * Decimal("0.70")
-                    ).quantize(Decimal("0.01"))
+                    current_price = Decimal(
+                        int(round(float(base_price) * 0.70 / 5000.0)) * 5000
+                    )
 
                 else:  # AUDIO
-                    current_price = (
-                        base_price * Decimal("0.90")
-                    ).quantize(Decimal("0.01"))
+                    current_price = Decimal(
+                        int(round(float(base_price) * 0.90 / 5000.0)) * 5000
+                    )
 
-                min_price = (
-                    current_price * Decimal("0.40")
-                ).quantize(Decimal("0.01"))
+                min_price = Decimal(
+                    int(round(float(current_price) * 0.40 / 5000.0)) * 5000
+                )
 
                 # --------------------------------------------------
                 # Most formats receive one active price.
@@ -722,21 +765,14 @@ class Command(BaseCommand):
 
                     if previous_price is not None:
 
-                        change = Decimal(
-                            str(
-                                round(
-                                    random.uniform(-0.20, 0.20),
-                                    2,
-                                )
-                            )
+                        change = random.uniform(-0.20, 0.20)
+                        value = Decimal(
+                            int(round(float(value) * (1.0 + change) / 5000.0)) * 5000
                         )
-
-                        value = (
-                            value * (Decimal("1.00") + change)
-                        ).quantize(Decimal("0.01"))
 
                         if value < min_price:
                             value = min_price
+
 
                     price = Price.objects.create(
                         book=book,
@@ -1091,8 +1127,9 @@ class Command(BaseCommand):
                 top_up = (
                     snapshot.total_amount
                     - wallet.balance
-                    + Decimal("10.00")
+                    + Decimal("500000")
                 )
+
 
                 wallet.balance += top_up
                 wallet.save(update_fields=["balance"])
@@ -1152,6 +1189,42 @@ class Command(BaseCommand):
                 )
             )
             return
+
+        # ------------------------------------------------------------
+        # Associate catalog books with publishers via APPLIED proposals
+        # ------------------------------------------------------------
+        self.stdout.write("Linking catalog books to publishers...")
+        for idx, book in enumerate(self.book_list):
+            publisher = publishers[idx % len(publishers)]
+            owner_member = PublisherMembership.objects.filter(publisher=publisher, is_active=True).first()
+            submitted_by = owner_member.user if owner_member else members[0].user
+
+            applied_proposal = Proposal.objects.create(
+                title=f"Published: {book.title}",
+                publisher=publisher,
+                submitted_by=submitted_by,
+                proposal_type=Proposal.ProposalType.BOOK_CREATE,
+                status=Proposal.Status.APPLIED,
+                submitted_at=timezone.now() - timezone.timedelta(days=random.randint(30, 180)),
+                reviewed_at=timezone.now() - timezone.timedelta(days=random.randint(20, 29)),
+                applied_at=timezone.now() - timezone.timedelta(days=random.randint(1, 19)),
+            )
+
+            BookCreateProposal.objects.create(
+                proposal=applied_proposal,
+                created_book=book,
+                author=book.author,
+                title=book.title,
+                description=book.description,
+                isbn=book.isbn,
+                cover_image_url=book.cover_image_url,
+                genre=book.genre,
+                is_digital=book.is_digital,
+                is_audio=book.is_audio,
+                digital_file_path=book.digital_file_path,
+                audio_file_path=book.audio_file_path,
+            )
+            self.proposals.append(applied_proposal)
 
         # ------------------------------------------------------------
         # Book creation proposals
@@ -1256,11 +1329,10 @@ class Command(BaseCommand):
             if not current_price:
                 continue
 
-            new_price = (
-                current_price.value * Decimal("1.10")
-            ).quantize(
-                Decimal("0.01")
+            new_price = Decimal(
+                int(round(float(current_price.value) * 1.10 / 5000.0)) * 5000
             )
+
 
             proposal = Proposal.objects.create(
                 title=f"Price update for {book.title}",

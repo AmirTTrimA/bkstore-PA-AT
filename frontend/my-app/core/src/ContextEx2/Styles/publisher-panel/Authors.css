@@ -1,19 +1,53 @@
-
-
-
 /* ============================================
-        AUTHORS PAGE
+   AUTHORS MANAGEMENT TABS & CONTAINER
    ============================================ */
 
-   
-/* Author Container */
-.authors-container{
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
+.authors-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
 }
 
-/* Form Container */
-.form-authors-container{
-     margin: 0 auto;
+.authors-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 6px;
+  width: fit-content;
+}
+
+.author-tab-btn {
+  background: transparent;
+  color: var(--text-primarys);
+  opacity: 0.8;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.author-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 1;
+}
+
+.author-tab-btn.active {
+  background: #d17842;
+  color: #ffffff;
+  opacity: 1;
+  box-shadow: 0 4px 12px rgba(209, 120, 66, 0.35);
+}
+
+.authors-tab-content {
+  width: 100%;
 }

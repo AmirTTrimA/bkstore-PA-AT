@@ -10,18 +10,18 @@ const BasketService = {
 
 
     setQuantity: (data) =>
-        ApiClient.post("/cart/items/", data),
-
+        ApiClient.put("/cart/items/", { ...data, override: true }),
 
     removeItem: (data) =>
         ApiClient.delete("/cart/items/", {
             data
         }),
 
-
     checkout: (data) =>
-        ApiClient.post("/cart/checkout/", data)
+        ApiClient.post("/cart/checkout/", data),
 
+    validateDiscount: (code) =>
+        ApiClient.post("/pricing/validate/", { code }),
 };
 
 export default BasketService;

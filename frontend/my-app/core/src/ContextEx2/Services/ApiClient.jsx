@@ -3,7 +3,7 @@ import axios from "axios";
 // ============================================
 // Constants
 // ============================================
-const API_BASE_URL = "/api/v1";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "/api/v1";
 
 const TOKEN_KEY = "token";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -50,6 +50,14 @@ const ApiClient = axios.create({
 // ============================================
 
 ApiClient.interceptors.request.use((config) => {
+  // Always attach Accept-Language header for bilingual backend localization
+  try {
+    const lang = localStorage.getItem("language") || "en";
+    config.headers["Accept-Language"] = lang;
+  } catch {
+    config.headers["Accept-Language"] = "en";
+  }
+
   if (isPublicEndpoint(config.url)) {
     return config;
   }

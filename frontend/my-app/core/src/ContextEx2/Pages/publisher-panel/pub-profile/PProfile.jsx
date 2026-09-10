@@ -12,9 +12,10 @@ import {
 
 import CloseIcon from '@mui/icons-material/Close';
 import Notification from '../../../Components/feature/Notification';
-import PPassword from './PPassword';
-import PAccount from './PAccount';
-import { useAuth } from '../../../Context/AuthProvider';
+import PPassword from '../../dashboard/profile/Passwordpart';
+import PAccount from '../../dashboard/profile/Accountpart';
+import { useAuth } from '../../../Context/AuthContext';
+import { useLanguage } from '../../../Context/LanguageContext';
 
 import "../../../Styles/publisher-panel/PProfile.css"
 // style in globals.css
@@ -26,7 +27,7 @@ import "../../../Styles/publisher-panel/PProfile.css"
 // ============================================
 export default function PProfile({open,onClose}) {
 
-  
+  const { t } = useLanguage();
   const {user}=useAuth();
   const notificationRef = useRef();
   
@@ -103,7 +104,7 @@ return (
             gutterBottom 
             sx={{mb:2,textAlign:'center',fontWeight:'800'}}
           >
-            Edit Publisher
+            {t("publisher_panel.edit_publisher", "Edit Publisher")}
           </Typography>
           
           {/* Tabs */}
@@ -119,8 +120,8 @@ return (
                   mt:2,
                 }}
             >
-              <Tab label="Account"/>
-              <Tab label="Password"/>
+              <Tab label={t("dashboard.personalInfo", "Account")}/>
+              <Tab label={t("dashboard.security", "Password")}/>
           </Tabs>
 
           <Box p={3} border={1} borderColor="grey.200" borderRadius={1}>

@@ -49,18 +49,33 @@
 
 .header-text2 {
   font-weight: 800;
-  font-style:italic;
-  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  font-style: normal;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   margin: 15px 0;
   padding-left: 20px;
+  color: var(--text-primarys);
 }
 
 .view-all2 {
-  color: white;
+  color: #d17842;
+  background: rgba(209, 120, 66, 0.1);
+  border: 1px solid rgba(209, 120, 66, 0.35);
+  padding: 4px 14px;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
   text-decoration: none;
-  font-weight: 500;
   margin-right: 20px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.view-all2:hover {
+  background: #d17842;
+  color: #ffffff;
+  border-color: #d17842;
 }
 
 /* ============================================
@@ -112,13 +127,15 @@
       CARDS
    ============================================ */
 .card-slider2 {
+  background: var(--slider-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   scroll-snap-align: start;
   text-align: center;
   text-decoration: none;
   padding: 0.5rem;
-  color: #333;
-  transition: transform 0.2s;
+  color: var(--text-primarys);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
   flex: 1;
   min-width: 0;
   position: relative;
@@ -128,11 +145,9 @@
 .card-slider2:hover {
   cursor: pointer;
   transform: translateY(-2px);
+  border-color: #d17842;
+  box-shadow: 0 6px 18px rgba(209, 120, 66, 0.18);
 }
-
-
-
-
 
 /* Card Variants */
 .card-slider2.publisher-famous2,
@@ -147,19 +162,14 @@
   color: var(--text-primarys);
 }
 
-
-
-
-
-
 /* Image Wrapper */
 .card-image-wrapper2 {
   position: relative;
   width: 100%;
-  height: 150px;
+  height: 180px;
   margin-bottom: 0.5rem;
   display: block;
-  background-color: #eee;
+  background-color: rgba(0, 0, 0, 0.04);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -167,7 +177,7 @@
 /* Main Image */
 .card-slider2 img#card-main2 {
   width: 100%;
-  height: 150px;
+  height: 180px;
   border-radius: 8px;
   margin-bottom: 0.5rem;
   object-fit: cover;
@@ -177,8 +187,8 @@
 /* Card Text */
 .card-slider2 h4 {
   font-weight: 700;
-  color: rgb(0, 0, 0);
-  margin: 15px auto 0;
+  color: var(--text-primarys);
+  margin: 12px auto 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -186,7 +196,8 @@
 
 .card-slider2 p {
   margin: 0 auto;
-  color: var(--slider-price);
+  color: var(--text-primarys);
+  font-weight: 700;
 }
 
 /* ============================================
@@ -315,4 +326,37 @@
     z-index: 1 !important;
 }
 
+}
+
+/* Discount Badges & Strikethrough Pricing */
+.slider-discount-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #e53935;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 3;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.slider-pricing-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slider-original-price {
+  font-size: 0.8rem;
+  color: #888;
+  text-decoration: line-through;
+}
+
+.slider-discounted-price {
+  color: rgb(103, 172, 0);
+  font-weight: 700;
+  margin: 0;
 }

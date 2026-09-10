@@ -92,7 +92,11 @@ class PricingEngine:
         price_record,
         discount,
     ):
-        if discount.discount_type == Discount.DiscountType.PERCENT:
+        if discount.discount_type in (
+            Discount.DiscountType.PERCENT,
+            "PERCENT",
+            "PERCENTAGE",
+        ):
             new_price = current_price * (
                 Decimal("1.00") - discount.value / Decimal("100")
             )

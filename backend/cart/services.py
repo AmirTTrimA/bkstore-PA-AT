@@ -136,6 +136,66 @@ class CheckoutService:
             applied_coupon=applied_coupon,
         )
 
+    def _resolve_shipping_data(self, cart: Cart, shipping_data: dict) -> dict:
+        """
+        Resolves shipping details from either a saved address_id or manual input fields.
+        Enforces required shipping details only when physical books are present in cart.
+        """
+        has_physical_items = any(
+            item.book_format.format_type == BookFormat.FormatType.PHYSICAL
+            for item in cart.items.select_related("book_format")
+        )
+
+        address_id = shipping_data.get("address_id")
+        if address_id:
+            from accounts.models import Address
+
+            try:
+                saved_address = Address.objects.get(pk=address_id, user=self.user)
+                return {
+                    "shipping_name": saved_address.recipient_name,
+                    "shipping_address_line1": saved_address.address_line,
+                    "shipping_city": saved_address.city,
+                    "shipping_country": saved_address.country,
+                }
+            except (Address.DoesNotExist, ValueError):
+                raise serializers.ValidationError(
+                    {"address_id": _("Selected address does not exist.")}
+                )
+
+        shipping_name = (shipping_data.get("shipping_name") or "").strip()
+        shipping_address_line1 = (
+            shipping_data.get("shipping_address_line1") or ""
+        ).strip()
+        shipping_city = (shipping_data.get("shipping_city") or "").strip()
+        shipping_country = (
+            shipping_data.get("shipping_country") or "Iran"
+        ).strip()
+
+        if has_physical_items:
+            missing_fields = []
+            if not shipping_name:
+                missing_fields.append("shipping_name")
+            if not shipping_address_line1:
+                missing_fields.append("shipping_address_line1")
+            if not shipping_city:
+                missing_fields.append("shipping_city")
+
+            if missing_fields:
+                raise serializers.ValidationError(
+                    {
+                        field: _("This field is required for physical book delivery.")
+                        for field in missing_fields
+                    }
+                )
+
+        return {
+            "shipping_name": shipping_name,
+            "shipping_address_line1": shipping_address_line1,
+            "shipping_city": shipping_city,
+            "shipping_country": shipping_country,
+        }
+
     def _create_order(
         self,
         snapshot: OrderSnapshot,
@@ -148,11 +208,12 @@ class CheckoutService:
             discount_amount=snapshot.discount_amount,
             total_amount=snapshot.total_amount,
             status="PENDING",
-            shipping_name=shipping_data["shipping_name"],
-            shipping_address_line1=shipping_data["shipping_address_line1"],
-            shipping_city=shipping_data["shipping_city"],
-            shipping_country=shipping_data["shipping_country"],
+            shipping_name=shipping_data.get("shipping_name", ""),
+            shipping_address_line1=shipping_data.get("shipping_address_line1", ""),
+            shipping_city=shipping_data.get("shipping_city", ""),
+            shipping_country=shipping_data.get("shipping_country", ""),
         )
+
 
     def _create_order_items(
         self,
@@ -255,6 +316,8 @@ class CheckoutService:
         if not cart.items.exists():
             raise serializers.ValidationError(_("Your cart is empty."))
 
+        resolved_shipping = self._resolve_shipping_data(cart, shipping_data)
+
         coupon_code = shipping_data.get("discount_code")
 
         snapshot = self._build_order_snapshot(
@@ -271,8 +334,9 @@ class CheckoutService:
 
         order = self._create_order(
             snapshot=snapshot,
-            shipping_data=shipping_data,
+            shipping_data=resolved_shipping,
         )
+
 
         # Wallet payment succeeded, so the order is already paid
         order.status = "PROCESSING"

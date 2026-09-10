@@ -1,0 +1,137 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    .reject-card {
+      max-width: 680px;
+      margin: 30px auto;
+      background: var(--pn-surface, #ffffff);
+      border: 1px solid var(--pn-border, #e2e8f0);
+      border-radius: 12px;
+      padding: 28px 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      color: var(--body-fg, #1e293b);
+    }
+    .reject-card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--pn-border, #e2e8f0);
+    }
+    .reject-card-header h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #ef4444;
+    }
+    .proposal-meta-box {
+      background: var(--darkened-bg, #f8fafc);
+      border: 1px solid var(--pn-border, #e2e8f0);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 22px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .proposal-meta-box strong {
+      color: var(--body-loud-color, #0f172a);
+    }
+    .reject-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color, #cbd5e1);
+      background: var(--body-bg, #ffffff);
+      color: var(--body-fg, #1e293b);
+      font-family: inherit;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      resize: vertical;
+      margin-top: 6px;
+      margin-bottom: 20px;
+    }
+    .reject-textarea:focus {
+      outline: none;
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+    .reject-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn-cancel {
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 1px solid var(--pn-border, #cbd5e1);
+      background: transparent;
+      color: var(--body-fg, #64748b);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .btn-cancel:hover {
+      background: rgba(0,0,0,0.05);
+    }
+    .btn-confirm-reject {
+      padding: 8px 22px;
+      border-radius: 6px;
+      border: none;
+      background: #dc2626;
+      color: #ffffff !important;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+    }
+    .btn-confirm-reject:hover {
+      background: #b91c1c;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="reject-card">
+  <div class="reject-card-header">
+    <span style="font-size: 1.8rem;">⚠️</span>
+    <h2>{% trans "Reject Proposal" %}</h2>
+  </div>
+
+  <div class="proposal-meta-box">
+    <div><strong>{% trans "Proposal Title:" %}</strong> {{ proposal.title }}</div>
+    <div><strong>{% trans "Publisher:" %}</strong> {{ proposal.publisher.name }}</div>
+    <div><strong>{% trans "Type:" %}</strong> {{ proposal.get_proposal_type_display }}</div>
+    <div><strong>{% trans "Submitted By:" %}</strong> {{ proposal.submitted_by.username }} ({{ proposal.submitted_at|date:"Y-m-d H:i" }})</div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    
+    <label for="id_reason" style="font-weight: 600; font-size: 0.95rem;">
+      {% trans "Rejection Reason / Feedback for Publisher:" %} <span style="color: #ef4444;">*</span>
+    </label>
+    <p style="margin: 4px 0 8px 0; font-size: 0.85rem; color: var(--body-quiet-color, #64748b);">
+      {% trans "Please state clearly why this proposal cannot be approved. This note will be recorded for audit and visible to the publisher." %}
+    </p>
+
+    <textarea name="reason" id="id_reason" class="reject-textarea" required placeholder="{% trans 'e.g. Incomplete synopsis or inaccurate pricing metadata...' %}"></textarea>
+
+    <div class="reject-actions">
+      <a href="{{ next_url }}" class="btn-cancel">{% trans "Cancel" %}</a>
+      <button type="submit" class="btn-confirm-reject">
+        ✕ {% trans "Confirm Rejection" %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

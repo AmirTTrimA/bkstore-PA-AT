@@ -12,7 +12,7 @@ const AuthContext = createContext();
 
 
 
-// ============================================
+// ============================================x
 //    Provider Component
 // ============================================
 export default function AuthProvider({ children }){
@@ -94,26 +94,39 @@ export default function AuthProvider({ children }){
 
   // Signup
   const signup = useCallback(
-  async (name, age, email, password,password2) => {
-    try {
-      await AuthService.register({
-        username: name.trim().toLowerCase(),
-        age,
-        email: email.trim(),
-        password,
-        password2
-      });
+    async (name, ...args) => {
+      let email, password, password2;
+      if (args.length === 4) {
+        // legacy: (name, age, email, password, password2)
+        [, email, password, password2] = args;
+      } else {
+        // modern: (name, email, password, password2)
+        [email, password, password2] = args;
+      }
 
+      try {
+        await AuthService.register({
+          username: name.trim().toLowerCase(),
+          email: email.trim(),
+          password,
+          password2,
+        });
 
-
-      
-      return true;
-    } catch (err) {
-        setError(err.response?.data?.message || "Signup failed");
+        return true;
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+          err.response?.data?.detail ||
+          err.response?.data?.username?.[0] ||
+          err.response?.data?.email?.[0] ||
+          err.response?.data?.password?.[0] ||
+          "Signup failed"
+        );
         return false;
-    }
-
-  },[]);
+      }
+    },
+    []
+  );
 
 
   // Login with email (magic link)
@@ -144,10 +157,75 @@ export default function AuthProvider({ children }){
 
 
 
+  // Request OTP code
+  const requestOtp = useCallback(
+    async (identifier) => {
+      try {
+        const res = await AuthService.requestOtp({
+          username_or_email: identifier.trim(),
+        });
+        clearError();
+        return { success: true, detail: res.data?.detail };
+      } catch (err) {
+        const msg =
+          err.response?.data?.detail ||
+          err.response?.data?.username_or_email?.[0] ||
+          "Failed to request OTP code.";
+        setError(msg);
+        return { success: false, error: msg };
+      }
+    },
+    []
+  );
+
+  // Login with OTP
+  const loginWithOtp = useCallback(
+    async (identifier, code) => {
+      try {
+        const res = await AuthService.loginWithOtp({
+          username_or_email: identifier.trim(),
+          code: code.trim(),
+        });
+
+        const accessToken = res.data?.access_token || res.data?.access;
+        const refreshToken = res.data?.refresh_token || res.data?.refresh;
+
+        if (!accessToken) {
+          setError("No access token returned from server.");
+          return false;
+        }
+
+        localStorage.setItem("token", accessToken);
+        if (refreshToken) {
+          localStorage.setItem("refreshToken", refreshToken);
+        }
+
+        const userData = { username: identifier.trim() };
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        setToken(accessToken);
+        setUser(userData);
+        clearError();
+        return true;
+      } catch (err) {
+        const msg =
+          err.response?.data?.detail ||
+          err.response?.data?.code?.[0] ||
+          err.response?.data?.message ||
+          "Invalid or expired OTP code.";
+        setError(msg);
+        return false;
+      }
+    },
+    []
+  );
+
   // ---Memoized Value---
   const value = useMemo(()=>({
     user,
     login,
+    loginWithOtp,
+    requestOtp,
     signup,
     logout,
     loginWithEmail,
@@ -157,7 +235,7 @@ export default function AuthProvider({ children }){
     token,
     isLoggedIn: !!token,
     updateUser:setUser,
-  }),[user,error,login,logout,signup,loginWithEmail,token,
+  }),[user,error,login,loginWithOtp,requestOtp,logout,signup,loginWithEmail,token,
   ]) 
 
   return (

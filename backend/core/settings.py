@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -19,9 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG")  # 🔑 CHANGE: Ensure DEBUG is cast as bool
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes", "t")
 
-ALLOWED_HOSTS = ["*"]
+_env_allowed_hosts = os.getenv("ALLOWED_HOSTS")
+if _env_allowed_hosts:
+    ALLOWED_HOSTS = [h.strip() for h in _env_allowed_hosts.split(",") if h.strip()]
+else:
+    ALLOWED_HOSTS = ["*"] if DEBUG else ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -54,6 +59,7 @@ INSTALLED_APPS = [
     "publishing",
     "wallet.apps.WalletConfig",
     "payments",
+    "recommendations",
 ]
 
 MIDDLEWARE = [
@@ -82,6 +88,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.i18n",
             ],
         },
     },
@@ -107,6 +114,12 @@ DATABASES = {
         "PORT": os.getenv("DB_PORT", default="5432"),
     },
 }
+
+if os.getenv("USE_SQLITE", "False").lower() in ("true", "1") or "test" in sys.argv:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "test_db.sqlite3" if "test" in sys.argv else BASE_DIR / "db.sqlite3",
+    }
 
 
 # Password validation
@@ -151,6 +164,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (User uploads, book covers, audio samples)
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -168,6 +189,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 12,
+    "URL_FORMAT_OVERRIDE": None,
 }
 
 # Simple JWT Configuration
@@ -187,10 +209,31 @@ SIMPLE_JWT = {
 # 🔑 NEW: EMAIL & DJ-REST-AUTH / ALLAUTH CONFIGURATION
 # -------------------------------------------------------------
 
-# 1. EMAIL CONFIGURATION (CRUCIAL for Password Reset/OTP)
-# In development, prints emails to the console/terminal.
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "support@bookstore.com"
+# 1. EMAIL CONFIGURATION (Gmail SMTP / Console)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in ("true", "1", "t")
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in ("true", "1", "t")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = (
+    os.getenv("DEFAULT_FROM_EMAIL")
+    or (f"Bookstore <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "Bookstore <support@bookstore.com>")
+)
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "15"))
+
+# Use SMTP backend if configured; fallback to console backend in development/testing if no user is set
+_configured_backend = os.getenv("EMAIL_BACKEND")
+if _configured_backend:
+    EMAIL_BACKEND = _configured_backend
+    if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend" and not EMAIL_HOST_USER:
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = (
+        "django.core.mail.backends.smtp.EmailBackend"
+        if EMAIL_HOST_USER
+        else "django.core.mail.backends.console.EmailBackend"
+    )
 
 
 # 2. ALLAUTH DEPENDENCIES (Required by dj-rest-auth)
@@ -237,6 +280,29 @@ HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.BaseSignalProcessor"
 
 CART_SESSION_KEY = "cart"
 
+# 🔑 CELERY CONFIGURATION
+# Default to memory:// for zero-dependency local development and testing.
+# If redis is configured, verify that the redis library is available before using it.
+_env_broker = os.getenv("CELERY_BROKER_URL", "memory://")
+if _env_broker.startswith("redis"):
+    try:
+        import redis  # noqa: F401
+    except ImportError:
+        _env_broker = "memory://"
+CELERY_BROKER_URL = _env_broker
+
+_env_result_backend = os.getenv("CELERY_RESULT_BACKEND", "cache+memory://")
+if _env_result_backend.startswith("redis"):
+    try:
+        import redis  # noqa: F401
+    except ImportError:
+        _env_result_backend = "cache+memory://"
+CELERY_RESULT_BACKEND = _env_result_backend
+
+# In development without a dedicated Celery worker daemon, execute tasks eagerly (inline)
+CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "True").lower() in ("true", "1", "t")
+CELERY_TASK_EAGER_PROPAGATES = False
+
 # 🔑 CELERY BEAT SCHEDULE (Periodic Tasks) - Schedule the high-priority tasks
 CELERY_BEAT_SCHEDULE = {
     "expire-otp-hourly": {
@@ -255,10 +321,23 @@ CELERY_BEAT_SCHEDULE = {
     },  
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+_cors_env = os.getenv("CORS_ALLOWED_ORIGINS")
+if _cors_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
+_csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS")
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in _csrf_env.split(",") if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 

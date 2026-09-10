@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation #{{ order.pk }}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #f8fafc;
+      padding: 32px 16px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+      color: #ffffff;
+      padding: 32px 28px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      margin: 8px 0 0 0;
+      font-size: 15px;
+      color: #e0e7ff;
+    }
+    .content {
+      padding: 28px;
+    }
+    .greeting {
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      color: #334155;
+    }
+    .order-badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    .order-badge-row strong {
+      color: #0f172a;
+    }
+    .badge-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      margin: 24px 0 12px 0;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .items-table th {
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .items-table td {
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 14px;
+      vertical-align: top;
+    }
+    .item-title {
+      font-weight: 600;
+      color: #0f172a;
+      display: block;
+    }
+    .item-author {
+      font-size: 12px;
+      color: #64748b;
+      display: block;
+      margin-top: 2px;
+    }
+    .item-format {
+      display: inline-block;
+      font-size: 11px;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #475569;
+      padding: 4px 0;
+    }
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 10px;
+      margin-top: 6px;
+    }
+    .delivery-info {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #166534;
+      line-height: 1.5;
+    }
+    .delivery-info strong {
+      color: #14532d;
+    }
+    .btn-container {
+      text-align: center;
+      margin: 32px 0 16px 0;
+    }
+    .btn {
+      display: inline-block;
+      background: #4f46e5;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    }
+    .footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 20px 28px;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>Bookstore</h1>
+        <p>Order Confirmation</p>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <div class="greeting">
+          Hi <strong>{{ order.user.username }}</strong>,<br>
+          Thank you for your purchase! We've received your order and it is being processed.
+        </div>
+
+        <div class="order-badge-row">
+          <div>
+            <span>Order ID: </span><strong>#{{ order.pk }}</strong>
+            <span style="margin-left: 12px; color: #64748b;">{{ order.created_at|date:"Y-m-d H:i" }}</span>
+          </div>
+          <span class="badge-status">{{ order.get_status_display }}</span>
+        </div>
+
+        <div class="section-title">Order Items</div>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th style="width: 55%;">Item</th>
+              <th style="width: 15%; text-align: center;">Qty</th>
+              <th style="width: 30%; text-align: right;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td>
+                <span class="item-title">{{ item.title }}</span>
+                {% if item.author %}
+                <span class="item-author">by {{ item.author }}</span>
+                {% endif %}
+                <span class="item-format">{{ item.format }}</span>
+              </td>
+              <td style="text-align: center; vertical-align: middle;">
+                {{ item.quantity }}
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <strong>{{ item.subtotal_formatted }}</strong>
+                {% if item.quantity > 1 %}
+                <br><span style="font-size: 11px; color: #64748b;">({{ item.price_formatted }} each)</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!-- Financial Summary -->
+        <div class="summary-card">
+          <div class="summary-line">
+            <span>Subtotal:</span>
+            <span>{{ subtotal_formatted }}</span>
+          </div>
+          {% if order.discount_amount > 0 %}
+          <div class="summary-line" style="color: #16a34a;">
+            <span>Discount Applied:</span>
+            <span>-{{ discount_formatted }}</span>
+          </div>
+          {% endif %}
+          <div class="summary-total">
+            <span>Total Paid:</span>
+            <span>{{ total_formatted }}</span>
+          </div>
+        </div>
+
+        <!-- Shipping or Digital Delivery Info -->
+        {% if has_shipping %}
+        <div class="delivery-info">
+          <strong>Shipping Details:</strong><br>
+          {{ order.shipping_name }}<br>
+          {{ order.shipping_address_line1 }}<br>
+          {{ order.shipping_city }}{% if order.shipping_country %}, {{ order.shipping_country }}{% endif %}
+        </div>
+        {% else %}
+        <div class="delivery-info">
+          <strong>Digital Delivery:</strong><br>
+          Your e-book and audiobook licenses are instantly available in your library on your dashboard.
+        </div>
+        {% endif %}
+
+        <!-- Call to action button -->
+        <div class="btn-container">
+          <a href="{{ frontend_url }}/dashboard" class="btn" target="_blank">View in Dashboard</a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        Need assistance? Feel free to contact our support team.<br>
+        &copy; {% now "Y" %} Bookstore. All rights reserved.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

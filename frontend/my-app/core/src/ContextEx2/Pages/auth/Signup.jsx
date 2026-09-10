@@ -1,480 +1,404 @@
-// ✅
-import React from 'react'
-import { useState,useRef,useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import {useAuth} from '../../Context/AuthContext'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
+import { ThemeToggle } from '../../Components/common/ThemeToggle';
+import { LanguageToggle } from '../../Components/common/LanguageToggle';
 import Notification from '../../Components/feature/Notification';
-import '../../Styles/components/Signup.css'
-import { useCallback } from 'react';
+import '../../Styles/components/Login.css';
+import '../../Styles/components/Signup.css';
 
-
-// ============================================
-//    Constants
-// ============================================
-const MIN_AGE = 13;
-const MAX_AGE = 120;
 const MIN_PASSWORD_LENGTH = 8;
-const PASSWORD_PATTERNS = [
-  /[a-z]/, 
-  /[A-Z]/, 
-  /[0-9]/, 
-  /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, 
-];
-const ALL_CHARS = {
-  lowercase: 'abcdefghijklmnopqrstuvwxyz',
-  uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  numbers: '0123456789',
-  symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?',
-};
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-
-
-
-// ============================================
-//    Main Component
-// ============================================
 export default function Signup() {
-
-
-  const { signup,setError,error,clearError } = useAuth();
+  const navigate = useNavigate();
+  const { signup, setError, error, clearError } = useAuth();
+  const { t, isPersian } = useLanguage();
   const notificationRef = useRef(null);
 
-  // ---State---
-  const[signData,setSignData]=useState({
-    name:'',
-    age:'',
-    email:'',
-    password:'',
-    password2:''
-})
+  // Form State (no age field)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    password2: '',
+  });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-const [strength, setStrength] = useState('none');
-const [isLampOn, setIsLampOn] = useState(false);
+  // Auto-clear global context error
+  useEffect(() => {
+    if (error) clearError();
+    return () => {
+      if (error) clearError();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Handle Input Changes
+  const handleChange = useCallback(
+    (e) => {
+      if (error) clearError();
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    },
+    [error, clearError]
+  );
 
-const isValid = signData.name &&
-                signData.age &&
-                signData.email &&
-                signData.password &&
-                signData.password2 
+  // Password criteria verification
+  const criteria = useMemo(() => {
+    const p = formData.password || '';
+    return {
+      length: p.length >= MIN_PASSWORD_LENGTH,
+      lowercase: /[a-z]/.test(p),
+      uppercase: /[A-Z]/.test(p),
+      number: /[0-9]/.test(p),
+      symbol: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p),
+    };
+  }, [formData.password]);
 
+  // Compute password score (0-4)
+  const strengthScore = useMemo(() => {
+    if (!formData.password) return 0;
+    let score = 0;
+    if (criteria.length) score += 1;
+    if (criteria.lowercase && criteria.uppercase) score += 1;
+    if (criteria.number) score += 1;
+    if (criteria.symbol) score += 1;
+    return score;
+  }, [formData.password, criteria]);
 
-
-const getStrengthColor =()=>{
-  switch(strength){
-    case 'weak': return '#ff4757';
-    case 'medium': return '#ffea02';
-    case 'strong': return '#2ed573';
-    default: return '#ccc';
-  }
-}
-
-
-
-
-// ---Effects---
-
- // Auto-clear error after duration
-      useEffect(() => {
-        if (error) {
-          const timer = setTimeout(clearError, 2000);
-          return () => clearTimeout(timer);
-        }
-      }, [error, clearError]);
-
-
-      // ---Password Strength Checker---
-      useEffect(()=>{
-
-        const checkStrength = (pass)=>{
-          if(!pass || pass.length === 0) return 'none';
-            
-          
-          
-          let score = PASSWORD_PATTERNS.reduce((count, pattern) => 
-            count + (pattern.test(pass) ? 1 : 0), 0
-          );
-    
-          // Length bonus
-          if (pass.length >= MIN_PASSWORD_LENGTH) score++;
-  
-          
-          if (score<=2) return 'weak';
-          if (score<=4) return 'medium';
-          if (score>=5) return 'strong';
-          
-        }
-    
-    
-        setStrength(checkStrength(signData.password))
-      
-      },[signData.password])
-      
-    
-      // Dark mode Effect
-      useEffect(() => {
-        document.body.style.backgroundColor = '#2d2d2d';
-        document.body.style.color = '#333';
-        return () => {
-          document.body.style.backgroundColor = '';
-          document.body.style.color = '';
-        };
-      }, []);
-
-
-
-// ---Helper Functions---
-
-const validateAge = useCallback((birthdate)=>{
-
-  if (!birthdate) {
-    notificationRef.current.showNotif('Birthdate is required', 'error');
-    return false;
-  }
-  
-  const birthDate = new Date(birthdate);
-  const today = new Date();
-
-  if (isNaN(birthDate.getTime())) {
-    notificationRef.current.showNotif('Please enter a valid birthdate', 'error');
-    return false;
-  }
-  if (birthDate > today) {
-    notificationRef.current.showNotif('Birthdate cannot be in the future', 'error');
-    return false;
-  }
-
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  if(age< MIN_AGE || age> MAX_AGE){
-    notificationRef.current.showNotif(`Age range is ${MIN_AGE}-${MAX_AGE} `,'error')
-    return false;
-  }
-  
-
-  return age;
-
-
-},[]);
-
-const SignupValidation = useCallback((name,age,email,password) => {
-
-      const trimmedName = name.trim();
-      const trimmedEmail = email.trim();
-
-    // emptiness check
-    if (!trimmedName || !age || !trimmedEmail || !password) {
-      notificationRef.current.showNotif('All fields are required','error');
-      return false;
+  const strengthMeta = useMemo(() => {
+    switch (strengthScore) {
+      case 1:
+        return { label: 'Weak', color: '#ff4757' };
+      case 2:
+        return { label: 'Fair', color: '#ffa502' };
+      case 3:
+        return { label: 'Good', color: '#eccc68' };
+      case 4:
+        return { label: 'Strong', color: '#2ed573' };
+      default:
+        return { label: 'Too short', color: '#6e7681' };
     }
+  }, [strengthScore]);
 
-   
+  // Form Validation
+  const isPasswordsMatch =
+    formData.password &&
+    formData.password2 &&
+    formData.password === formData.password2;
 
-    const ageResult = validateAge(age);
-    if(ageResult === false){
-      return false;
-    }
+  const isFormValid =
+    formData.name.trim().length >= 3 &&
+    EMAIL_REGEX.test(formData.email.trim()) &&
+    formData.password.length >= MIN_PASSWORD_LENGTH &&
+    isPasswordsMatch;
 
-
-
-    // email Validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if(!emailRegex.test(email)){
-      notificationRef.current.showNotif('Enter Valid-email','error')
-      return false;
-    }
-
-
-    // password Validation
-    if(password.length < MIN_PASSWORD_LENGTH){
-      notificationRef.current.showNotif('Password not Strong (8)','error')
-      return false;
-    }
-
-
-
-
-
-    return ageResult;
-  },[validateAge])
-
-
-
-
-
-
-  // ---Handlers
-  const handleChange = useCallback((e) => {
-    if(error) clearError()
-      const{name,value} = e.target;
-      setSignData(prevstate=>(
-          {...prevstate,[name]:value})
-      )
-      if (error){
-        setError('')
-      } 
-  },[error,setError,clearError])
-  
-  
-  
-
-  const handlesubmit = useCallback(async (e) => {
+  // Submit Handler
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    clearError();
 
-    if (signData.password !== signData.password2) {
-      notificationRef.current.showNotif('Password not match', 'error');
+    const { name, email, password, password2 } = formData;
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    // Validation checks
+    if (!trimmedName || !trimmedEmail || !password || !password2) {
+      if (notificationRef.current) {
+        notificationRef.current.showNotif('Please complete all fields.', 'error');
+      }
       return;
     }
 
-    const ageResult =SignupValidation(
-        signData.name,
-        signData.age,
-        signData.email,
-        signData.password) 
-
-      if (ageResult === false){
-        return ;
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      if (notificationRef.current) {
+        notificationRef.current.showNotif('Please enter a valid email address.', 'error');
       }
-
-  
-
-    const success = await signup(
-      signData.name.trim().toLowerCase(),
-      ageResult,
-      signData.email.trim(),
-      signData.password,
-      signData.password2
-    );
-  
-
-    if (success) {
-      setSignData({ name:"", age:"", email:"", password:"", password2:"" });
-      notificationRef.current.showNotif('Signup success!', 'success',{
-        navigateTo:'/login'
-      });
-
-    
-      console.log("Signup successful");
-    }
-    else{
-      notificationRef.current.showNotif('Signup failed! try later', 'error');
-
+      return;
     }
 
-
-    },[signup,SignupValidation,clearError,signData])
-
-
-// Turn on/off lamp 
-const toggleLamp = ()=>{
-  setIsLampOn(!isLampOn)
-}
-
-
-// suggest pass
-const SuggestPass = ()=>{
-    
-  const { lowercase, uppercase, numbers, symbols } = ALL_CHARS;
-
-    const allchars = lowercase + uppercase + numbers + symbols
-    let newPassword =''
-
-    // Least one each type
-    newPassword += lowercase[Math.floor(Math.random() * lowercase.length)];
-    newPassword += uppercase[Math.floor(Math.random() * uppercase.length)];
-    newPassword += numbers[Math.floor(Math.random() * numbers.length)];
-    newPassword += symbols[Math.floor(Math.random() * symbols.length)];
-
-    // 4 rest randomly
-    for ( let i=4 ; i < 8; i++ ){
-      newPassword += allchars[Math.floor(Math.random() * allchars.length)]
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      if (notificationRef.current) {
+        notificationRef.current.showNotif(
+          `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`,
+          'error'
+        );
+      }
+      return;
     }
 
-    // Shuffle 
-    newPassword = newPassword.split('').sort(()=> Math.random()-0.5).join('');
+    if (password !== password2) {
+      if (notificationRef.current) {
+        notificationRef.current.showNotif('Passwords do not match.', 'error');
+      }
+      return;
+    }
 
-    setSignData(prev=>({...prev,password:newPassword}))
-
-  }
-
+    setSubmitting(true);
+    try {
+      const success = await signup(trimmedName, trimmedEmail, password, password2);
+      if (success) {
+        if (notificationRef.current) {
+          notificationRef.current.showNotif(
+            'Account created successfully! Please sign in.',
+            'success',
+            { navigateTo: '/login' }
+          );
+        } else {
+          navigate('/login');
+        }
+      } else {
+        if (notificationRef.current) {
+          notificationRef.current.showNotif(error || 'Signup failed. Please try again.', 'error');
+        }
+      }
+    } catch {
+      setError('Registration failed. Username or email may already exist.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-
-<div className="signup-content">
-      <form className='signup-form'>
-        <h2 className='title-signup'>Signup</h2>
-        <div className="field">
-
-          {/* Name */}
-          <i className='far fa-id-card' id='icons'></i>
-          <input 
-            type="text"
-            className='signup-form-fields'
-            name='name'
-            placeholder='name'
-            value={signData.name}
-            onChange={handleChange}
-            autoComplete="off"
-            required
-            />
+    <div className="signup-page-wrapper">
+      <div className="signup-card">
+        {/* Navigation & Brand Header */}
+        <div className="auth-header-nav">
+          <Link to="/home" className="auth-back-btn" title={isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}>
+            <i className={isPersian ? 'fas fa-arrow-right' : 'fas fa-arrow-left'}></i>
+            <span>{isPersian ? 'بازگشت به فروشگاه' : 'Back to Store'}</span>
+          </Link>
+          <div className="auth-header-controls">
+            <ThemeToggle page="auth" />
+            <LanguageToggle page="auth" />
+            <Link to="/home" className="auth-brand">
+              Book<span>kadeh</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Age */}
-        <div className="field">
-          <i className='fas fa-calendar-alt' id='icons'></i>
-          <input 
-            type="date"
-            className='signup-form-fields'
-            id='age-date'
-            name='age'
-            placeholder='age'
-            value={signData.age}
-            onChange={handleChange}
-            autoComplete="off"
-            required
-            />
+        {/* Title Section */}
+        <div className="auth-title-section">
+          <h1 className="auth-main-title">{t("auth.signupTitle", "Create an Account")}</h1>
+          <p className="auth-subtitle">
+            {t("auth.signupSubtitle", "Join Bookkadeh to read, listen, and collect your favorite books.")}
+          </p>
         </div>
 
-        {/* Email */}
-        <div className="field">
-          <i className='fas fa-at' id='icons'></i>
-          <input 
-            type="text"
-            className='signup-form-fields'
-            name='email'
-            placeholder='email'
-            value={signData.email}
-            onChange={handleChange}
-            autoComplete="off"
-            required
-            />
-        </div>
+        {/* Inline Error Notice */}
+        {error && (
+          <div className="auth-inline-alert error">
+            <i className="fas fa-exclamation-circle" style={{ marginTop: 2 }}></i>
+            <span>{error}</span>
+          </div>
+        )}
 
-        {/* Password */}
-        <div className="field">  
-          <i className='fas fa-fingerprint' id='icons'></i>    
-          <input 
-            type="text"
-            className='signup-form-fields'
-            name='password'
-            placeholder='password'
-            value={signData.password}
-            onChange={handleChange}
-            autoComplete="off"
-            required
-            onFocus={() => setIsLampOn(true)}
-            />
-
-      
-      
-      {/* Strength Indicator & Lamp */}       
-        <div  
-          className={`lampSection ${isLampOn ? 'alwaysVisible' : ''}`}
-          title="suggest strong pass"
-        >
-           <div className='lampContainer'>
-
-            <button 
-              className={`lampButton ${isLampOn ? 'lampOn' : ''}`}
-              onClick={()=>{
-                  toggleLamp();
-                  SuggestPass();
-              }}
-
-              onMouseEnter={(e) => {
-                if (isLampOn) {
-                  e.target.style.boxShadow = '0 0 50px 5px rgba(255, 255, 150, 0.5), 0 4px 20px rgba(0,0,0,0.3)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (isLampOn) {
-                  e.target.style.boxShadow = 'none';
-                }
-              }}
-            >
-
-              {/* Lamp icon */}
-              <div className='lampIcon'>
-                {isLampOn
-                ? <i className='far fa-lightbulb' ></i>
-                :<i className='fas fa-lightbulb' ></i>
-                }
-              </div>
-              
-              
-            </button>
-              
-            {/* Indicator */}
-            <div
-                className={`strengthIndicator ${
-                  strength === 'weak'
-                    ? 'weak'
-                    : strength === 'medium'
-                    ? 'medium'
-                    : strength === 'strong'
-                    ? 'strong'
-                    : ''
-                }`}
-                style={{
-                  backgroundColor: getStrengthColor()
-                }}
-            >
+        {/* Form */}
+        <form onSubmit={handleSubmit} noValidate>
+          {/* Username */}
+          <div className="auth-form-group">
+            <label className="auth-label" htmlFor="signup-username">
+              Username
+            </label>
+            <div className="auth-input-wrapper">
+              <i className="fas fa-user auth-input-icon"></i>
+              <input
+                id="signup-username"
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="e.g. alex_reader"
+                required
+                className="auth-input"
+                autoComplete="username"
+                autoFocus
+              />
             </div>
+          </div>
+
+          {/* Email */}
+          <div className="auth-form-group">
+            <label className="auth-label" htmlFor="signup-email">
+              {t("auth.email", "Email Address")}
+            </label>
+            <div className="auth-input-wrapper">
+              <i className="fas fa-envelope auth-input-icon"></i>
+              <input
+                id="signup-email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                required
+                className="auth-input"
+                autoComplete="email"
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="auth-form-group">
+            <label className="auth-label" htmlFor="signup-password">
+              {t("auth.password", "Password")}
+            </label>
+            <div className="auth-input-wrapper">
+              <i className="fas fa-lock auth-input-icon"></i>
+              <input
+                id="signup-password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="At least 8 characters"
+                required
+                className="auth-input has-toggle"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="auth-toggle-pass-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+              </button>
+            </div>
+
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <div className="signup-strength-container">
+                <div className="signup-strength-header">
+                  <span>Strength:</span>
+                  <span
+                    className="signup-strength-label"
+                    style={{ color: strengthMeta.color }}
+                  >
+                    {strengthMeta.label}
+                  </span>
+                </div>
+                <div className="signup-strength-bar">
+                  {[1, 2, 3, 4].map((seg) => (
+                    <div
+                      key={seg}
+                      className="signup-strength-segment"
+                      style={{
+                        backgroundColor:
+                          seg <= strengthScore ? strengthMeta.color : 'rgba(255, 255, 255, 0.08)',
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="signup-criteria-list">
+                  <span className={`signup-criteria-badge ${criteria.length ? 'met' : ''}`}>
+                    <i className={criteria.length ? 'fas fa-check' : 'fas fa-circle'}></i>
+                    8+ chars
+                  </span>
+                  <span className={`signup-criteria-badge ${criteria.uppercase ? 'met' : ''}`}>
+                    <i className={criteria.uppercase ? 'fas fa-check' : 'fas fa-circle'}></i>
+                    Uppercase
+                  </span>
+                  <span className={`signup-criteria-badge ${criteria.lowercase ? 'met' : ''}`}>
+                    <i className={criteria.lowercase ? 'fas fa-check' : 'fas fa-circle'}></i>
+                    Lowercase
+                  </span>
+                  <span className={`signup-criteria-badge ${criteria.number ? 'met' : ''}`}>
+                    <i className={criteria.number ? 'fas fa-check' : 'fas fa-circle'}></i>
+                    Number
+                  </span>
+                  <span className={`signup-criteria-badge ${criteria.symbol ? 'met' : ''}`}>
+                    <i className={criteria.symbol ? 'fas fa-check' : 'fas fa-circle'}></i>
+                    Symbol
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div className="auth-form-group">
+            <label className="auth-label" htmlFor="signup-password-repeat">
+              {t("auth.confirmPassword", "Confirm Password")}
+            </label>
+            <div className="auth-input-wrapper">
+              <i className="fas fa-lock auth-input-icon"></i>
+              <input
+                id="signup-password-repeat"
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="password2"
+                value={formData.password2}
+                onChange={handleChange}
+                placeholder="Re-enter your password"
+                required
+                className="auth-input has-toggle"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="auth-toggle-pass-btn"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+              </button>
+            </div>
+
+            {/* Live Password Match Status */}
+            {formData.password2 && (
+              <div
+                className={`signup-match-status ${isPasswordsMatch ? 'valid' : 'invalid'}`}
+              >
+                <i
+                  className={
+                    isPasswordsMatch
+                      ? 'fas fa-check-circle'
+                      : 'fas fa-times-circle'
+                  }
+                ></i>
+                <span>
+                  {isPasswordsMatch
+                    ? t("auth.passwordsMatch", "Passwords match")
+                    : t("auth.passMismatch", "Passwords do not match")}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="auth-submit-btn"
+            disabled={submitting || !isFormValid}
+            style={{ marginTop: '1.25rem' }}
+          >
+            {submitting ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i>
+                <span>{t("common.loading", "Creating Account...")}</span>
+              </>
+            ) : (
+              <>
+                <span>{t("auth.signupTitle", "Create Account")}</span>
+                <i className="fas fa-arrow-right"></i>
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Card Footer */}
+        <div className="auth-card-footer">
+          {t("auth.haveAccount", "Already have an account?")}
+          <Link to="/login">{t("nav.login", "Sign In here")}</Link>
         </div>
-            
-          
-          
-          </div>            
-        </div>
+      </div>
 
-        {/* Confim Pass */}
-        <div className="field">
-          <i className='fas fa-fingerprint' id='icons'></i>
-          <input 
-            type="text"
-            className='signup-form-fields'
-            name='password2'
-            placeholder='repeat-password'
-            onChange={handleChange}
-            autoComplete="off"
-            value={signData.password2}
-            required
-            />
-        </div>
-        
-        {/* Back to Login */}
-        <div className="return-login">  
-            <nav>
-              <p>back to <Link to='/login' className='return-login-link'>login</Link></p>
-            </nav>
-        </div>
-        
-        
-        
-
-
-
-
-        {/* Submit Button*/}
-        <button 
-          type='submit'
-          className='form-buttons'
-          onClick={handlesubmit}
-          disabled={!isValid}
-        >
-          Confirm!
-        </button>
-
-      </form>
-
-      <Notification ref={notificationRef}/>
-    
-</div>   
-  )
+      <Notification ref={notificationRef} />
+    </div>
+  );
 }

@@ -726,3 +726,51 @@ class ProposalWithdrawalAPITest(PublishingAPITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    def test_publisher_member_can_list_publisher_books(self):
+        # Create an approved proposal that created a book
+        proposal = self.create_proposal(
+            publisher=self.publisher,
+            user=self.user,
+        )
+        proposal.status = Proposal.Status.APPLIED
+        proposal.save()
+        proposal.book_create.created_book = self.book
+        proposal.book_create.save()
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/books/"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get("results", response.data)
+        self.assertGreaterEqual(len(results), 1)
+        self.assertEqual(results[0]["id"], self.book.id)
+
+    def test_unauthorized_user_cannot_list_publisher_books(self):
+        other_user = User.objects.create_user(
+            username="outsider_user",
+            email="outsider@test.com",
+            password="testpass123",
+        )
+        self.client.force_authenticate(user=other_user)
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/books/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_staff_user_can_list_publisher_books(self):
+        staff_user = User.objects.create_user(
+            username="staff_admin",
+            email="staff@test.com",
+            password="testpass123",
+            is_staff=True,
+        )
+        self.client.force_authenticate(user=staff_user)
+
+        response = self.client.get(
+            f"/api/v1/publishing/publishers/{self.publisher.id}/books/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
