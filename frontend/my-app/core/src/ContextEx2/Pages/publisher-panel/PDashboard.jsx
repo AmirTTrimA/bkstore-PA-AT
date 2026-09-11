@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Profile from '../dashboard/profile/Profile';
 import Authors from './authors/Authors';
 import Upload from './Upload';
@@ -28,6 +28,7 @@ const HIGHLIGHT_DURATION = 4000;
 export default function PDashboard() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
 
@@ -103,6 +104,25 @@ export default function PDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notifModal, setNotifModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Drawer scroll-lock & Escape listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMobileMenuOpen]);
 
   const rowRefs = useRef({});
   const notificationRef = useRef();
@@ -291,7 +311,9 @@ export default function PDashboard() {
           </button>
 
           {/* Language Toggle */}
-          <LanguageToggle page="dash" />
+          <div className="topbar-lang-toggle">
+            <LanguageToggle page="dash" />
+          </div>
 
           {/* Theme Toggle */}
           <ThemeToggle page="dash" />
@@ -696,6 +718,191 @@ export default function PDashboard() {
           </div>
         )}
       </main>
+
+      {/* Mobile Slide-out Drawer */}
+      <div
+        className={`mobile-drawer-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <aside
+          className={`mobile-drawer-panel ${isMobileMenuOpen ? 'open' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="drawer-header">
+            <div
+              className="drawer-user-info"
+              onClick={() => {
+                setIsModalOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <img src={ppic14} alt="Profile" className="drawer-avatar" />
+              <div>
+                <h4 className="drawer-username">{username}</h4>
+                <span className="drawer-role">
+                  {currentPublisher?.name
+                    ? `${currentPublisher.name} (${currentPublisher.role || 'Publisher'})`
+                    : 'Publisher'}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="drawer-close-btn"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close Drawer"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Publisher Switcher in drawer if multiple publishers */}
+          {publishers.length > 1 && (
+            <div style={{ padding: '14px 14px 0 14px' }}>
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                {t('publisher_panel.switchPublisher', 'Switch Publisher')}:
+              </label>
+              <select
+                className="publisher-dropdown-select"
+                style={{ width: '100%', padding: '8px 10px', fontSize: '0.88rem' }}
+                value={currentPublisher?.id || ''}
+                onChange={(e) => {
+                  const selected = publishers.find(
+                    (p) => p.id === parseInt(e.target.value, 10)
+                  );
+                  if (selected) setCurrentPublisher(selected);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {publishers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.role || 'Publisher'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <ul className="drawer-nav-list">
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeTab === 'mybook' ? 'active' : ''}`}
+                onClick={() => {
+                  handleClearEditMode();
+                  setActiveTab('mybook');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {t('publisher_panel.publishedBooks', 'Published Books')} ({allbooks.length})
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeTab === 'upload' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('upload');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {bookToEdit
+                  ? t('publisher_panel.editBookFormats', 'Edit Book & Formats')
+                  : t('publisher_panel.bookProposalEditor', 'Book Proposal & Editor')}
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeTab === 'authors' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('authors');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {t('publisher_panel.authorsManagement', 'Authors Management')}
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`drawer-link ${activeTab === 'proposals' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('proposals');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {t('publisher_panel.proposalsWaitingList', 'Proposals Waiting List')} {pendingCount > 0 && `(${pendingCount})`}
+              </button>
+            </li>
+
+            <div className="drawer-divider" />
+
+            <li>
+              <button
+                type="button"
+                className="drawer-link"
+                onClick={() => {
+                  navigate('/dashboard');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {t('dashboard.readerShelf', 'Reader Shelf')}
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="drawer-link"
+                onClick={() => {
+                  navigate('/home');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {t('publisher_panel.storefront', 'Storefront')}
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="drawer-link"
+                onClick={() => {
+                  setIsModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {t('dashboard.profile', 'Profile Settings')}
+              </button>
+            </li>
+
+            <div className="drawer-divider" />
+
+            <li style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{t('common.language', 'Language')}</span>
+              <LanguageToggle page="dash" />
+            </li>
+            <li style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{t('common.theme', 'Theme')}</span>
+              <ThemeToggle page="dash" />
+            </li>
+
+            <div className="drawer-divider" />
+
+            <li>
+              <button
+                type="button"
+                className="drawer-link drawer-logout"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  logout();
+                }}
+              >
+                {t('nav.logout', 'Logout')}
+              </button>
+            </li>
+          </ul>
+        </aside>
+      </div>
 
       {/* --------------------------------------------
           Modals
