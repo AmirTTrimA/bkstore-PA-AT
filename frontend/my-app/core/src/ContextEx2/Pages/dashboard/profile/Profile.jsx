@@ -71,7 +71,7 @@ export default function Profile({
               component="h2"
               sx={{ fontWeight: "800", color: "var(--text-primarys)", letterSpacing: "0.5px" }}
             >
-              ⚙️ {t("dashboard.profileSecurity", "Profile & Security")}
+              {t("dashboard.profileSecurity", "Profile & Security")}
             </Typography>
             <IconButton
               onClick={onClose}

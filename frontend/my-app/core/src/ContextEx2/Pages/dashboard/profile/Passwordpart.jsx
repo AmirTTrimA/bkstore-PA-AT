@@ -138,8 +138,18 @@ export default function Passwordpart({ notificationRef }) {
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)", display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ mb: 3, textAlign: { xs: "center", sm: "inherit" } }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 700,
+            color: "var(--text-primarys)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: { xs: "center", sm: "flex-start" },
+            gap: 1
+          }}
+        >
           <LockResetIcon sx={{ color: "#d17842" }} />
           {t("dashboard.changePassword", "Change Password")}
         </Typography>
@@ -164,7 +174,19 @@ export default function Passwordpart({ notificationRef }) {
         </Box>
       )}
 
-      <Grid container spacing={2}>
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          width: "100%",
+          m: 0,
+          "& > .MuiGrid-item": {
+            pl: { xs: 0, sm: 2 },
+            pt: { xs: 1.5, sm: 2 },
+            width: "100%"
+          }
+        }}
+      >
         {/* Current Password */}
         <Grid item xs={12}>
           <TextField
@@ -328,7 +350,7 @@ export default function Passwordpart({ notificationRef }) {
       </Grid>
 
       {/* Action Button */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: { xs: "center", sm: "flex-end" }, mt: 3, width: "100%" }}>
         <Button
           type="submit"
           variant="contained"
@@ -340,6 +362,7 @@ export default function Passwordpart({ notificationRef }) {
             px: 4,
             py: 1.2,
             borderRadius: "8px",
+            width: { xs: "100%", sm: "auto" },
             "&:hover": { backgroundColor: "#b35e2e" },
             "&:disabled": {
               backgroundColor: "var(--border-color)",

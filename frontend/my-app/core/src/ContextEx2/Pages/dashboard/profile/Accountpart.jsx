@@ -150,16 +150,25 @@ export default function Accountpart({
         sx={{
           display: "flex",
           flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "flex-start", sm: "center" },
-          gap: { xs: 1.5, sm: 2.5 },
-          p: { xs: 1.5, sm: 2 },
+          alignItems: "center",
+          justifyContent: { xs: "center", sm: "space-between" },
+          gap: { xs: 2, sm: 2.5 },
+          p: { xs: 2, sm: 2 },
           mb: 3,
           background: "var(--bg-secondary)",
           border: "1px solid var(--border-color)",
-          borderRadius: "14px"
+          borderRadius: "14px",
+          textAlign: { xs: "center", sm: "inherit" }
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: { xs: "100%", sm: "auto" }, flex: { sm: 1 } }}>
+        <Box sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: "center",
+          gap: 2,
+          width: { xs: "100%", sm: "auto" },
+          flex: { sm: 1 }
+        }}>
           <Box sx={{ position: "relative", flexShrink: 0 }}>
             <img
               src={selectedAvatar}
@@ -191,7 +200,13 @@ export default function Accountpart({
             </IconButton>
           </Box>
 
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: { xs: "center", sm: "flex-start" }
+          }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)", fontSize: { xs: "1rem", sm: "1.25rem" }, wordBreak: "break-word" }}>
               {userAccount.first_name || userAccount.last_name
                 ? `${userAccount.first_name} ${userAccount.last_name}`
@@ -237,7 +252,19 @@ export default function Accountpart({
       </Box>
 
       {/* Profile Form Fields */}
-      <Grid container spacing={2}>
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          width: "100%",
+          m: 0,
+          "& > .MuiGrid-item": {
+            pl: { xs: 0, sm: 2 },
+            pt: { xs: 1.5, sm: 2 },
+            width: "100%"
+          }
+        }}
+      >
         {/* Username */}
         <Grid item xs={12} sm={6}>
           <TextField
@@ -330,19 +357,31 @@ export default function Accountpart({
           <TextField
             fullWidth
             multiline
-            minRows={3}
+            rows={3}
             label={t("dashboard.interests", "Reading Interests & Hobbies")}
             name="hobbies_or_likings"
             value={userAccount.hobbies_or_likings}
             onChange={handleChange}
             placeholder="Tell us about the genres, topics, or authors you love..."
             size="small"
+            sx={{
+              "& .MuiInputBase-root": {
+                height: "96px",
+                alignItems: "flex-start"
+              },
+              "& textarea": {
+                height: "72px !important",
+                maxHeight: "72px !important",
+                overflowY: "auto !important",
+                resize: "none !important"
+              }
+            }}
           />
         </Grid>
       </Grid>
 
       {/* Action Button */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: { xs: "center", sm: "flex-end" }, mt: 3, width: "100%" }}>
         <Button
           type="submit"
           variant="contained"
@@ -354,6 +393,7 @@ export default function Accountpart({
             px: 4,
             py: 1.2,
             borderRadius: "8px",
+            width: { xs: "100%", sm: "auto" },
             "&:hover": { backgroundColor: "#b35e2e" }
           }}
         >

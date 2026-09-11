@@ -75,7 +75,7 @@ export default function Allauthor({ onEditAuthor, onAddNew }) {
           onClick={onAddNew}
           style={{ background: 'rgba(209, 120, 66, 0.15)', borderColor: '#d17842', color: '#d17842' }}
         >
-          + {t('publisher_panel.proposeNewAuthor', 'Propose New Author')}
+          {t('publisher_panel.proposeNewAuthor', 'Propose New Author')}
         </button>
       </div>
 
@@ -122,7 +122,7 @@ export default function Allauthor({ onEditAuthor, onAddNew }) {
                   onClick={() => onEditAuthor(author)}
                   title={t('publisher_panel.editAuthorProposal', 'Submit an author update proposal')}
                 >
-                  ✏️ {t('publisher_panel.editProposal', 'Edit Proposal')}
+                  {t('publisher_panel.editProposal', 'Edit Proposal')}
                 </button>
 
                 <button

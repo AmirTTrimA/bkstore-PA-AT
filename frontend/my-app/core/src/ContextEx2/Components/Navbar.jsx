@@ -27,7 +27,7 @@ import { useLanguage } from '../Context/LanguageContext';
 import { ThemeToggle } from './common/ThemeToggle';
 import { LanguageToggle } from './common/LanguageToggle';
 import { useMyPublishers, useCart } from '../Hooks/queries';
-import { ppic13 } from "../Constants"
+import { ppic14 } from "../Constants";
 
 import '../Styles/components/Navbar.css'
 
@@ -50,6 +50,18 @@ export default function Navbar() {
     const [searchInputValue, setSearchInputValue] = useState('');
     const [recentSearches, setRecentSearches] = useState([]);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [userAvatar, setUserAvatar] = useState(
+      () => localStorage.getItem("user_avatar") || ppic14
+    );
+
+    useEffect(() => {
+      const handleAvatarUpdate = () => {
+        const saved = localStorage.getItem("user_avatar");
+        if (saved) setUserAvatar(saved);
+      };
+      window.addEventListener("avatar_updated", handleAvatarUpdate);
+      return () => window.removeEventListener("avatar_updated", handleAvatarUpdate);
+    }, []);
 
     // Queries via React Query
     const { data: myPublishers } = useMyPublishers({ enabled: Boolean(isLoggedIn) });
@@ -267,7 +279,7 @@ export default function Navbar() {
                 >
                   <Avatar 
                     sx={{ width: 34, height: 34, border: '2px solid #d17842' }}
-                    src={ppic13}
+                    src={userAvatar}
                   />
                 </Button>
             
@@ -284,7 +296,7 @@ export default function Navbar() {
                     <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
                       <Avatar 
                         sx={{ width: 36, height: 36, mr: 1.5 }}
-                        src={ppic13}
+                        src={userAvatar}
                       />
                       <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{username}</Typography>

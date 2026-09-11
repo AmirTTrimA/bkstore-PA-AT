@@ -258,10 +258,10 @@ export default function PDashboard() {
         {/* Right: Actions, Notifications, Profile, Theme, Logout */}
         <div className="pdashboard-topbar-right">
           <Link to="/dashboard" className="pdash-btn" title="Go to Reader Dashboard">
-            📚 {t('dashboard.readerShelf', 'Reader Shelf')}
+            {t('dashboard.readerShelf', 'Reader Shelf')}
           </Link>
           <Link to="/home" className="pdash-btn" title="Return to Customer Storefront">
-            {t('publisher_panel.storefront', '← Storefront')}
+            {t('publisher_panel.storefront', 'Storefront')}
           </Link>
 
           {/* Notifications Bell */}
@@ -271,7 +271,10 @@ export default function PDashboard() {
             onClick={() => setNotifModal(true)}
             title="Proposals & Notifications"
           >
-            🔔
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
             {pendingCount > 0 && (
               <span className="notif-count-badge">{pendingCount}</span>
             )}
@@ -284,7 +287,7 @@ export default function PDashboard() {
             onClick={() => setIsModalOpen(true)}
             title="Publisher Account Settings"
           >
-            👤 {t('dashboard.profile', 'Profile')}
+            {t('dashboard.profile', 'Profile')}
           </button>
 
           {/* Language Toggle */}
@@ -310,7 +313,11 @@ export default function PDashboard() {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle Navigation Menu"
           >
-            ☰
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
           </button>
         </div>
         </div>
@@ -369,7 +376,7 @@ export default function PDashboard() {
               setActiveTab('mybook');
             }}
           >
-            📚 {t('publisher_panel.publishedBooks', 'Published Books')}
+            {t('publisher_panel.publishedBooks', 'Published Books')}
             <span className="tab-badge">{allbooks.length}</span>
           </button>
 
@@ -378,7 +385,7 @@ export default function PDashboard() {
             className={`pdash-tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
             onClick={() => setActiveTab('upload')}
           >
-            {bookToEdit ? `✏️ ${t('publisher_panel.editBookFormats', 'Edit Book & Formats')}` : `📤 ${t('publisher_panel.bookProposalEditor', 'Book Proposal & Editor')}`}
+            {bookToEdit ? t('publisher_panel.editBookFormats', 'Edit Book & Formats') : t('publisher_panel.bookProposalEditor', 'Book Proposal & Editor')}
           </button>
 
           <button
@@ -386,7 +393,7 @@ export default function PDashboard() {
             className={`pdash-tab-btn ${activeTab === 'authors' ? 'active' : ''}`}
             onClick={() => setActiveTab('authors')}
           >
-            ✍️ {t('publisher_panel.authorsManagement', 'Authors Management')}
+            {t('publisher_panel.authorsManagement', 'Authors Management')}
           </button>
 
           <button
@@ -394,7 +401,7 @@ export default function PDashboard() {
             className={`pdash-tab-btn ${activeTab === 'proposals' ? 'active' : ''}`}
             onClick={() => setActiveTab('proposals')}
           >
-            ⏳ {t('publisher_panel.proposalsWaitingList', 'Proposals Waiting List')}
+            {t('publisher_panel.proposalsWaitingList', 'Proposals Waiting List')}
             {pendingCount > 0 && <span className="tab-badge">{pendingCount}</span>}
           </button>
         </nav>
@@ -499,7 +506,7 @@ export default function PDashboard() {
                               onClick={() => handleEditBook(book)}
                               title={t('publisher_panel.editDetailsTitle', 'Modify details or format prices')}
                             >
-                              ✏️ {t('publisher_panel.editAndFormats', 'Edit & Formats')}
+                              {t('publisher_panel.editAndFormats', 'Edit & Formats')}
                             </button>
                           </td>
                         </tr>
@@ -569,21 +576,21 @@ export default function PDashboard() {
                   className={`proposal-filter-chip ${proposalFilter === 'PENDING' ? 'active' : ''}`}
                   onClick={() => setProposalFilter('PENDING')}
                 >
-                  ⏳ {t('publisher_panel.pending', 'Pending')} ({pendingCount})
+                  {t('publisher_panel.pending', 'Pending')} ({pendingCount})
                 </button>
                 <button
                   type="button"
                   className={`proposal-filter-chip ${proposalFilter === 'APPROVED' ? 'active' : ''}`}
                   onClick={() => setProposalFilter('APPROVED')}
                 >
-                  ✅ {t('publisher_panel.approved', 'Approved')} ({proposals.filter((p) => p.status === 'APPROVED' || p.status === 'APPLIED').length})
+                  {t('publisher_panel.approved', 'Approved')} ({proposals.filter((p) => p.status === 'APPROVED' || p.status === 'APPLIED').length})
                 </button>
                 <button
                   type="button"
                   className={`proposal-filter-chip ${proposalFilter === 'REJECTED' ? 'active' : ''}`}
                   onClick={() => setProposalFilter('REJECTED')}
                 >
-                  ❌ {t('publisher_panel.rejected', 'Rejected')} ({proposals.filter((p) => p.status === 'REJECTED').length})
+                  {t('publisher_panel.rejected', 'Rejected')} ({proposals.filter((p) => p.status === 'REJECTED').length})
                 </button>
               </div>
             </div>

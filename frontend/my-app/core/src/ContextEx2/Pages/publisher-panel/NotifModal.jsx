@@ -136,21 +136,21 @@ export default function NotifModal({ open, onClose, notifmessage = [], onWithdra
             className={`proposal-filter-chip ${filter === 'PENDING' ? 'active' : ''}`}
             onClick={() => setFilter('PENDING')}
           >
-            ⏳ {t('publisher_panel.pending', 'Pending')} ({counts.PENDING})
+            {t('publisher_panel.pending', 'Pending')} ({counts.PENDING})
           </button>
           <button
             type="button"
             className={`proposal-filter-chip ${filter === 'APPROVED' ? 'active' : ''}`}
             onClick={() => setFilter('APPROVED')}
           >
-            ✅ {t('publisher_panel.approved', 'Approved')} ({counts.APPROVED})
+            {t('publisher_panel.approved', 'Approved')} ({counts.APPROVED})
           </button>
           <button
             type="button"
             className={`proposal-filter-chip ${filter === 'REJECTED' ? 'active' : ''}`}
             onClick={() => setFilter('REJECTED')}
           >
-            ❌ {t('publisher_panel.rejected', 'Rejected')} ({counts.REJECTED})
+            {t('publisher_panel.rejected', 'Rejected')} ({counts.REJECTED})
           </button>
         </div>
 

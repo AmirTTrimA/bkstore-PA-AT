@@ -28,7 +28,7 @@
 }
 
 .dashboard-topbar-inner {
-  max-width: 1280px;
+  max-width: 1560px;
   width: 100%;
   margin: 0 auto;
   padding: 8px 24px;
@@ -138,9 +138,10 @@
 
 /* Central Search Bar */
 .topbar-search-section {
-  flex: 1;
-  max-width: 380px;
-  margin: 0 10px;
+  flex: 1 1 280px;
+  min-width: 220px;
+  max-width: 420px;
+  margin: 0 12px;
 }
 
 .search-input-wrapper {
@@ -171,6 +172,7 @@
   color: var(--text-primarys);
   font-size: 0.88rem;
   width: 100%;
+  min-width: 0;
   outline: none;
 }
 
@@ -197,7 +199,7 @@
 .topbar-nav-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -205,16 +207,17 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   color: var(--text-primarys);
-  padding: 7px 13px;
+  padding: 6px 11px;
   border-radius: 18px;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .topbar-nav-pill:hover {
@@ -745,7 +748,7 @@
    RESPONSIVE BREAKPOINTS
    ============================================ */
 
-@media (max-width: 960px) {
+@media (max-width: 1180px) {
   .topbar-nav-pill,
   .topbar-icon-btn {
     display: none;

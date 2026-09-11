@@ -377,7 +377,7 @@ export default function Upload({
               if (PageChanger) PageChanger('mybook');
             }}
           >
-            ← {t('publisher_panel.backToPublished', 'Back to Published Books')}
+            {t('publisher_panel.backToPublished', 'Back to Published Books')}
           </button>
         )}
       </div>

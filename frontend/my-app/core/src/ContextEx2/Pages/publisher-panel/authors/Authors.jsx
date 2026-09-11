@@ -38,7 +38,7 @@ export default function Authors({ currentPublisher, onProposalCreated }) {
             setTabIndex(0);
           }}
         >
-          👥 {t('publisher_panel.authorsRoster', 'Authors Roster')}
+          {t('publisher_panel.authorsRoster', 'Authors Roster')}
         </button>
 
         <button
@@ -46,7 +46,7 @@ export default function Authors({ currentPublisher, onProposalCreated }) {
           className={`author-tab-btn ${tabIndex === 1 ? 'active' : ''}`}
           onClick={handleNewAuthor}
         >
-          {authorToEdit ? `✏️ ${t('common.edit', 'Edit')}: ${authorToEdit.name}` : `✍️ ${t('publisher_panel.proposeNewAuthor', 'Propose New Author')}`}
+          {authorToEdit ? `${t('common.edit', 'Edit')}: ${authorToEdit.name}` : t('publisher_panel.proposeNewAuthor', 'Propose New Author')}
         </button>
       </div>
 
