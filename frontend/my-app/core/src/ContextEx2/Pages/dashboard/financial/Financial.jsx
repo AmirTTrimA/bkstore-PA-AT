@@ -81,16 +81,24 @@ export default function Financial({ open, onClose, defaultTab = 0 }) {
         <Tabs
           value={value}
           onChange={handleTabChange}
-          variant="fullWidth"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             mt: 2,
             borderBottom: "1px solid var(--border-color)",
+            "& .MuiTabs-scroller": {
+              overflowX: "auto !important",
+            },
             "& .MuiTab-root": {
               color: "var(--text-secondary)",
               fontWeight: 600,
-              fontSize: "0.92rem",
+              fontSize: { xs: "0.82rem", sm: "0.92rem" },
               textTransform: "none",
               py: 1.5,
+              px: { xs: 1.5, sm: 2.5 },
+              minWidth: "auto",
+              whiteSpace: "nowrap",
               transition: "all 0.2s ease",
               "&.Mui-selected": {
                 color: "#d17842 !important"

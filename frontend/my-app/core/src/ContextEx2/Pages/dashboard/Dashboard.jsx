@@ -18,6 +18,7 @@ import { useLanguage } from "../../Context/LanguageContext";
 import { ppic14 } from "../../Constants";
 import ContentService from "../../Services/ContentService";
 import { useProfile, useMyPublishers } from "../../Hooks/queries";
+import BottomNav from "../../Components/common/BottomNav";
 
 import "../../Styles/components/Dashboard.css";
 
@@ -368,11 +369,11 @@ export default function Dashboard({ initialTab }) {
             </svg>
           </button>
 
-          {/* Language Toggle */}
-          <LanguageToggle page="dash" />
-
           {/* Dark Mode Toggle */}
           <ThemeToggle page="dash" />
+
+          {/* Language Toggle */}
+          <LanguageToggle page="dash" />
 
           {/* Logout Button */}
           <button
@@ -742,6 +743,8 @@ export default function Dashboard({ initialTab }) {
           </ul>
         </div>
       </div>
+
+      <BottomNav />
 
       {/* Modals */}
       {profileModalOpen && (

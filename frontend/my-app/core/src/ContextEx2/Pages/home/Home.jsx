@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 // ---Components---
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
+import BottomNav from "../../Components/common/BottomNav";
 import ReusableSlider from "../../Components/common/ReusableSlider";
-import { ThemeToggle } from "../../Components/common/ThemeToggle";
-import { LanguageToggle } from "../../Components/common/LanguageToggle";
 import Notification from "../../Components/feature/Notification";
-import { useAuth } from "../../Context/AuthContext";
 import { useLanguage } from "../../Context/LanguageContext";
 
 // --- Styles ---
@@ -131,9 +129,7 @@ const FALLBACK_GENRES = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const inputRef = useRef(null);
   const notificationRef = useRef();
-  const { isLoggedIn } = useAuth();
   const { t } = useLanguage();
 
   // ----------------------------------------
@@ -203,31 +199,9 @@ export default function Home() {
     return Array.isArray(rawGenres) && rawGenres.length >= 4 ? rawGenres : FALLBACK_GENRES;
   }, [genresData]);
 
-  // Search input
-  const [searchInputValue, setSearchInputValue] = useState("");
-
   // Hero carousel
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-
-  // ============================================
-  // Search Submission
-  // ============================================
-  const handleSearchSubmit = (e) => {
-    if (e) e.preventDefault();
-    const trimmed = searchInputValue.trim();
-    if (!trimmed) {
-      navigate("/search");
-    } else {
-      navigate(`/search/${encodeURIComponent(trimmed)}`);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearchSubmit(e);
-    }
-  };
 
   // ============================================
   // Category Pill Navigation
@@ -266,22 +240,6 @@ export default function Home() {
 
   const slide = heroBooks.length > 0 ? heroBooks[currentSlide] : null;
 
-  // Login check for bottom nav
-  const handleLoginCheck = useCallback(
-    (e) => {
-      if (!isLoggedIn) {
-        e.preventDefault();
-        notificationRef.current?.showNotif("Login required", "error", {
-          linkText: "login",
-          linkHref: "/login",
-        });
-        return false;
-      }
-      return true;
-    },
-    [isLoggedIn]
-  );
-
   if (loadingBooks) {
     return (
       <div className="home-loading-screen">
@@ -294,49 +252,6 @@ export default function Home() {
   return (
     <div className="home-page-wrapper">
       <Navbar />
-
-      {/* Mobile Top Header */}
-      <div className="TopRes">
-        <nav className="top-res">
-          <div className="up">
-            <Link to="/home" className="logo-res">
-              {t('nav.brandName', 'Bookkadeh')}
-            </Link>
-          </div>
-          <div className="down">
-            <ThemeToggle page="home" />
-            <LanguageToggle page="home" />
-            <div className="search-res-wrapper">
-              <input
-                ref={inputRef}
-                type="search"
-                placeholder={t('nav.searchPlaceholder', 'Search catalog...')}
-                className="search-res"
-                value={searchInputValue}
-                onChange={(e) => setSearchInputValue(e.target.value)}
-                onKeyDown={handleKeyPress}
-              />
-              <button
-                type="button"
-                className="search-res-btn"
-                onClick={handleSearchSubmit}
-              >
-                <i className="fas fa-search"></i>
-              </button>
-            </div>
-            <button
-              onClick={() => navigate("/subscription")}
-              className="sub-list"
-              type="button"
-              title="Subscriptions"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="24px">
-                <path d="M160-240q-50 0-85-35t-35-85v-240q0-50 35-85t85-35h540q50 0 85 35t35 85v240q0 50-35 85t-85 35H160Zm0-80h540q17 0 28.5-11.5T740-360v-240q0-17-11.5-28.5T700-640H160q-17 0-28.5 11.5T120-600v240q0 17 11.5 28.5T160-320Zm700-60v-200h20q17 0 28.5 11.5T920-540v120q0 17-11.5 28.5T880-380h-20Zm-700 20v-240h540v240H160Z" />
-              </svg>
-            </button>
-          </div>
-        </nav>
-      </div>
 
       <main className="Container_home">
 
@@ -532,32 +447,7 @@ export default function Home() {
       <Footer />
 
       {/* Mobile Bottom Navigation */}
-      <div className="BottomNav">
-        <nav className="bottom-navbar">
-          <Link to="/" className="nav-item">
-            <i className="fas fa-home"></i>
-            <span>Home</span>
-          </Link>
-          <Link to="/favorites" onClick={handleLoginCheck} className="nav-item">
-            <i className="fa-solid fa-heart"></i>
-            <span>Favorites</span>
-          </Link>
-          <Link to="/basket" className="nav-item">
-            <svg className="cart-icon" viewBox="0 -960 960 960">
-              <path d="M240-80q-33 0-56.5-23.5T160-160v-480q0-33 23.5-56.5T240-720h80q0-66 47-113t113-47q66 0 113 47t47 113h80q33 0 56.5 23.5T800-640v480q0 33-23.5 56.5T720-80H240Zm0-80h480v-480h-80v80q0 17-11.5 28.5T600-520q-17 0-28.5-11.5T560-560v-80H400v80q0 17-11.5 28.5T360-520q-17 0-28.5-11.5T320-560v-80h-80v480Zm160-560h160q0-33-23.5-56.5T480-800q-33 0-56.5 23.5T400-720ZM240-160v-480 480Z" />
-            </svg>
-            <span>Cart</span>
-          </Link>
-          <Link to="/library" className="nav-item">
-            <i className="fas fa-book"></i>
-            <span>Library</span>
-          </Link>
-          <Link to="/dashboard" onClick={handleLoginCheck} className="nav-item">
-            <i className="fas fa-user"></i>
-            <span>Dashboard</span>
-          </Link>
-        </nav>
-      </div>
+      <BottomNav />
 
       <Notification ref={notificationRef} />
     </div>

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
 import Navbar from "../../Components/Navbar";
-import SimpleNav from "../../Components/SimpleNav";
+import BottomNav from "../../Components/common/BottomNav";
 import Footer from "../../Components/Footer";
 import { useLanguage } from "../../Context/LanguageContext";
 
@@ -79,17 +79,13 @@ export default function Author() {
   if (isLoading) {
     return (
       <div className="author-page-wrapper">
-        <div className="author-nav-full">
-          <Navbar />
-        </div>
-        <div className="author-nav-res">
-          <SimpleNav />
-        </div>
+        <Navbar />
         <div className="author-container author-loading-box">
           <div className="author-spinner"></div>
           <p>{t("common.loading", "Loading author details...")}</p>
         </div>
         <Footer />
+        <BottomNav />
       </div>
     );
   }
@@ -97,12 +93,7 @@ export default function Author() {
   if (error || !authorData) {
     return (
       <div className="author-page-wrapper">
-        <div className="author-nav-full">
-          <Navbar />
-        </div>
-        <div className="author-nav-res">
-          <SimpleNav />
-        </div>
+        <Navbar />
         <div className="author-container author-not-found-box">
           <h2>{error || t("author.notFound", "Author Not Found")}</h2>
           <p>{t("author.notFoundDesc", "We couldn't locate this author in our catalog.")}</p>
@@ -114,6 +105,7 @@ export default function Author() {
           </button>
         </div>
         <Footer />
+        <BottomNav />
       </div>
     );
   }
@@ -123,12 +115,7 @@ export default function Author() {
 
   return (
     <div className="author-page-wrapper">
-      <div className="author-nav-full">
-        <Navbar />
-      </div>
-      <div className="author-nav-res">
-        <SimpleNav />
-      </div>
+      <Navbar />
 
       <main className="author-container">
         {/* Top bar with back button & breadcrumbs */}
@@ -361,6 +348,7 @@ export default function Author() {
       </main>
 
       <Footer />
+      <BottomNav />
     </div>
   );
 }

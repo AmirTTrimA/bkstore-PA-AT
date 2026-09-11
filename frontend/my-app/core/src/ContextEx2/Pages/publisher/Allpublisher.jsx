@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../Components/Navbar'
-import SimpleNav from '../../Components/SimpleNav'
+import BottomNav from '../../Components/common/BottomNav'
 import Footer from '../../Components/Footer'
 import { useLanguage } from '../../Context/LanguageContext'
 import PublisherService from '../../Services/PublisherService'
@@ -76,15 +76,7 @@ export default function AllPublisher() {
 
   return (
     <div className="all-publisher-page-wrapper">
-      {/* Mobile Navigation */}
-      <div className="all-publisher-res">
-        <SimpleNav />
-      </div>
-
-      {/* Desktop Navigation */}
-      <div className="all-publisher-full">
-        <Navbar />
-      </div>
+      <Navbar />
 
       <div className="all-publisher-container">
         {/* Top bar with Back button & Breadcrumbs */}
@@ -185,6 +177,7 @@ export default function AllPublisher() {
         </div>
       </div>
 
+      <BottomNav />
       <Footer />
     </div>
   )

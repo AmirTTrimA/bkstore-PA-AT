@@ -1,0 +1,126 @@
+/* ============================================
+   BOOKKADEH UNIFIED MOBILE BOTTOM NAVIGATION
+   ============================================ */
+
+.bk-bottom-nav-container {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bk-bottom-nav-container {
+    display: block !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1200 !important;
+    background-color: var(--bg-nav, #ffffff) !important;
+    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.08)) !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+  }
+
+  .bk-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 60px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+
+  .bk-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-secondary, #64748b);
+    transition: color 0.2s ease, transform 0.15s ease;
+    padding: 4px 0;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+
+  .bk-nav-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    width: 24px;
+    margin-bottom: 3px;
+  }
+
+  .bk-nav-icon-wrap i,
+  .bk-nav-icon-wrap svg {
+    font-size: 19px !important;
+    width: 19px !important;
+    height: 19px !important;
+    max-width: 19px !important;
+    max-height: 19px !important;
+    color: inherit;
+    fill: currentColor;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .bk-nav-badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-nav, #ffffff);
+    line-height: 1;
+    box-sizing: border-box;
+  }
+
+  .bk-nav-label {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.1;
+    transition: color 0.2s ease, font-weight 0.2s ease;
+    white-space: nowrap;
+    color: inherit;
+  }
+
+  .bk-nav-item:hover {
+    color: #d17842;
+  }
+
+  .bk-nav-item.active {
+    color: #d17842 !important;
+  }
+
+  .bk-nav-item.active .bk-nav-icon-wrap i,
+  .bk-nav-item.active .bk-nav-icon-wrap svg {
+    transform: scale(1.15);
+  }
+
+  .bk-nav-item.active .bk-nav-label {
+    font-weight: 700;
+    color: #d17842 !important;
+  }
+
+  .bk-nav-item:active {
+    transform: scale(0.92);
+  }
+}

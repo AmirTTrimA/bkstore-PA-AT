@@ -3,37 +3,20 @@
    ============================================ */
 
 .subscription-page-root {
-    max-width: 1100px;
+    max-width: 1440px;
     margin: 0 auto;
-    border-radius: 0 0 10px 10px;
     background-color: var(--bg-primary, #ffffff);
     color: var(--text-primarys, #0f172a);
-    width: 90%;
+    width: 100%;
     min-height: 100vh;
+    box-sizing: border-box;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .sub-container {
-    padding-bottom: 60px;
+    padding-bottom: 80px;
     min-height: 60vh;
-}
-
-/* ============================================
-        NAVIGATION
-   ============================================ */
-
-.full-sub-nav {
-    position: sticky;
-    z-index: 1000;
-    top: 0;
-    display: block;
-}
-
-.sub-nav {
-    position: sticky;
-    z-index: 1000;
-    top: 0;
-    display: none;
+    box-sizing: border-box;
 }
 
 /* ============================================
@@ -166,7 +149,8 @@
    ============================================ */
 
 .sub-status-card {
-    width: min(900px, 100%);
+    width: 100%;
+    max-width: 900px;
     margin: 20px auto 28px;
     padding: 24px 28px;
     border-radius: 16px;
@@ -174,6 +158,7 @@
     border: 1px solid var(--border-color, #e5e7eb);
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
     transition: all 0.25s ease;
+    box-sizing: border-box;
 }
 
 .sub-status-card.active-status {
@@ -365,8 +350,10 @@
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 28px;
     padding: 10px 0 40px;
-    width: min(1000px, 100%);
+    width: 100%;
+    max-width: 1000px;
     margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .plan-card {
@@ -379,6 +366,8 @@
     padding: 32px 26px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .plan-card:hover {
@@ -854,22 +843,15 @@
         RESPONSIVE DESIGN
    ============================================ */
 
-.BottomNav {
-    display: none;
-}
-
 @media (max-width: 768px) {
     .subscription-page-root {
         width: 100%;
         border-radius: 0;
     }
 
-    .full-sub-nav {
-        display: none !important;
-    }
-
-    .sub-nav {
-        display: block !important;
+    .sub-container {
+        padding: 0 16px 80px;
+        box-sizing: border-box;
     }
 
     .sub-main-title {
@@ -879,56 +861,17 @@
     .plans-grid {
         grid-template-columns: 1fr;
         padding: 10px 0 30px;
+        gap: 20px;
+        width: 100%;
     }
 
     .sub-status-card {
         padding: 18px 16px;
+        width: 100%;
     }
 
     .sub-status-grid {
         grid-template-columns: 1fr;
         gap: 12px;
-    }
-
-    .BottomNav {
-        display: block;
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        z-index: 1000;
-        margin-top: 20px;
-    }
-
-    .bottom-navbar {
-        display: flex;
-        justify-content: space-around;
-        background-color: var(--bg-top-res, #1e1e1e);
-        height: 65px;
-        box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.3);
-        border-radius: 14px 14px 0 0;
-        padding: 0 10px;
-        align-items: center;
-    }
-
-    .nav-item {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        color: #999;
-        font-size: 11px;
-        gap: 4px;
-        padding: 6px 0;
-        transition: color 0.2s;
-    }
-
-    .nav-item.active {
-        color: #d17842;
-    }
-
-    .nav-item i {
-        font-size: 18px;
     }
 }

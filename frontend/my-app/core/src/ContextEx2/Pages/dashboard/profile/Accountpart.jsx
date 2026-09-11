@@ -149,71 +149,74 @@ export default function Accountpart({
       <Box
         sx={{
           display: "flex",
-          alignItems: "center",
-          gap: 2.5,
-          p: 2,
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: { xs: 1.5, sm: 2.5 },
+          p: { xs: 1.5, sm: 2 },
           mb: 3,
           background: "var(--bg-secondary)",
           border: "1px solid var(--border-color)",
           borderRadius: "14px"
         }}
       >
-        <Box sx={{ position: "relative" }}>
-          <img
-            src={selectedAvatar}
-            alt="Profile Avatar"
-            style={{
-              width: 76,
-              height: 76,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "2px solid #d17842",
-              boxShadow: "0 4px 14px rgba(0, 0, 0, 0.4)"
-            }}
-          />
-          <IconButton
-            size="small"
-            onClick={() => setAvatarDialogOpen(true)}
-            sx={{
-              position: "absolute",
-              bottom: -4,
-              right: -4,
-              bgcolor: "#d17842",
-              color: "#fff",
-              "&:hover": { bgcolor: "#b35e2e" },
-              boxShadow: "0 2px 6px rgba(0,0,0,0.5)"
-            }}
-            title="Choose Avatar"
-          >
-            <PhotoCameraIcon sx={{ fontSize: 16 }} />
-          </IconButton>
-        </Box>
-
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)" }}>
-            {userAccount.first_name || userAccount.last_name
-              ? `${userAccount.first_name} ${userAccount.last_name}`
-              : userAccount.username || "Reader"}
-          </Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
-            @{userAccount.username || "username"}
-          </Typography>
-
-          {subscription?.is_current && (
-            <Chip
-              icon={<WorkspacePremiumIcon sx={{ fontSize: "14px !important" }} />}
-              label={`${subscription.plan_name} (${subscription.discount_percent}% off)`}
-              size="small"
-              sx={{
-                mt: 1,
-                bgcolor: "rgba(209, 120, 66, 0.2)",
-                color: "#ffab73",
-                border: "1px solid rgba(209, 120, 66, 0.4)",
-                fontWeight: 700,
-                fontSize: "0.72rem"
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: { xs: "100%", sm: "auto" }, flex: { sm: 1 } }}>
+          <Box sx={{ position: "relative", flexShrink: 0 }}>
+            <img
+              src={selectedAvatar}
+              alt="Profile Avatar"
+              style={{
+                width: 68,
+                height: 68,
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "2px solid #d17842",
+                boxShadow: "0 4px 14px rgba(0, 0, 0, 0.4)"
               }}
             />
-          )}
+            <IconButton
+              size="small"
+              onClick={() => setAvatarDialogOpen(true)}
+              sx={{
+                position: "absolute",
+                bottom: -4,
+                right: -4,
+                bgcolor: "#d17842",
+                color: "#fff",
+                "&:hover": { bgcolor: "#b35e2e" },
+                boxShadow: "0 2px 6px rgba(0,0,0,0.5)"
+              }}
+              title="Choose Avatar"
+            >
+              <PhotoCameraIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Box>
+
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primarys)", fontSize: { xs: "1rem", sm: "1.25rem" }, wordBreak: "break-word" }}>
+              {userAccount.first_name || userAccount.last_name
+                ? `${userAccount.first_name} ${userAccount.last_name}`
+                : userAccount.username || "Reader"}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
+              @{userAccount.username || "username"}
+            </Typography>
+
+            {subscription?.is_current && (
+              <Chip
+                icon={<WorkspacePremiumIcon sx={{ fontSize: "14px !important" }} />}
+                label={`${subscription.plan_name} (${subscription.discount_percent}% off)`}
+                size="small"
+                sx={{
+                  mt: 0.8,
+                  bgcolor: "rgba(209, 120, 66, 0.2)",
+                  color: "#ffab73",
+                  border: "1px solid rgba(209, 120, 66, 0.4)",
+                  fontWeight: 700,
+                  fontSize: "0.72rem"
+                }}
+              />
+            )}
+          </Box>
         </Box>
 
         <Button
@@ -224,6 +227,8 @@ export default function Accountpart({
             color: "var(--text-primarys)",
             borderColor: "var(--border-color)",
             textTransform: "none",
+            width: { xs: "100%", sm: "auto" },
+            whiteSpace: "nowrap",
             "&:hover": { borderColor: "#d17842", color: "#d17842" }
           }}
         >

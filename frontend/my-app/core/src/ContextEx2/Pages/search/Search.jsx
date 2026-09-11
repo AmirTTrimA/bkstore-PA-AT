@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
-import SimpleNav from "../../Components/SimpleNav";
+import BottomNav from "../../Components/common/BottomNav";
 import { useLanguage } from "../../Context/LanguageContext";
 
 import BookService from "../../Services/BookService";
@@ -313,12 +313,7 @@ export default function Search() {
 
   return (
     <div className="search-page-wrapper">
-      <div className="search-nav-res">
-        <SimpleNav />
-      </div>
-      <div className="search-nav-full">
-        <Navbar />
-      </div>
+      <Navbar />
 
       <main className="search-full-container">
         {/* TOP SEARCH BAR & ACTIONS */}
@@ -674,6 +669,7 @@ export default function Search() {
         </div>
       </main>
 
+      <BottomNav />
       <Footer />
 
       {/* MOBILE SORT BOTTOM SHEET */}

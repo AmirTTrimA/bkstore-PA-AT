@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import Navbar from '../../Components/Navbar';
-import SimpleNav from '../../Components/SimpleNav';
+import BottomNav from '../../Components/common/BottomNav';
 import Footer from '../../Components/Footer';
 import { useLanguage } from '../../Context/LanguageContext';
 import PublisherService from '../../Services/PublisherService';
@@ -119,17 +119,13 @@ export default function Publisher() {
   if (isLoading) {
     return (
       <div className="publisher-page-wrapper">
-        <div className="publisher-nav-full">
-          <Navbar />
-        </div>
-        <div className="publisher-nav-res">
-          <SimpleNav />
-        </div>
+        <Navbar />
         <div className="publisher-container publisher-loading-box">
           <div className="publisher-spinner"></div>
           <p>{t("common.loading", "Loading publisher information...")}</p>
         </div>
         <Footer />
+        <BottomNav />
       </div>
     );
   }
@@ -138,12 +134,7 @@ export default function Publisher() {
   if (error || !publisher) {
     return (
       <div className="publisher-page-wrapper">
-        <div className="publisher-nav-full">
-          <Navbar />
-        </div>
-        <div className="publisher-nav-res">
-          <SimpleNav />
-        </div>
+        <Navbar />
         <div className="publisher-container publisher-error-box">
           <div className="publisher-error-icon">
             <i className="fas fa-landmark"></i>
@@ -170,6 +161,7 @@ export default function Publisher() {
           </div>
         </div>
         <Footer />
+        <BottomNav />
       </div>
     );
   }
@@ -180,15 +172,7 @@ export default function Publisher() {
 
   return (
     <div className="publisher-page-wrapper">
-      {/* Desktop Navigation */}
-      <div className="publisher-nav-full">
-        <Navbar />
-      </div>
-
-      {/* Mobile Navigation */}
-      <div className="publisher-nav-res">
-        <SimpleNav />
-      </div>
+      <Navbar />
 
       <div className="publisher-container">
         {/* Top bar with Back Button & Breadcrumbs */}
@@ -421,6 +405,7 @@ export default function Publisher() {
         </div>
       </div>
 
+      <BottomNav />
       <Footer />
     </div>
   );

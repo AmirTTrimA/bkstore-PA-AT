@@ -96,9 +96,11 @@ export default function Profile({
               "& .MuiTab-root": {
                 color: "var(--text-secondary)",
                 fontWeight: 600,
-                fontSize: "0.92rem",
+                fontSize: { xs: "0.8rem", sm: "0.92rem" },
                 textTransform: "none",
-                py: 1.5,
+                py: { xs: 1, sm: 1.5 },
+                px: { xs: 0.5, sm: 2 },
+                minHeight: "44px",
                 transition: "all 0.2s ease",
                 "&.Mui-selected": {
                   color: "#d17842 !important"

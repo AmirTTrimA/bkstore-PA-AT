@@ -12,7 +12,7 @@ import {
 
 import Footer from "../../Components/Footer";
 import Navbar from "../../Components/Navbar";
-import SimpleNav from "../../Components/SimpleNav";
+import BottomNav from "../../Components/common/BottomNav";
 import ReusableSlider from "../../Components/common/ReusableSlider";
 import Notification from "../../Components/feature/Notification";
 
@@ -203,13 +203,13 @@ export default function Book() {
   if (loading) {
     return (
       <>
-        <div className="book-nav-full"><Navbar /></div>
-        <div className="book-nav-res"><SimpleNav /></div>
+        <Navbar />
         <div className="book-status-screen">
           <div className="book-spinner"></div>
           <p>{t("common.loading", "Loading book details...")}</p>
         </div>
         <Footer />
+        <BottomNav />
       </>
     );
   }
@@ -217,8 +217,7 @@ export default function Book() {
   if (!book || error) {
     return (
       <>
-        <div className="book-nav-full"><Navbar /></div>
-        <div className="book-nav-res"><SimpleNav /></div>
+        <Navbar />
         <div className="book-status-screen">
           <h2>{error || t("book.notFound", "Book not found")}</h2>
           <p>{t("book.notFoundDesc", "The requested book could not be found in our catalog.")}</p>
@@ -227,19 +226,14 @@ export default function Book() {
           </button>
         </div>
         <Footer />
+        <BottomNav />
       </>
     );
   }
 
   return (
     <>
-      <div className="book-nav-full">
-        <Navbar />
-      </div>
-
-      <div className="book-nav-res">
-        <SimpleNav />
-      </div>
+      <Navbar />
 
       <Notification ref={notificationRef} />
 
@@ -516,6 +510,7 @@ export default function Book() {
       </main>
 
       <Footer />
+      <BottomNav />
     </>
   );
 }

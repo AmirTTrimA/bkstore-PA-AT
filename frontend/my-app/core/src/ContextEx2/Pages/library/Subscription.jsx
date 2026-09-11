@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 
 import Navbar from "../../Components/Navbar";
-import SimpleNav from "../../Components/SimpleNav";
+import BottomNav from "../../Components/common/BottomNav";
 import Footer from "../../Components/Footer";
 import { useAuth } from "../../Context/AuthContext";
 import { useLanguage } from "../../Context/LanguageContext";
@@ -166,15 +166,7 @@ export default function Subscription() {
 
     return (
         <div className="subscription-page-root">
-            {/* Desktop Navigation */}
-            <div className="full-sub-nav">
-                <Navbar />
-            </div>
-
-            {/* Mobile Navigation */}
-            <div className="sub-nav">
-                <SimpleNav />
-            </div>
+            <Navbar />
 
             <Notification ref={notificationRef} />
 
@@ -462,30 +454,7 @@ export default function Subscription() {
             <Footer />
 
             {/* Mobile Bottom Navigation */}
-            <div className="BottomNav">
-                <nav className="bottom-navbar">
-                    <Link to="/" className="nav-item">
-                        <i className="fas fa-home"></i>
-                        <span>{t("nav.home", "Home")}</span>
-                    </Link>
-                    <Link to="/favorites" className="nav-item">
-                        <i className="fa-solid fa-heart"></i>
-                        <span>{t("library.favorites", "Favorites")}</span>
-                    </Link>
-                    <Link to="/library" className="nav-item">
-                        <i className="fa-solid fa-book"></i>
-                        <span>{t("nav.explore", "Catalog")}</span>
-                    </Link>
-                    <Link to="/subscription" className="nav-item active">
-                        <i className="fa-solid fa-bolt"></i>
-                        <span>{t("nav.subscription", "Plans")}</span>
-                    </Link>
-                    <Link to="/basket" className="nav-item">
-                        <i className="fa-solid fa-cart-shopping"></i>
-                        <span>{t("nav.cart", "Cart")}</span>
-                    </Link>
-                </nav>
-            </div>
+            <BottomNav />
         </div>
     );
 }

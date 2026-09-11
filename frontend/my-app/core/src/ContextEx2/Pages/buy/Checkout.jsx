@@ -9,7 +9,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import Notification from "../../Components/feature/Notification";
 import Navbar from "../../Components/Navbar";
-import SimpleNav from "../../Components/SimpleNav";
+import BottomNav from "../../Components/common/BottomNav";
 import Footer from "../../Components/Footer";
 import { useAuth } from "../../Context/AuthContext";
 import { useLanguage } from "../../Context/LanguageContext";
@@ -434,12 +434,7 @@ export default function Checkout() {
     if (!pageLoading && !hasItems && !order) {
         return (
             <div className="checkout-page-root">
-                <div className="full-checkout-nav">
-                    <Navbar />
-                </div>
-                <div className="checkout-nav">
-                    <SimpleNav />
-                </div>
+                <Navbar />
                 <div className="checkout-container">
                     <div className="checkout-empty-box">
                         <h2>{t("cart.emptyCart", "Your basket is empty")}</h2>
@@ -464,15 +459,7 @@ export default function Checkout() {
 
     return (
         <div className="checkout-page-root">
-            {/* Desktop Navigation */}
-            <div className="full-checkout-nav">
-                <Navbar />
-            </div>
-
-            {/* Mobile Navigation */}
-            <div className="checkout-nav">
-                <SimpleNav />
-            </div>
+            <Navbar />
 
             <Notification ref={notificationRef} />
 
@@ -1235,30 +1222,7 @@ export default function Checkout() {
             <Footer />
 
             {/* Mobile Bottom Navigation */}
-            <div className="BottomNav">
-                <nav className="bottom-navbar">
-                    <Link to="/" className="nav-item">
-                        <i className="fas fa-home"></i>
-                        <span>{t("nav.home", "Home")}</span>
-                    </Link>
-                    <Link to="/favorites" className="nav-item">
-                        <i className="fa-solid fa-heart"></i>
-                        <span>{t("library.wishlistTitle", "Favorites")}</span>
-                    </Link>
-                    <Link to="/library" className="nav-item">
-                        <i className="fa-solid fa-book"></i>
-                        <span>{t("nav.explore", "Catalog")}</span>
-                    </Link>
-                    <Link to="/subscription" className="nav-item">
-                        <i className="fa-solid fa-bolt"></i>
-                        <span>{t("nav.subscription", "Plans")}</span>
-                    </Link>
-                    <Link to="/basket" className="nav-item active">
-                        <i className="fa-solid fa-cart-shopping"></i>
-                        <span>{t("nav.cart", "Cart")}</span>
-                    </Link>
-                </nav>
-            </div>
+            <BottomNav />
         </div>
     );
 }

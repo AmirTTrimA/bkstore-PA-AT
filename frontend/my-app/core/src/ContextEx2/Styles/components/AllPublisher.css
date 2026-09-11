@@ -10,22 +10,9 @@
     flex-direction: column;
 }
 
-/* Navigation */
-.all-publisher-res {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-}
-
-.all-publisher-full {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-}
-
 /* Container */
 .all-publisher-container {
-    max-width: 1280px;
+    max-width: 1440px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -287,8 +274,9 @@
 /* Responsive */
 @media (max-width: 768px) {
     .all-publisher-container {
-        width: 95%;
-        margin: 10px auto;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 16px 85px 16px;
     }
 
     .all-publisher-top-bar {

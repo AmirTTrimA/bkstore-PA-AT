@@ -265,11 +265,30 @@
 
 .mobile-hamburger-btn {
   display: none;
-  background: none;
-  border: none;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primarys);
   cursor: pointer;
-  padding: 6px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-hamburger-btn:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: #d17842;
+  color: #d17842;
+}
+
+.mobile-hamburger-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
 }
 
 /* ============================================
@@ -588,12 +607,13 @@
 .mobile-drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 200;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 2500;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .mobile-drawer-overlay.open {
@@ -602,18 +622,30 @@
 }
 
 .mobile-drawer-panel {
-  position: absolute;
+  position: fixed;
   top: 0;
   right: 0;
-  width: 290px;
+  width: min(85vw, 320px);
   height: 100%;
+  height: 100dvh;
   background: var(--bg-primary);
   border-left: 1px solid var(--border-color);
-  padding: 24px 20px;
+  padding: max(20px, env(safe-area-inset-top, 20px)) 20px max(24px, env(safe-area-inset-bottom, 24px)) 20px;
+  box-sizing: border-box;
   transform: translateX(100%);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
+  z-index: 2501;
+  overflow-y: auto;
+}
+
+[dir="rtl"] .mobile-drawer-panel {
+  right: auto;
+  left: 0;
+  border-left: none;
+  border-right: 1px solid var(--border-color);
+  transform: translateX(-100%);
 }
 
 .mobile-drawer-overlay.open .mobile-drawer-panel {
@@ -720,7 +752,7 @@
   }
 
   .mobile-hamburger-btn {
-    display: block;
+    display: inline-flex;
   }
 
   .topbar-search-section {
@@ -728,20 +760,42 @@
   }
 }
 
+@media (max-width: 768px) {
+  .topbar-left-group {
+    gap: 10px;
+  }
+
+  .user-info-text {
+    display: none;
+  }
+
+  .topbar-user-section {
+    padding: 2px;
+    background: transparent;
+    border: none;
+  }
+
+  .dashboard-content-area {
+    padding: 16px 12px 85px 12px;
+  }
+}
+
 @media (max-width: 600px) {
   .dashboard-topbar-inner {
-    padding: 10px 16px;
+    padding: 10px 14px;
     flex-wrap: wrap;
+    row-gap: 8px;
   }
 
   .topbar-search-section {
     order: 3;
     width: 100%;
-    margin: 8px 0 0 0;
+    margin: 4px 0 0 0;
   }
 
   .section-header-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
   }
 }

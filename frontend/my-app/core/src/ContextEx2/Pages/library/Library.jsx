@@ -5,7 +5,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import BookService from "../../Services/BookService";
 import { queryKeys } from "../../Hooks/queries/queryKeys";
 import Navbar from "../../Components/Navbar";
-import SimpleNav from "../../Components/SimpleNav";
+import BottomNav from "../../Components/common/BottomNav";
 import Footer from "../../Components/Footer";
 import { useLanguage } from "../../Context/LanguageContext";
 import { formatPrice } from "../../utils/formatPrice";
@@ -103,12 +103,7 @@ export default function Library() {
     if (loading) {
         return (
             <div className="all">
-                <div className="full-lib-nav">
-                    <Navbar />
-                </div>
-                <div className="lib-nav">
-                    <SimpleNav />
-                </div>
+                <Navbar />
 
                 <div className="lib-container">
                     <div className="library-message">
@@ -127,15 +122,7 @@ export default function Library() {
 
     return (
         <div className="all">
-            {/* Desktop Navigation */}
-            <div className="full-lib-nav">
-                <Navbar />
-            </div>
-
-            {/* Mobile Navigation */}
-            <div className="lib-nav">
-                <SimpleNav />
-            </div>
+            <Navbar />
 
             {/* Main Container */}
             <div className="lib-container">
@@ -370,30 +357,7 @@ export default function Library() {
             <Footer />
 
             {/* Mobile Bottom Navigation */}
-            <div className="BottomNav">
-                <nav className="bottom-navbar">
-                    <Link to="/" className="nav-item">
-                        <i className="fas fa-home"></i>
-                        <span>{t("nav.home", "Home")}</span>
-                    </Link>
-                    <Link to="/favorites" className="nav-item">
-                        <i className="fa-solid fa-heart"></i>
-                        <span>{t("library.favorites", "Favorites")}</span>
-                    </Link>
-                    <Link to="/library" className="nav-item active">
-                        <i className="fa-solid fa-book"></i>
-                        <span>{t("nav.explore", "Catalog")}</span>
-                    </Link>
-                    <Link to="/subscription" className="nav-item">
-                        <i className="fa-solid fa-bolt"></i>
-                        <span>{t("nav.subscription", "Plans")}</span>
-                    </Link>
-                    <Link to="/basket" className="nav-item">
-                        <i className="fa-solid fa-cart-shopping"></i>
-                        <span>{t("nav.cart", "Cart")}</span>
-                    </Link>
-                </nav>
-            </div>
+            <BottomNav />
         </div>
     );
 }
